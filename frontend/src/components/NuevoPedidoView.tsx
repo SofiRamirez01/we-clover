@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import './NuevoPedidoView.css';
+import AppHeader from './AppHeader';
 import { crearPedido } from '../services/pedidoService';
 import { useAuth } from '../context/AuthContext';
 import { extraerMensajeError } from '../utils/errores';
@@ -69,18 +70,8 @@ function formatearMoneda(valor: number): string {
   return valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function iniciales(nombre: string | undefined): string {
-  if (!nombre) return '';
-  return nombre
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((parte) => parte[0]?.toUpperCase())
-    .join('');
-}
-
 export default function NuevoPedidoView() {
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
 
   const [cliente, setCliente] = useState<ClienteForm>(clienteInicial);
   const [infoGeneral, setInfoGeneral] = useState<InfoGeneralForm>(infoGeneralInicial);
@@ -184,19 +175,7 @@ export default function NuevoPedidoView() {
 
   return (
     <div className="nuevo-pedido">
-      <header className="nuevo-pedido-header">
-        <h1>Carga de Nuevo Pedido - Egresados 2026</h1>
-        <div className="user-chip">
-          <span className="user-chip-avatar">{iniciales(usuario?.nombre)}</span>
-          <div className="user-chip-info">
-            <strong>{usuario?.nombre}</strong>
-            <span>{usuario?.rol}</span>
-          </div>
-          <button type="button" className="btn-logout" onClick={logout}>
-            Salir
-          </button>
-        </div>
-      </header>
+      <AppHeader title="Carga de Nuevo Pedido - Egresados 2026" />
 
       {mensaje && (
         <div className={`alerta alerta--${estado === 'error' ? 'error' : 'exito'}`} role="status">

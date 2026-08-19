@@ -67,6 +67,7 @@ class Permiso {
 &#x20;   class Rol {
 -id: Long
 -nombre: String
+-descripcion: String
 -permisos: List\~Permiso\~
 }
 

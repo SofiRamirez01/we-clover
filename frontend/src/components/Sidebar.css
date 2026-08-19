@@ -68,3 +68,13 @@
   background: #ffffff;
   color: var(--wc-green-dark);
 }
+
+.sidebar-link[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.sidebar-link[aria-disabled='true']:hover {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+}

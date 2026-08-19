@@ -2,9 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import type { ReactNode } from 'react';
 import { login as loginRequest } from '../services/authService';
 import { extraerMensajeError } from '../utils/errores';
+import { USUARIO_STORAGE_KEY, leerUsuarioGuardado } from '../utils/authStorage';
 import type { LoginResponse } from '../types/auth';
-
-const STORAGE_KEY = 'weclover.usuario';
 
 interface AuthContextValue {
   usuario: LoginResponse | null;
@@ -16,16 +15,6 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function leerUsuarioGuardado(): LoginResponse | null {
-  const crudo = localStorage.getItem(STORAGE_KEY);
-  if (!crudo) return null;
-  try {
-    return JSON.parse(crudo) as LoginResponse;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<LoginResponse | null>(leerUsuarioGuardado);
   const [cargando, setCargando] = useState(false);
@@ -36,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const usuarioAutenticado = await loginRequest({ email, password });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(usuarioAutenticado));
+      localStorage.setItem(USUARIO_STORAGE_KEY, JSON.stringify(usuarioAutenticado));
       setUsuario(usuarioAutenticado);
     } catch (err) {
       setError(extraerMensajeError(err, 'No se pudo iniciar sesión. Intentá nuevamente.'));
@@ -47,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(USUARIO_STORAGE_KEY);
     setUsuario(null);
   }, []);
 

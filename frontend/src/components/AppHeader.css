@@ -1,0 +1,68 @@
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--wc-text);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-chip-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--wc-green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.user-chip-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  font-size: 12.5px;
+}
+
+.user-chip-info strong {
+  color: var(--wc-text);
+}
+
+.user-chip-info span {
+  color: var(--wc-text-muted);
+}
+
+.btn-logout {
+  margin-left: 6px;
+  border: 1px solid var(--wc-border);
+  background: #ffffff;
+  color: var(--wc-text-muted);
+  font-weight: 700;
+  font-size: 11.5px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-logout:hover {
+  background: #fdeceb;
+  color: #a12c22;
+  border-color: #f3bcb6;
+}

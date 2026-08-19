@@ -52,11 +52,13 @@ public class DataInitializer implements CommandLineRunner {
 
             Rol rolVendedor = rolRepository.save(Rol.builder()
                 .nombre("ROLE_VENDEDOR")
+                .descripcion("Vendedor")
                 .permisos(new ArrayList<>(List.of(permisoCrear, permisoLeer, permisoActualizarEstado)))
                 .build());
 
             rolRepository.save(Rol.builder()
                 .nombre("ROLE_CLIENTE")
+                .descripcion("Cliente / Representante de Curso")
                 .permisos(new ArrayList<>(List.of(permisoLeer)))
                 .build());
 

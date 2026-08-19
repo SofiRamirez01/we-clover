@@ -32,6 +32,12 @@ public class AuthService {
             throw new InvalidCredentialsException(MENSAJE_CREDENCIALES_INVALIDAS);
         }
 
-        return new LoginResponse(usuario.getId(), usuario.getNombre(), usuario.getEmail(), usuario.getRol().getNombre());
+        return new LoginResponse(
+            usuario.getId(),
+            usuario.getNombre(),
+            usuario.getEmail(),
+            usuario.getRol().getNombre(),
+            usuario.getRol().getDescripcion()
+        );
     }
 }

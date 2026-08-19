@@ -73,23 +73,39 @@ const ReportesIcon = (props: IconProps) => (
   </svg>
 );
 
+const UsuariosIcon = (props: IconProps) => (
+  <svg {...baseIconProps(props)}>
+    <circle cx="9" cy="8" r="3.2" />
+    <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+    <path d="M17 8h4M19 6v4" />
+  </svg>
+);
+
+export type AppView = 'pedidos' | 'usuarios';
+
 interface NavItem {
   label: string;
   icon: (props: IconProps) => ReactElement;
-  active?: boolean;
+  view?: AppView;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'CRM', icon: CrmIcon },
-  { label: 'PEDIDOS', icon: PedidosIcon, active: true },
+  { label: 'PEDIDOS', icon: PedidosIcon, view: 'pedidos' },
   { label: 'FICHAS TÉCNICAS', icon: FichasIcon },
   { label: 'PRODUCCIÓN', icon: ProduccionIcon },
   { label: 'PLANIFICADOR COMPRAS', icon: ComprasIcon },
   { label: 'MOTOR TIZADA', icon: TizadaIcon },
   { label: 'REPORTES', icon: ReportesIcon },
+  { label: 'USUARIOS', icon: UsuariosIcon, view: 'usuarios' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  activeView: AppView;
+  onNavigate: (view: AppView) => void;
+}
+
+export default function Sidebar({ activeView, onNavigate }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -98,17 +114,25 @@ export default function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ label, icon: Icon, active }) => (
-          <a
-            key={label}
-            href="#"
-            className={`sidebar-link${active ? ' sidebar-link--active' : ''}`}
-            aria-current={active ? 'page' : undefined}
-          >
-            <Icon className="sidebar-link-icon" />
-            <span>{label}</span>
-          </a>
-        ))}
+        {NAV_ITEMS.map(({ label, icon: Icon, view }) => {
+          const active = view === activeView;
+          return (
+            <a
+              key={label}
+              href="#"
+              className={`sidebar-link${active ? ' sidebar-link--active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+              aria-disabled={!view}
+              onClick={(e) => {
+                e.preventDefault();
+                if (view) onNavigate(view);
+              }}
+            >
+              <Icon className="sidebar-link-icon" />
+              <span>{label}</span>
+            </a>
+          );
+        })}
       </nav>
     </aside>
   );

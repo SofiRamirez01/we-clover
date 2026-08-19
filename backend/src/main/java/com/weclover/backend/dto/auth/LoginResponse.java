@@ -4,6 +4,7 @@ public record LoginResponse(
     Long id,
     String nombre,
     String email,
-    String rol
+    String rol,
+    String rolDescripcion
 ) {
 }

@@ -3,93 +3,6 @@
   max-width: 1280px;
 }
 
-.nuevo-pedido-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.nuevo-pedido-header h1 {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--wc-text);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.user-chip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.user-chip-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--wc-green);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.user-chip-info {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.25;
-  font-size: 12.5px;
-}
-
-.user-chip-info strong {
-  color: var(--wc-text);
-}
-
-.user-chip-info span {
-  color: var(--wc-text-muted);
-}
-
-.btn-logout {
-  margin-left: 6px;
-  border: 1px solid var(--wc-border);
-  background: #ffffff;
-  color: var(--wc-text-muted);
-  font-weight: 700;
-  font-size: 11.5px;
-  padding: 7px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.btn-logout:hover {
-  background: #fdeceb;
-  color: #a12c22;
-  border-color: #f3bcb6;
-}
-
-.card {
-  background: #ffffff;
-  border: 1px solid var(--wc-border);
-  border-radius: 14px;
-  padding: 20px 22px;
-  box-shadow: 0 1px 3px rgba(16, 24, 15, 0.05);
-  margin-bottom: 20px;
-}
-
-.card h2 {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--wc-text);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin: 0 0 16px;
-}
-
 .section-title-spaced {
   margin-top: 26px;
 }
@@ -101,52 +14,8 @@
   align-items: start;
 }
 
-.grid {
-  display: grid;
-  gap: 14px 16px;
-}
-
 .grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--wc-text-muted);
-}
-
-input,
-select {
-  font: inherit;
-  font-size: 13.5px;
-  color: var(--wc-text);
-  padding: 9px 11px;
-  border: 1px solid var(--wc-border);
-  border-radius: 8px;
-  background: #fbfbfa;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-input:focus,
-select:focus {
-  border-color: var(--wc-green);
-  box-shadow: 0 0 0 3px var(--wc-green-soft);
-  background: #ffffff;
-}
-
-.input-id {
-  background: #f1f1ee;
-}
-
-.input-readonly {
-  background: #f1f1ee;
-  color: var(--wc-text);
-  font-weight: 700;
 }
 
 .prendas-table {
