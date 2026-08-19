@@ -1,0 +1,45 @@
+.alerta {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.alerta--exito {
+  background: #e6f5e9;
+  color: #1f6a2c;
+  border: 1px solid #b7e2c0;
+}
+
+.alerta--error {
+  background: #fdeceb;
+  color: #a12c22;
+  border: 1px solid #f3bcb6;
+}
+
+.btn-guardar {
+  border: none;
+  background: var(--wc-green);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: 0.4px;
+  padding: 13px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.btn-guardar:hover:not(:disabled) {
+  background: var(--wc-green-dark);
+}
+
+.btn-guardar:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-guardar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

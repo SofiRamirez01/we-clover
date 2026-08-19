@@ -1,0 +1,10 @@
+.app-layout {
+  display: flex;
+  min-height: 100svh;
+  background: var(--wc-bg);
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+}
