@@ -2,10 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import './NuevoPedidoView.css';
 import AppHeader from './AppHeader';
-import { crearPedido, listarTiposPrenda } from '../services/pedidoService';
+import { actualizarPedido, crearPedido, listarTiposPrenda } from '../services/pedidoService';
 import { useAuth } from '../context/AuthContext';
 import { extraerMensajeError } from '../utils/errores';
-import type { EstadoPedido, PedidoCreateRequest, TipoPrendaOption } from '../types/pedido';
+import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS } from '../types/pedido';
+import type {
+  EstadoPedido,
+  PedidoCreateRequest,
+  PedidoResponse,
+  PedidoUpdateRequest,
+  TipoPrendaOption,
+} from '../types/pedido';
 
 const FORMATO_NUMERO_FICHA = /^\d{4}-\d{2}$/;
 
@@ -74,18 +81,61 @@ function formatearMoneda(valor: number): string {
   return valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function clienteDesdePedido(pedido: PedidoResponse): ClienteForm {
+  return {
+    colegioNombre: pedido.nombreColegio,
+    localidad: pedido.localidadColegio ?? '',
+    provincia: pedido.provinciaColegio ?? '',
+    nombreContacto: pedido.nombreRepresentanteCurso,
+    telefono: pedido.telefonoRepresentanteCurso ?? '',
+    mail: pedido.emailRepresentanteCurso,
+    cantAlumnos: String(pedido.cantAlumnos),
+    curso: pedido.curso,
+  };
+}
+
+function infoGeneralDesdePedido(pedido: PedidoResponse): InfoGeneralForm {
+  return {
+    numeroFicha: pedido.codigoInterno,
+    fechaPedido: pedido.fechaVenta,
+    fechaEstimadaEntrega: pedido.fechaEstimadaEntrega,
+    estado: pedido.estadoActual,
+    observaciones: pedido.observaciones ?? '',
+  };
+}
+
+function prendasDesdePedido(pedido: PedidoResponse): PrendaRow[] {
+  if (pedido.productos.length === 0) return [nuevaPrenda()];
+  return pedido.productos.map((p) => ({
+    id: crypto.randomUUID(),
+    idTipoPrenda: p.idTipoPrenda != null ? String(p.idTipoPrenda) : '',
+    cantidad: String(p.cantidadTotal),
+    precioUnitario: String(p.costo),
+  }));
+}
+
 interface NuevoPedidoViewProps {
   onCreado: (mensaje: string) => void;
   onVolver: () => void;
+  pedidoAEditar?: PedidoResponse | null;
 }
 
-export default function NuevoPedidoView({ onCreado, onVolver }: NuevoPedidoViewProps) {
+export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: NuevoPedidoViewProps) {
   const { usuario } = useAuth();
+  const esEdicion = pedidoAEditar != null;
 
-  const [cliente, setCliente] = useState<ClienteForm>(clienteInicial);
-  const [infoGeneral, setInfoGeneral] = useState<InfoGeneralForm>(infoGeneralInicial);
-  const [prendas, setPrendas] = useState<PrendaRow[]>([nuevaPrenda()]);
-  const [pagoInicial, setPagoInicial] = useState('');
+  const [cliente, setCliente] = useState<ClienteForm>(
+    () => (pedidoAEditar ? clienteDesdePedido(pedidoAEditar) : clienteInicial),
+  );
+  const [infoGeneral, setInfoGeneral] = useState<InfoGeneralForm>(
+    () => (pedidoAEditar ? infoGeneralDesdePedido(pedidoAEditar) : infoGeneralInicial),
+  );
+  const [prendas, setPrendas] = useState<PrendaRow[]>(
+    () => (pedidoAEditar ? prendasDesdePedido(pedidoAEditar) : [nuevaPrenda()]),
+  );
+  const [pagoInicial, setPagoInicial] = useState(
+    () => (pedidoAEditar ? String(pedidoAEditar.pagoInicial) : ''),
+  );
   const [estado, setEstado] = useState<EnvioEstado>('idle');
   const [mensaje, setMensaje] = useState<string | null>(null);
 
@@ -176,47 +226,78 @@ export default function NuevoPedidoView({ onCreado, onVolver }: NuevoPedidoViewP
       return;
     }
 
-    const payload: PedidoCreateRequest = {
-      colegioNombre: cliente.colegioNombre.trim(),
-      colegioLocalidad: cliente.localidad.trim() || undefined,
-      colegioProvincia: cliente.provincia.trim() || undefined,
-      representanteNombre: cliente.nombreContacto.trim(),
-      representanteTelefono: cliente.telefono.trim() || undefined,
-      representanteEmail: cliente.mail.trim(),
-      idVendedor: usuario.id,
-      codigoInterno: numeroFicha,
-      curso: cliente.curso.trim(),
-      cantAlumnos: aNumero(cliente.cantAlumnos),
-      observaciones: infoGeneral.observaciones.trim() || undefined,
-      estado: infoGeneral.estado,
-      fechaVenta: infoGeneral.fechaPedido,
-      fechaEstimadaEntrega: infoGeneral.fechaEstimadaEntrega,
-      productos: productosValidos.map((p) => ({
-        idTipoPrenda: Number(p.idTipoPrenda),
-        cantidadTotal: aNumero(p.cantidad),
-        costo: aNumero(p.precioUnitario),
-      })),
-      pagoInicial: aNumero(pagoInicial),
-    };
+    const productos = productosValidos.map((p) => ({
+      idTipoPrenda: Number(p.idTipoPrenda),
+      cantidadTotal: aNumero(p.cantidad),
+      costo: aNumero(p.precioUnitario),
+    }));
 
     setEstado('enviando');
     setMensaje(null);
     try {
-      const pedidoCreado = await crearPedido(payload);
-      limpiarFormulario();
-      onCreado(
-        `Pedido ${pedidoCreado.codigoInterno} creado correctamente (estado: ${pedidoCreado.estadoActual}, ` +
-          `total: $${formatearMoneda(pedidoCreado.precioTotal)}).`,
-      );
+      if (esEdicion && pedidoAEditar) {
+        const payload: PedidoUpdateRequest = {
+          colegioNombre: cliente.colegioNombre.trim(),
+          colegioLocalidad: cliente.localidad.trim() || undefined,
+          colegioProvincia: cliente.provincia.trim() || undefined,
+          representanteNombre: cliente.nombreContacto.trim(),
+          representanteTelefono: cliente.telefono.trim() || undefined,
+          representanteEmail: cliente.mail.trim(),
+          codigoInterno: numeroFicha,
+          curso: cliente.curso.trim(),
+          cantAlumnos: aNumero(cliente.cantAlumnos),
+          observaciones: infoGeneral.observaciones.trim() || undefined,
+          estado: infoGeneral.estado,
+          fechaVenta: infoGeneral.fechaPedido,
+          fechaEstimadaEntrega: infoGeneral.fechaEstimadaEntrega,
+          productos,
+          pagoInicial: aNumero(pagoInicial),
+        };
+        const pedidoActualizado = await actualizarPedido(pedidoAEditar.id, payload);
+        onCreado(
+          `Pedido ${pedidoActualizado.codigoInterno} actualizado correctamente (estado: ` +
+            `${ESTADO_PEDIDO_LABELS[pedidoActualizado.estadoActual]}, total: $${formatearMoneda(pedidoActualizado.precioTotal)}).`,
+        );
+      } else {
+        const payload: PedidoCreateRequest = {
+          colegioNombre: cliente.colegioNombre.trim(),
+          colegioLocalidad: cliente.localidad.trim() || undefined,
+          colegioProvincia: cliente.provincia.trim() || undefined,
+          representanteNombre: cliente.nombreContacto.trim(),
+          representanteTelefono: cliente.telefono.trim() || undefined,
+          representanteEmail: cliente.mail.trim(),
+          idVendedor: usuario.id,
+          codigoInterno: numeroFicha,
+          curso: cliente.curso.trim(),
+          cantAlumnos: aNumero(cliente.cantAlumnos),
+          observaciones: infoGeneral.observaciones.trim() || undefined,
+          estado: infoGeneral.estado,
+          fechaVenta: infoGeneral.fechaPedido,
+          fechaEstimadaEntrega: infoGeneral.fechaEstimadaEntrega,
+          productos,
+          pagoInicial: aNumero(pagoInicial),
+        };
+        const pedidoCreado = await crearPedido(payload);
+        limpiarFormulario();
+        onCreado(
+          `Pedido ${pedidoCreado.codigoInterno} creado correctamente (estado: ${pedidoCreado.estadoActual}, ` +
+            `total: $${formatearMoneda(pedidoCreado.precioTotal)}).`,
+        );
+      }
     } catch (error) {
       setEstado('error');
-      setMensaje(extraerMensajeError(error, 'No se pudo guardar el pedido. Intentá nuevamente.'));
+      setMensaje(
+        extraerMensajeError(
+          error,
+          esEdicion ? 'No se pudo actualizar el pedido. Intentá nuevamente.' : 'No se pudo guardar el pedido. Intentá nuevamente.',
+        ),
+      );
     }
   }
 
   return (
     <div className="nuevo-pedido">
-      <AppHeader title="Carga de Nuevo Pedido" onBack={onVolver} />
+      <AppHeader title={esEdicion ? `Editar Pedido ${pedidoAEditar?.codigoInterno ?? ''}` : 'Carga de Nuevo Pedido'} onBack={onVolver} />
 
       {mensaje && (
         <div className={`alerta alerta--${estado === 'error' ? 'error' : 'exito'}`} role="status">
@@ -297,7 +378,11 @@ export default function NuevoPedidoView({ onCreado, onVolver }: NuevoPedidoViewP
             </label>
             <label>
               Vendedor
-              <input value={usuario?.email ?? ''} readOnly className="input-readonly" />
+              <input
+                value={esEdicion ? pedidoAEditar?.emailVendedor ?? '' : usuario?.email ?? ''}
+                readOnly
+                className="input-readonly"
+              />
             </label>
           </div>
         </section>
@@ -338,11 +423,17 @@ export default function NuevoPedidoView({ onCreado, onVolver }: NuevoPedidoViewP
                   value={infoGeneral.estado}
                   onChange={(e) => actualizarInfoGeneral('estado', e.target.value as EstadoPedido)}
                 >
-                  {ESTADOS_INICIALES.map(({ value, label }) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
+                  {esEdicion
+                    ? ESTADOS_PEDIDO.map((valor) => (
+                        <option key={valor} value={valor}>
+                          {ESTADO_PEDIDO_LABELS[valor]}
+                        </option>
+                      ))
+                    : ESTADOS_INICIALES.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
                 </select>
               </label>
             </div>
@@ -471,7 +562,7 @@ export default function NuevoPedidoView({ onCreado, onVolver }: NuevoPedidoViewP
               className="btn-guardar"
               disabled={estado === 'enviando' || tiposPrendaEstado === 'cargando'}
             >
-              {estado === 'enviando' ? 'Guardando…' : '✓ Guardar Pedido'}
+              {estado === 'enviando' ? 'Guardando…' : esEdicion ? '✓ Guardar Cambios' : '✓ Guardar Pedido'}
             </button>
         </section>
       </form>

@@ -102,14 +102,44 @@ export interface CambioEstadoRequest {
   observaciones?: string;
 }
 
+export interface PedidoUpdateRequest {
+  colegioNombre: string;
+  colegioLocalidad?: string;
+  colegioProvincia?: string;
+  representanteNombre: string;
+  representanteTelefono?: string;
+  representanteEmail: string;
+  codigoInterno: string;
+  curso: string;
+  cantAlumnos: number;
+  observaciones?: string;
+  estado: EstadoPedido;
+  fechaVenta: string;
+  fechaEstimadaEntrega: string;
+  productos: ProductoCreateRequest[];
+  pagoInicial: number;
+}
+
+export interface HistorialEstadoPedidoResponse {
+  id: number;
+  estado: EstadoPedido;
+  fechaCambio: string;
+  observaciones: string | null;
+  nombreUsuario: string;
+  emailUsuario: string;
+}
+
 export interface PedidoResponse {
   id: number;
   idColegio: number;
   nombreColegio: string;
   localidadColegio: string | null;
+  provinciaColegio: string | null;
   estadoActual: EstadoPedido;
   idRepresentanteCurso: number;
   nombreRepresentanteCurso: string;
+  telefonoRepresentanteCurso: string | null;
+  emailRepresentanteCurso: string;
   codigoInterno: string;
   curso: string;
   cantAlumnos: number;
@@ -120,6 +150,7 @@ export interface PedidoResponse {
   fechaActualizacion: string;
   idVendedor: number;
   nombreVendedor: string;
+  emailVendedor: string;
   productos: ProductoResponse[];
   precioTotal: number;
   pagoInicial: number;

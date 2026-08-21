@@ -5,7 +5,9 @@
   height: 100vh;
   width: 72px;
   flex-shrink: 0;
-  background: var(--wc-green);
+  background:
+    linear-gradient(180deg, rgba(8, 36, 22, 0.32), rgba(8, 36, 22, 0.58)) left top / 100% 100% no-repeat,
+    url('../assets/trama-story-verde.jpg') left top / auto 100% no-repeat var(--wc-green-dark);
   color: #ffffff;
   padding: 24px 10px;
   display: flex;
@@ -35,8 +37,6 @@
   height: 30px;
   object-fit: contain;
   flex-shrink: 0;
-  /* el archivo fuente es negro; lo convertimos a blanco para que se vea sobre el verde */
-  filter: brightness(0) invert(1);
 }
 
 .sidebar-nav {

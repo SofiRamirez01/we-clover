@@ -1,3 +1,19 @@
+@font-face {
+  font-family: 'Manrope';
+  src: url('./assets/fonts/Manrope-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Manrope';
+  src: url('./assets/fonts/Manrope-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --wc-green: #3e8e41;
   --wc-green-dark: #2e6b30;
@@ -7,7 +23,7 @@
   --wc-border: #e4e4e0;
   --wc-bg: #f5f6f3;
 
-  font: 15px/145% system-ui, 'Segoe UI', Roboto, sans-serif;
+  font: 15px/145% 'Manrope', system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light;
   color: var(--wc-text);
   background: var(--wc-bg);

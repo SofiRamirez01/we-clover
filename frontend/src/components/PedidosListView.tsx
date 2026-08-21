@@ -3,6 +3,8 @@ import './PedidosListView.css';
 import AppHeader from './AppHeader';
 import DateRangePicker from './DateRangePicker';
 import CambiarEstadoPopover from './CambiarEstadoPopover';
+import AccionesPedidoMenu from './AccionesPedidoMenu';
+import HistorialPedidoModal from './HistorialPedidoModal';
 import { listarPedidos } from '../services/pedidoService';
 import { BUCKET_POR_ESTADO, ESTADO_PEDIDO_LABELS } from '../types/pedido';
 import type { BucketEstadoPedido, EstadoPedido, PedidoResponse } from '../types/pedido';
@@ -75,13 +77,15 @@ function StatTile({ label, value, variante }: StatTileProps) {
 
 interface PedidosListViewProps {
   onNuevoPedido: () => void;
+  onEditarPedido: (pedido: PedidoResponse) => void;
   mensajeExito?: string | null;
 }
 
-export default function PedidosListView({ onNuevoPedido, mensajeExito }: PedidosListViewProps) {
+export default function PedidosListView({ onNuevoPedido, onEditarPedido, mensajeExito }: PedidosListViewProps) {
   const [pedidos, setPedidos] = useState<PedidoResponse[]>([]);
   const [estadoCarga, setEstadoCarga] = useState<'cargando' | 'listo' | 'error'>('cargando');
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciales);
+  const [pedidoHistorial, setPedidoHistorial] = useState<PedidoResponse | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -208,13 +212,14 @@ export default function PedidosListView({ onNuevoPedido, mensajeExito }: Pedidos
                 <th>Colegio</th>
                 <th>Localidad</th>
                 <th>Vendedor</th>
-                <th>Buzo/Camperas</th>
+                <th>Buzo/Camp.</th>
                 <th>Remeras</th>
                 <th>Chombas</th>
                 <th>Precio Unitario</th>
                 <th>Total</th>
                 <th>%Pago</th>
                 <th>Estado</th>
+                <th aria-label="Acciones" />
               </tr>
             </thead>
             <tbody>
@@ -236,6 +241,13 @@ export default function PedidosListView({ onNuevoPedido, mensajeExito }: Pedidos
                     <td>
                       <CambiarEstadoPopover pedido={pedido} onCambiado={manejarCambioEstado} />
                     </td>
+                    <td>
+                      <AccionesPedidoMenu
+                        pedido={pedido}
+                        onEditar={onEditarPedido}
+                        onVerHistorial={setPedidoHistorial}
+                      />
+                    </td>
                   </tr>
                 ))}
             </tbody>
@@ -249,6 +261,10 @@ export default function PedidosListView({ onNuevoPedido, mensajeExito }: Pedidos
           )}
         </div>
       </section>
+
+      {pedidoHistorial && (
+        <HistorialPedidoModal pedido={pedidoHistorial} onClose={() => setPedidoHistorial(null)} />
+      )}
     </div>
   );
 }

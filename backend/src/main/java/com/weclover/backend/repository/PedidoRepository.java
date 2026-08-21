@@ -9,4 +9,6 @@ import com.weclover.backend.entity.Pedido;
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     boolean existsByCodigoInterno(String codigoInterno);
+
+    boolean existsByCodigoInternoAndIdNot(String codigoInterno, Long id);
 }

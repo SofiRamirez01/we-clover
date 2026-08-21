@@ -1,5 +1,5 @@
 import type { ReactElement, SVGProps } from 'react';
-import logoTrebol from '../assets/logo-trebol.png';
+import logoTrebol from '../assets/logo-trebol-menta.svg';
 import './Sidebar.css';
 
 type IconProps = SVGProps<SVGSVGElement>;

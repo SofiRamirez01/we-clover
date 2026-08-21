@@ -10,8 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.weclover.backend.dto.pedido.CambioEstadoRequest;
+import com.weclover.backend.dto.pedido.HistorialEstadoPedidoResponse;
 import com.weclover.backend.dto.pedido.PedidoCreateRequest;
 import com.weclover.backend.dto.pedido.PedidoResponse;
+import com.weclover.backend.dto.pedido.PedidoUpdateRequest;
 import com.weclover.backend.dto.producto.ProductoCreateRequest;
 import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.entity.Colegio;
@@ -25,6 +27,7 @@ import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PedidoMapper;
 import com.weclover.backend.repository.ColegioRepository;
+import com.weclover.backend.repository.HistorialEstadoPedidoRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
@@ -43,6 +46,7 @@ public class PedidoService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
+    private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
 
@@ -79,7 +83,8 @@ public class PedidoService {
             .provincia(request.colegioProvincia())
             .build());
 
-        Usuario representanteCurso = obtenerOCrearRepresentante(request);
+        Usuario representanteCurso = obtenerOCrearRepresentante(
+            request.representanteEmail(), request.representanteNombre(), request.representanteTelefono());
 
         Pedido pedido = Pedido.builder()
             .colegio(colegio)
@@ -158,13 +163,121 @@ public class PedidoService {
             .toList();
     }
 
+    @Transactional(readOnly = true)
+    public PedidoResponse obtenerPedido(Long id) {
+        Pedido pedido = pedidoRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el pedido con id " + id));
+        return construirRespuesta(pedido);
+    }
+
+    @Transactional(readOnly = true)
+    public List<HistorialEstadoPedidoResponse> listarHistorial(Long idPedido) {
+        if (!pedidoRepository.existsById(idPedido)) {
+            throw new ResourceNotFoundException("No existe el pedido con id " + idPedido);
+        }
+        return historialEstadoPedidoRepository.findByPedidoIdOrderByFechaCambioDesc(idPedido).stream()
+            .map(h -> new HistorialEstadoPedidoResponse(
+                h.getId(),
+                h.getEstado(),
+                h.getFechaCambio(),
+                h.getObservaciones(),
+                h.getModificadoPor().getNombre(),
+                h.getModificadoPor().getEmail()
+            ))
+            .toList();
+    }
+
+    @Transactional
+    public PedidoResponse actualizarPedido(Long id, PedidoUpdateRequest request, Long idUsuarioActor) {
+        Pedido pedido = pedidoRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el pedido con id " + id));
+
+        if (pedidoRepository.existsByCodigoInternoAndIdNot(request.codigoInterno(), id)) {
+            throw new BusinessRuleException(
+                "Ya existe un pedido con el código interno " + request.codigoInterno());
+        }
+
+        float precioTotal = calcularPrecioTotal(request.productos());
+        if (request.pagoInicial() > precioTotal) {
+            throw new BusinessRuleException(
+                "El pago inicial no puede ser mayor al precio total del pedido");
+        }
+
+        if (request.fechaEstimadaEntrega().isBefore(request.fechaVenta())) {
+            throw new BusinessRuleException(
+                "La fecha estimada de entrega no puede ser anterior a la fecha de venta");
+        }
+
+        Colegio colegio = pedido.getColegio();
+        colegio.setNombre(request.colegioNombre());
+        colegio.setLocalidad(request.colegioLocalidad());
+        colegio.setProvincia(request.colegioProvincia());
+
+        Usuario representanteActual = pedido.getRepresentanteCurso();
+        if (representanteActual.getEmail().equalsIgnoreCase(request.representanteEmail())) {
+            representanteActual.setNombre(request.representanteNombre());
+            representanteActual.setTelefono(request.representanteTelefono());
+        } else {
+            pedido.setRepresentanteCurso(obtenerOCrearRepresentante(
+                request.representanteEmail(), request.representanteNombre(), request.representanteTelefono()));
+        }
+
+        pedido.setCodigoInterno(request.codigoInterno());
+        pedido.setCurso(request.curso());
+        pedido.setCantAlumnos(request.cantAlumnos());
+        pedido.setObservaciones(request.observaciones());
+        pedido.setFechaVenta(request.fechaVenta());
+        pedido.setFechaEstimadaEntrega(request.fechaEstimadaEntrega());
+        pedido.setPagoInicial(request.pagoInicial());
+
+        if (request.estado() != pedido.getEstadoActual()) {
+            if (idUsuarioActor == null) {
+                throw new BusinessRuleException(
+                    "No se pudo identificar al usuario que realiza el cambio de estado");
+            }
+            Usuario actor = usuarioRepository.findById(idUsuarioActor)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el usuario que realiza el cambio de estado"));
+
+            HistorialEstadoPedido historial = HistorialEstadoPedido.builder()
+                .pedido(pedido)
+                .estado(request.estado())
+                .fechaCambio(LocalDateTime.now())
+                .modificadoPor(actor)
+                .observaciones("Modificado desde la edición del pedido")
+                .build();
+            pedido.getHistorial().add(historial);
+            pedido.setEstadoActual(request.estado());
+        }
+
+        pedido.getProductos().clear();
+        for (ProductoCreateRequest productoRequest : request.productos()) {
+            TipoPrenda tipoPrenda = tipoPrendaRepository.findById(productoRequest.idTipoPrenda())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el tipo de prenda con id " + productoRequest.idTipoPrenda()));
+
+            Producto producto = Producto.builder()
+                .pedido(pedido)
+                .tipoPrenda(tipoPrenda)
+                .cantidadTotal(productoRequest.cantidadTotal())
+                .costo(productoRequest.costo())
+                .observaciones(productoRequest.observaciones())
+                .imagenDisenoUrl(productoRequest.imagenDisenoUrl())
+                .build();
+            pedido.getProductos().add(producto);
+        }
+
+        Pedido actualizado = pedidoRepository.save(pedido);
+        return construirRespuesta(actualizado);
+    }
+
     /**
      * El representante de curso todavía no tiene alta ni login propios (ver doc/pantallas-pendientes.md):
      * se reutiliza por email si ya existe, o se crea como ROLE_CLIENTE con una contraseña aleatoria
      * que nadie conoce (no hay flujo de invitación/recuperación implementado aún).
      */
-    private Usuario obtenerOCrearRepresentante(PedidoCreateRequest request) {
-        return usuarioRepository.findByEmail(request.representanteEmail())
+    private Usuario obtenerOCrearRepresentante(String email, String nombre, String telefono) {
+        return usuarioRepository.findByEmail(email)
             .orElseGet(() -> {
                 Rol rolCliente = rolRepository.findByNombre(ROL_CLIENTE)
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -172,9 +285,9 @@ public class PedidoService {
 
                 return usuarioRepository.save(Usuario.builder()
                     .rol(rolCliente)
-                    .nombre(request.representanteNombre())
-                    .email(request.representanteEmail())
-                    .telefono(request.representanteTelefono())
+                    .nombre(nombre)
+                    .email(email)
+                    .telefono(telefono)
                     .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
                     .habilitado(true)
                     .build());
@@ -202,9 +315,12 @@ public class PedidoService {
             base.idColegio(),
             base.nombreColegio(),
             base.localidadColegio(),
+            base.provinciaColegio(),
             base.estadoActual(),
             base.idRepresentanteCurso(),
             base.nombreRepresentanteCurso(),
+            base.telefonoRepresentanteCurso(),
+            base.emailRepresentanteCurso(),
             base.codigoInterno(),
             base.curso(),
             base.cantAlumnos(),
@@ -215,6 +331,7 @@ public class PedidoService {
             base.fechaActualizacion(),
             base.idVendedor(),
             base.nombreVendedor(),
+            base.emailVendedor(),
             base.productos(),
             precioTotal,
             base.pagoInicial(),
