@@ -15,9 +15,9 @@
 }
 
 :root {
-  --wc-green: #3e8e41;
-  --wc-green-dark: #2e6b30;
-  --wc-green-soft: rgba(62, 142, 65, 0.12);
+  --wc-green: #025939;
+  --wc-green-dark: #007450;
+  --wc-green-soft: rgba(2, 89, 57, 0.12);
   --wc-text: #1f2421;
   --wc-text-muted: #6b7268;
   --wc-border: #e4e4e0;
