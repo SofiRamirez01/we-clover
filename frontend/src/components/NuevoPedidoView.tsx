@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import './NuevoPedidoView.css';
 import AppHeader from './AppHeader';
-import { crearPedido } from '../services/pedidoService';
+import { crearPedido, listarTiposPrenda } from '../services/pedidoService';
 import { useAuth } from '../context/AuthContext';
 import { extraerMensajeError } from '../utils/errores';
-import type { EstadoPedido, PedidoCreateRequest } from '../types/pedido';
+import type { EstadoPedido, PedidoCreateRequest, TipoPrendaOption } from '../types/pedido';
 
 const FORMATO_NUMERO_FICHA = /^\d{4}-\d{2}$/;
 
@@ -16,7 +16,7 @@ const ESTADOS_INICIALES: { value: EstadoPedido; label: string }[] = [
 
 interface PrendaRow {
   id: string;
-  articulo: string;
+  idTipoPrenda: string;
   cantidad: string;
   precioUnitario: string;
 }
@@ -35,7 +35,9 @@ interface ClienteForm {
 interface InfoGeneralForm {
   numeroFicha: string;
   fechaPedido: string;
+  fechaEstimadaEntrega: string;
   estado: EstadoPedido;
+  observaciones: string;
 }
 
 type EnvioEstado = 'idle' | 'enviando' | 'exito' | 'error';
@@ -54,11 +56,13 @@ const clienteInicial: ClienteForm = {
 const infoGeneralInicial: InfoGeneralForm = {
   numeroFicha: '',
   fechaPedido: new Date().toISOString().slice(0, 10),
+  fechaEstimadaEntrega: '',
   estado: 'PRESUPUESTADO',
+  observaciones: '',
 };
 
 function nuevaPrenda(): PrendaRow {
-  return { id: crypto.randomUUID(), articulo: '', cantidad: '', precioUnitario: '' };
+  return { id: crypto.randomUUID(), idTipoPrenda: '', cantidad: '', precioUnitario: '' };
 }
 
 function aNumero(valor: string): number {
@@ -70,7 +74,12 @@ function formatearMoneda(valor: number): string {
   return valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default function NuevoPedidoView() {
+interface NuevoPedidoViewProps {
+  onCreado: (mensaje: string) => void;
+  onVolver: () => void;
+}
+
+export default function NuevoPedidoView({ onCreado, onVolver }: NuevoPedidoViewProps) {
   const { usuario } = useAuth();
 
   const [cliente, setCliente] = useState<ClienteForm>(clienteInicial);
@@ -79,6 +88,25 @@ export default function NuevoPedidoView() {
   const [pagoInicial, setPagoInicial] = useState('');
   const [estado, setEstado] = useState<EnvioEstado>('idle');
   const [mensaje, setMensaje] = useState<string | null>(null);
+
+  const [tiposPrenda, setTiposPrenda] = useState<TipoPrendaOption[]>([]);
+  const [tiposPrendaEstado, setTiposPrendaEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
+
+  useEffect(() => {
+    let cancelado = false;
+    listarTiposPrenda()
+      .then((data) => {
+        if (cancelado) return;
+        setTiposPrenda(data);
+        setTiposPrendaEstado('listo');
+      })
+      .catch(() => {
+        if (!cancelado) setTiposPrendaEstado('error');
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   const precioTotal = useMemo(
     () => prendas.reduce((acc, p) => acc + aNumero(p.cantidad) * aNumero(p.precioUnitario), 0),
@@ -128,8 +156,19 @@ export default function NuevoPedidoView() {
       return;
     }
 
+    if (!infoGeneral.fechaEstimadaEntrega) {
+      setEstado('error');
+      setMensaje('Ingresá la fecha estimada de entrega.');
+      return;
+    }
+    if (infoGeneral.fechaEstimadaEntrega < infoGeneral.fechaPedido) {
+      setEstado('error');
+      setMensaje('La fecha estimada de entrega no puede ser anterior a la fecha del pedido.');
+      return;
+    }
+
     const productosValidos = prendas.filter(
-      (p) => p.articulo.trim() !== '' && aNumero(p.cantidad) > 0 && aNumero(p.precioUnitario) > 0,
+      (p) => p.idTipoPrenda !== '' && aNumero(p.cantidad) > 0 && aNumero(p.precioUnitario) > 0,
     );
     if (productosValidos.length === 0) {
       setEstado('error');
@@ -148,9 +187,12 @@ export default function NuevoPedidoView() {
       codigoInterno: numeroFicha,
       curso: cliente.curso.trim(),
       cantAlumnos: aNumero(cliente.cantAlumnos),
+      observaciones: infoGeneral.observaciones.trim() || undefined,
       estado: infoGeneral.estado,
+      fechaVenta: infoGeneral.fechaPedido,
+      fechaEstimadaEntrega: infoGeneral.fechaEstimadaEntrega,
       productos: productosValidos.map((p) => ({
-        tipoPrenda: p.articulo.trim(),
+        idTipoPrenda: Number(p.idTipoPrenda),
         cantidadTotal: aNumero(p.cantidad),
         costo: aNumero(p.precioUnitario),
       })),
@@ -161,12 +203,11 @@ export default function NuevoPedidoView() {
     setMensaje(null);
     try {
       const pedidoCreado = await crearPedido(payload);
-      setEstado('exito');
-      setMensaje(
+      limpiarFormulario();
+      onCreado(
         `Pedido ${pedidoCreado.codigoInterno} creado correctamente (estado: ${pedidoCreado.estadoActual}, ` +
           `total: $${formatearMoneda(pedidoCreado.precioTotal)}).`,
       );
-      limpiarFormulario();
     } catch (error) {
       setEstado('error');
       setMensaje(extraerMensajeError(error, 'No se pudo guardar el pedido. Intentá nuevamente.'));
@@ -175,7 +216,7 @@ export default function NuevoPedidoView() {
 
   return (
     <div className="nuevo-pedido">
-      <AppHeader title="Carga de Nuevo Pedido - Egresados 2026" />
+      <AppHeader title="Carga de Nuevo Pedido" onBack={onVolver} />
 
       {mensaje && (
         <div className={`alerta alerta--${estado === 'error' ? 'error' : 'exito'}`} role="status">
@@ -261,10 +302,9 @@ export default function NuevoPedidoView() {
           </div>
         </section>
 
-        <div className="row-2col">
-          <section className="card">
+        <section className="card">
             <h2>Sección 2: Información General del Pedido</h2>
-            <div className="grid grid-3">
+            <div className="grid grid-4">
               <label>
                 Nº Ficha
                 <input
@@ -280,6 +320,16 @@ export default function NuevoPedidoView() {
                   type="date"
                   value={infoGeneral.fechaPedido}
                   onChange={(e) => actualizarInfoGeneral('fechaPedido', e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Fecha Estimada de Entrega
+                <input
+                  type="date"
+                  value={infoGeneral.fechaEstimadaEntrega}
+                  onChange={(e) => actualizarInfoGeneral('fechaEstimadaEntrega', e.target.value)}
+                  required
                 />
               </label>
               <label>
@@ -297,7 +347,19 @@ export default function NuevoPedidoView() {
               </label>
             </div>
 
-            <h2 className="section-title-spaced">Sección 3: Desglose de Prendas y Precios</h2>
+            <label className="campo-observaciones">
+              Observaciones
+              <textarea
+                value={infoGeneral.observaciones}
+                onChange={(e) => actualizarInfoGeneral('observaciones', e.target.value)}
+                placeholder="Notas adicionales sobre el pedido (opcional)"
+                rows={3}
+              />
+            </label>
+        </section>
+
+        <section className="card">
+            <h2>Sección 3: Desglose de Prendas y Precios</h2>
             <table className="prendas-table">
               <thead>
                 <tr>
@@ -312,11 +374,26 @@ export default function NuevoPedidoView() {
                 {prendas.map((prenda) => (
                   <tr key={prenda.id}>
                     <td>
-                      <input
-                        value={prenda.articulo}
-                        onChange={(e) => actualizarPrenda(prenda.id, 'articulo', e.target.value)}
-                        placeholder="Ej: Buzos"
-                      />
+                      {tiposPrendaEstado === 'error' ? (
+                        <select disabled>
+                          <option>No se pudieron cargar los tipos de prenda</option>
+                        </select>
+                      ) : (
+                        <select
+                          value={prenda.idTipoPrenda}
+                          onChange={(e) => actualizarPrenda(prenda.id, 'idTipoPrenda', e.target.value)}
+                          disabled={tiposPrendaEstado === 'cargando'}
+                        >
+                          <option value="">
+                            {tiposPrendaEstado === 'cargando' ? 'Cargando…' : 'Seleccionar…'}
+                          </option>
+                          {tiposPrenda.map((tipo) => (
+                            <option key={tipo.id} value={tipo.id}>
+                              {tipo.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td>
                       <input
@@ -356,42 +433,47 @@ export default function NuevoPedidoView() {
             <button type="button" className="btn-secondary" onClick={agregarPrenda}>
               + Agregar Prenda
             </button>
-          </section>
+        </section>
 
-          <section className="card resumen-financiero">
+        <section className="card resumen-financiero">
             <h2>Sección 4: Resumen Financiero</h2>
-            <label>
-              Precio Total
-              <input value={`$${formatearMoneda(precioTotal)}`} readOnly className="input-readonly" />
-            </label>
-            <label>
-              Pago Inicial ($)
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={pagoInicial}
-                onChange={(e) => setPagoInicial(e.target.value)}
-              />
-            </label>
-            <label>
-              Saldo ($)
-              <input value={`$${formatearMoneda(saldo)}`} readOnly className="input-readonly" />
-            </label>
-            <label>
-              Porcentaje Pagado
-              <input
-                value={`${porcentajePagado.toFixed(0)}%`}
-                readOnly
-                className="input-readonly"
-              />
-            </label>
+            <div className="grid grid-4">
+              <label>
+                Precio Total
+                <input value={`$${formatearMoneda(precioTotal)}`} readOnly className="input-readonly" />
+              </label>
+              <label>
+                Pago Inicial ($)
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={pagoInicial}
+                  onChange={(e) => setPagoInicial(e.target.value)}
+                />
+              </label>
+              <label>
+                Saldo ($)
+                <input value={`$${formatearMoneda(saldo)}`} readOnly className="input-readonly" />
+              </label>
+              <label>
+                Porcentaje Pagado
+                <input
+                  value={`${porcentajePagado.toFixed(0)}%`}
+                  readOnly
+                  className="input-readonly"
+                />
+              </label>
+            </div>
 
-            <button type="submit" className="btn-guardar" disabled={estado === 'enviando'}>
+            <button
+              type="submit"
+              className="btn-guardar"
+              disabled={estado === 'enviando' || tiposPrendaEstado === 'cargando'}
+            >
               {estado === 'enviando' ? 'Guardando…' : '✓ Guardar Pedido'}
             </button>
-          </section>
-        </div>
+        </section>
       </form>
     </div>
   );

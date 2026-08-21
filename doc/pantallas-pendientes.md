@@ -1,8 +1,54 @@
-# Pendientes de las pantallas de Login / Nuevo Pedido / Usuarios
+# Pendientes de las pantallas de Login / Pedidos / Usuarios
 
-Lista de lo que quedó afuera a propósito al construir el login, la carga de pedidos y
-el alta de usuarios corporativos (módulo M1 - Seguridad y CRM), para retomar más
-adelante. Última actualización: 2026-08-19.
+Lista de lo que quedó afuera a propósito al construir el login, el listado y la carga de
+pedidos, y el alta de usuarios corporativos (módulo M1 - Seguridad y CRM), para retomar
+más adelante. Última actualización: 2026-08-21.
+
+## -1. Listado de Pedidos: agrupación de estados en 3 categorías (decisión propia, a confirmar)
+
+La pantalla "Pedidos" (`PedidosListView.tsx`) muestra 4 contadores (Total vendido /
+Pendientes / En producción / Entregados) tanto para cantidad de pedidos como para
+unidades de Buzo+Campera. El negocio tiene 9 estados posibles (`EstadoPedido`), pero el
+mockup solo pedía 3 categorías, así que agrupé así (`BUCKET_POR_ESTADO` en
+`frontend/src/types/pedido.ts`):
+
+- **Pendiente**: Presupuestado, Señado, Listo para Producción.
+- **En producción**: Cortado, Bordado, Confeccionado, En Control, Terminado.
+- **Entregado**: Entregado.
+
+Es una interpretación mía, no algo que el negocio confirmó explícitamente — en particular
+dudé si "Terminado" debería contar como "en producción" (ya está confeccionado, pero
+todavía no se entregó) o como una cuarta categoría propia. Si no coincide con cómo lo
+piensa el equipo, ajustar `BUCKET_POR_ESTADO` (un solo lugar, se usa tanto para los
+contadores como para el color del badge de Estado en la tabla).
+
+También: "Colegios" es el nombre de la sección en el mockup, pero los 4 contadores de esa
+fila en realidad cuentan **pedidos**, no colegios distintos (un colegio con 3 pedidos
+suma 3, no 1). Lo dejé así porque así lo aclaró el pedido original ("cantidad de colegios
+que sería la cantidad total de pedidos"), pero el rótulo puede confundir a futuro.
+
+## -0.5. Listado de Pedidos: filtros y datos 100% del lado del cliente
+
+`GET /api/pedidos` trae **todos** los pedidos sin paginar ni filtrar en el servidor; el
+buscador, el rango de fechas, el filtro de estado y de año filtran el array ya en el
+navegador (`PedidosListView.tsx`). Funciona bien con la cantidad de pedidos actual, pero
+no va a escalar — cuando haya muchos pedidos, mover el filtrado/paginado al backend
+(`PedidoRepository` con `Specification`/query params en `GET /api/pedidos`).
+
+"Precio Unitario" en la tabla es un promedio (`precioTotal / cantidad total de unidades
+del pedido`), no un precio real de un artículo puntual — un pedido con varios tipos de
+prenda a distinto costo no tiene un único "precio unitario" real. Es una aproximación
+para tener algo que mostrar en esa columna del mockup.
+
+## 0. Productos viejos sin `tipo_prenda` indexado
+
+Al migrar `productos.tipo_prenda` (texto libre) a `productos.id_tipo_prenda` (FK a la
+tabla nueva `tipos_prenda`), solo se pudieron mapear automáticamente los valores que
+coincidían exactamente con el catálogo nuevo (`Campera`, `Buzo`, `Remera`, `Chomba`,
+`Bandera`). Los productos que tenían el texto en plural (`"Buzos"`, `"Camperas"`,
+`"Remeras"`) quedaron con `id_tipo_prenda = NULL` a propósito, como se pidió, en vez de
+adivinar la correspondencia. Son los productos con id 1, 2, 3 y 4 (pedidos 2 y 3 de esa
+fecha). Falta revisarlos a mano y asignarles el tipo correcto.
 
 ## 1. Seguridad real (JWT / Spring Security)
 

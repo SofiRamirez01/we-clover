@@ -5,6 +5,12 @@
   margin-bottom: 24px;
 }
 
+.app-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .app-header h1 {
   font-size: 22px;
   font-weight: 800;
@@ -12,6 +18,27 @@
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+}
+
+.btn-volver {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--wc-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--wc-text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-volver:hover {
+  background: var(--wc-green-soft);
+  border-color: var(--wc-green);
 }
 
 .user-chip {

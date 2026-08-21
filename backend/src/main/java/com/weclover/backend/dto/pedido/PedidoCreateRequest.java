@@ -1,5 +1,6 @@
 package com.weclover.backend.dto.pedido;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.weclover.backend.dto.producto.ProductoCreateRequest;
@@ -58,6 +59,12 @@ public record PedidoCreateRequest(
 
     @NotNull(message = "Debe indicar el estado inicial del pedido")
     EstadoPedido estado,
+
+    @NotNull(message = "Debe indicar la fecha de venta")
+    LocalDate fechaVenta,
+
+    @NotNull(message = "Debe indicar la fecha estimada de entrega")
+    LocalDate fechaEstimadaEntrega,
 
     @NotEmpty(message = "Debe cargar al menos una prenda")
     @Valid

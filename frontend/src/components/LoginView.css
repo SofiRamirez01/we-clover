@@ -29,7 +29,9 @@
 }
 
 .login-brand-icon {
-  color: var(--wc-green);
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
   margin-bottom: 6px;
 }
 

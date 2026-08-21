@@ -1,20 +1,25 @@
 package com.weclover.backend.service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.weclover.backend.dto.pedido.CambioEstadoRequest;
 import com.weclover.backend.dto.pedido.PedidoCreateRequest;
 import com.weclover.backend.dto.pedido.PedidoResponse;
 import com.weclover.backend.dto.producto.ProductoCreateRequest;
+import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.entity.Colegio;
 import com.weclover.backend.entity.HistorialEstadoPedido;
 import com.weclover.backend.entity.Pedido;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.Rol;
+import com.weclover.backend.entity.TipoPrenda;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
@@ -22,6 +27,7 @@ import com.weclover.backend.mapper.PedidoMapper;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.RolRepository;
+import com.weclover.backend.repository.TipoPrendaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +42,7 @@ public class PedidoService {
     private final ColegioRepository colegioRepository;
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
+    private final TipoPrendaRepository tipoPrendaRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
 
@@ -59,6 +66,11 @@ public class PedidoService {
                 "El pago inicial no puede ser mayor al precio total del pedido");
         }
 
+        if (request.fechaEstimadaEntrega().isBefore(request.fechaVenta())) {
+            throw new BusinessRuleException(
+                "La fecha estimada de entrega no puede ser anterior a la fecha de venta");
+        }
+
         // Por el momento cada pedido crea su propio Colegio; la reutilización de colegios
         // existentes queda pendiente (ver doc/pantallas-pendientes.md).
         Colegio colegio = colegioRepository.save(Colegio.builder()
@@ -78,6 +90,8 @@ public class PedidoService {
             .curso(request.curso())
             .cantAlumnos(request.cantAlumnos())
             .observaciones(request.observaciones())
+            .fechaVenta(request.fechaVenta())
+            .fechaEstimadaEntrega(request.fechaEstimadaEntrega())
             .pagoInicial(request.pagoInicial())
             .build();
 
@@ -91,9 +105,13 @@ public class PedidoService {
         pedido.getHistorial().add(historialInicial);
 
         for (ProductoCreateRequest productoRequest : request.productos()) {
+            TipoPrenda tipoPrenda = tipoPrendaRepository.findById(productoRequest.idTipoPrenda())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el tipo de prenda con id " + productoRequest.idTipoPrenda()));
+
             Producto producto = Producto.builder()
                 .pedido(pedido)
-                .tipoPrenda(productoRequest.tipoPrenda())
+                .tipoPrenda(tipoPrenda)
                 .cantidadTotal(productoRequest.cantidadTotal())
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())
@@ -103,7 +121,41 @@ public class PedidoService {
         }
 
         Pedido guardado = pedidoRepository.save(pedido);
-        return construirRespuesta(guardado, precioTotal);
+        return construirRespuesta(guardado);
+    }
+
+    @Transactional
+    public PedidoResponse cambiarEstado(Long idPedido, CambioEstadoRequest request, Long idUsuarioActor) {
+        Pedido pedido = pedidoRepository.findById(idPedido)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el pedido con id " + idPedido));
+
+        if (idUsuarioActor == null) {
+            throw new BusinessRuleException("No se pudo identificar al usuario que realiza el cambio de estado");
+        }
+        Usuario actor = usuarioRepository.findById(idUsuarioActor)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "No existe el usuario que realiza el cambio de estado"));
+
+        HistorialEstadoPedido historial = HistorialEstadoPedido.builder()
+            .pedido(pedido)
+            .estado(request.estado())
+            .fechaCambio(request.fechaCambio())
+            .modificadoPor(actor)
+            .observaciones(request.observaciones())
+            .build();
+        pedido.getHistorial().add(historial);
+        pedido.setEstadoActual(request.estado());
+
+        Pedido actualizado = pedidoRepository.save(pedido);
+        return construirRespuesta(actualizado);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> listarPedidos() {
+        return pedidoRepository.findAll().stream()
+            .sorted(Comparator.comparing(Pedido::getFechaCreacion).reversed())
+            .map(this::construirRespuesta)
+            .toList();
     }
 
     /**
@@ -137,8 +189,11 @@ public class PedidoService {
         return total;
     }
 
-    private PedidoResponse construirRespuesta(Pedido pedido, float precioTotal) {
+    private PedidoResponse construirRespuesta(Pedido pedido) {
         PedidoResponse base = pedidoMapper.toResponse(pedido);
+        float precioTotal = base.productos().stream()
+            .map(ProductoResponse::subtotal)
+            .reduce(0f, Float::sum);
         float saldo = precioTotal - base.pagoInicial();
         float porcentajePagado = precioTotal > 0 ? (base.pagoInicial() / precioTotal) * 100 : 0f;
 
@@ -146,6 +201,7 @@ public class PedidoService {
             base.id(),
             base.idColegio(),
             base.nombreColegio(),
+            base.localidadColegio(),
             base.estadoActual(),
             base.idRepresentanteCurso(),
             base.nombreRepresentanteCurso(),
@@ -153,6 +209,8 @@ public class PedidoService {
             base.curso(),
             base.cantAlumnos(),
             base.observaciones(),
+            base.fechaVenta(),
+            base.fechaEstimadaEntrega(),
             base.fechaCreacion(),
             base.fechaActualizacion(),
             base.idVendedor(),

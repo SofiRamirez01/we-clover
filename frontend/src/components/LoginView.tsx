@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import CloverIcon from './CloverIcon';
+import logoTrebol from '../assets/logo-trebol.png';
 import { useAuth } from '../context/AuthContext';
 import './LoginView.css';
 
@@ -22,7 +22,7 @@ export default function LoginView() {
     <div className="login-screen">
       <div className="login-card">
         <div className="login-brand">
-          <CloverIcon className="login-brand-icon" width={48} height={48} />
+          <img src={logoTrebol} className="login-brand-icon" alt="WE CLOVER" />
           <h1>WE CLOVER</h1>
           <p>Sistema de Gestión y Optimización de Recursos</p>
         </div>

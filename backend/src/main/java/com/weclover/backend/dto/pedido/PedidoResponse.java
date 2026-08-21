@@ -1,5 +1,6 @@
 package com.weclover.backend.dto.pedido;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,6 +11,7 @@ public record PedidoResponse(
     Long id,
     Long idColegio,
     String nombreColegio,
+    String localidadColegio,
     EstadoPedido estadoActual,
     Long idRepresentanteCurso,
     String nombreRepresentanteCurso,
@@ -17,6 +19,8 @@ public record PedidoResponse(
     String curso,
     int cantAlumnos,
     String observaciones,
+    LocalDate fechaVenta,
+    LocalDate fechaEstimadaEntrega,
     LocalDateTime fechaCreacion,
     LocalDateTime fechaActualizacion,
     Long idVendedor,

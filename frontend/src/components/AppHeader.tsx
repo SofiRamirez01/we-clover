@@ -13,14 +13,22 @@ function iniciales(nombre: string | undefined): string {
 
 interface AppHeaderProps {
   title: string;
+  onBack?: () => void;
 }
 
-export default function AppHeader({ title }: AppHeaderProps) {
+export default function AppHeader({ title, onBack }: AppHeaderProps) {
   const { usuario, logout } = useAuth();
 
   return (
     <header className="app-header">
-      <h1>{title}</h1>
+      <div className="app-header-title">
+        {onBack && (
+          <button type="button" className="btn-volver" onClick={onBack} aria-label="Volver">
+            ←
+          </button>
+        )}
+        <h1>{title}</h1>
+      </div>
       <div className="user-chip">
         <span className="user-chip-avatar">{iniciales(usuario?.nombre)}</span>
         <div className="user-chip-info">

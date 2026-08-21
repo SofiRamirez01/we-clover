@@ -1,15 +1,14 @@
 package com.weclover.backend.dto.producto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 public record ProductoCreateRequest(
 
-    @NotBlank(message = "El tipo de prenda es obligatorio")
-    @Size(max = 100, message = "El tipo de prenda no puede superar los 100 caracteres")
-    String tipoPrenda,
+    @NotNull(message = "Debe seleccionar el tipo de prenda")
+    Long idTipoPrenda,
 
     @Positive(message = "La cantidad debe ser mayor a cero")
     int cantidadTotal,

@@ -11,10 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.weclover.backend.entity.Colegio;
 import com.weclover.backend.entity.Permiso;
 import com.weclover.backend.entity.Rol;
+import com.weclover.backend.entity.TipoPrenda;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.PermisoRepository;
 import com.weclover.backend.repository.RolRepository;
+import com.weclover.backend.repository.TipoPrendaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PermisoRepository permisoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ColegioRepository colegioRepository;
+    private final TipoPrendaRepository tipoPrendaRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -76,6 +79,11 @@ public class DataInitializer implements CommandLineRunner {
                 .provincia("Buenos Aires")
                 .localidad("La Plata")
                 .build());
+        }
+
+        if (tipoPrendaRepository.count() == 0) {
+            List.of("Campera", "Buzo", "Remera", "Chomba", "Bandera")
+                .forEach(nombre -> tipoPrendaRepository.save(TipoPrenda.builder().nombre(nombre).build()));
         }
 
         System.out.println("--- DATOS SEMILLA CARGADOS CORRECTAMENTE ---");

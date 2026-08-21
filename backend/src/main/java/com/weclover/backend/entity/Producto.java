@@ -42,8 +42,14 @@ public class Producto {
     @JoinColumn(name = "id_pedido", nullable = false)
     private Pedido pedido;
 
-    @Column(name = "tipo_prenda", nullable = false, length = 100)
-    private String tipoPrenda;
+    /**
+     * Nullable a nivel de base porque productos ya existentes con el viejo tipo_prenda
+     * en texto libre no se pudieron mapear con certeza al catálogo nuevo (ver
+     * doc/pantallas-pendientes.md). Para productos nuevos, el DTO de creación lo exige.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_tipo_prenda")
+    private TipoPrenda tipoPrenda;
 
     @Column(name = "cantidad_total", nullable = false)
     private int cantidadTotal;

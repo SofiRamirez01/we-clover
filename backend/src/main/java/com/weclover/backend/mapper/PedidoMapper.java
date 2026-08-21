@@ -11,6 +11,7 @@ public interface PedidoMapper {
 
     @Mapping(source = "colegio.id", target = "idColegio")
     @Mapping(source = "colegio.nombre", target = "nombreColegio")
+    @Mapping(source = "colegio.localidad", target = "localidadColegio")
     @Mapping(source = "representanteCurso.id", target = "idRepresentanteCurso")
     @Mapping(source = "representanteCurso.nombre", target = "nombreRepresentanteCurso")
     @Mapping(source = "creadoPor.id", target = "idVendedor")

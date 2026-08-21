@@ -1,5 +1,6 @@
 package com.weclover.backend.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +68,12 @@ public class Pedido {
 
     @Column(length = 500)
     private String observaciones;
+
+    @Column(name = "fecha_venta", nullable = false)
+    private LocalDate fechaVenta;
+
+    @Column(name = "fecha_estimada_entrega", nullable = false)
+    private LocalDate fechaEstimadaEntrega;
 
     @Column(name = "pago_inicial", nullable = false)
     @Builder.Default

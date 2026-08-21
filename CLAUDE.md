@@ -120,15 +120,22 @@ class Permiso {
         -cantAlumnos: int
         -observaciones: String
         -pagoInicial: float
+        -fechaVenta: Date
+        -fechaEstimadaEntrega: Date
         -fechaCreacion: Date
         -fechaActualizacion: Date
         -creadoPorIdUsuario: Long
     }
 
+    class TipoPrenda {
+        -id: Long
+        -nombre: String
+    }
+
     class Producto {
         -id: Long
         -idPedido: Long
-        -tipoPrenda: String
+        -idTipoPrenda: Long
         -cantidadTotal: int
         -costo: float
         -observaciones: string
@@ -210,6 +217,8 @@ class Permiso {
     
     Producto "1" \\\*-- "0..\\\*" PrendaIndividual : se desglosa en
     Producto "1" -- "1" FichaTecnica : detalla confeccion
+    
+    TipoPrenda "1" --> "0..\\\*" Producto : clasifica
     
     FichaTecnica "1" \\\*-- "1..\\\*" AtributoFicha : compone
     

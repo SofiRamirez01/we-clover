@@ -1,5 +1,5 @@
 import type { ReactElement, SVGProps } from 'react';
-import CloverIcon from './CloverIcon';
+import logoTrebol from '../assets/logo-trebol.png';
 import './Sidebar.css';
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -81,7 +81,7 @@ const UsuariosIcon = (props: IconProps) => (
   </svg>
 );
 
-export type AppView = 'pedidos' | 'usuarios';
+export type AppView = 'pedidos' | 'pedidos-nuevo' | 'usuarios';
 
 interface NavItem {
   label: string;
@@ -109,13 +109,13 @@ export default function Sidebar({ activeView, onNavigate }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <CloverIcon className="sidebar-brand-icon" width={30} height={30} />
-        <span className="sidebar-brand-text">WE CLOVER</span>
+        <img src={logoTrebol} className="sidebar-brand-icon" alt="WE CLOVER" />
       </div>
 
       <nav className="sidebar-nav">
         {NAV_ITEMS.map(({ label, icon: Icon, view }) => {
-          const active = view === activeView;
+          const active =
+            view === activeView || (view === 'pedidos' && activeView === 'pedidos-nuevo');
           return (
             <a
               key={label}
