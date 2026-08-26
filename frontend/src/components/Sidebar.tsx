@@ -22,14 +22,7 @@ function baseIconProps(props: IconProps): IconProps {
   };
 }
 
-const CrmIcon = (props: IconProps) => (
-  <svg {...baseIconProps(props)}>
-    <circle cx="9" cy="8" r="3" />
-    <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-    <circle cx="17" cy="7" r="2.4" />
-    <path d="M15.5 13.2c2.6.4 4.5 2.6 4.5 5.3" />
-  </svg>
-);
+
 
 const PedidosIcon = (props: IconProps) => (
   <svg {...baseIconProps(props)}>
@@ -125,7 +118,6 @@ interface NavItem {
 }
 
 const NAV_ITEMS_RAIZ: NavItem[] = [
-  { label: 'CRM', icon: CrmIcon },
   { label: 'Pedidos', icon: PedidosIcon, view: 'pedidos' },
   { label: 'Ficha Técnica', icon: FichaTecnicaIcon, view: 'fichas-tecnicas' },
   { label: 'Producción', icon: ProduccionIcon },

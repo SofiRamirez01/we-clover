@@ -10,6 +10,9 @@ public record ProductoCreateRequest(
     @NotNull(message = "Debe seleccionar el tipo de prenda")
     Long idTipoPrenda,
 
+    @NotNull(message = "Debe seleccionar el patrón de corte")
+    Long idPatronCorte,
+
     @Positive(message = "La cantidad debe ser mayor a cero")
     int cantidadTotal,
 

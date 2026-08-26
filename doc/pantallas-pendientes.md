@@ -3,7 +3,220 @@
 Lista de lo que quedó afuera a propósito al construir el login, el listado y la carga de
 pedidos, el alta de usuarios corporativos (módulo M1 - Seguridad y CRM) y el alta de
 patrones de corte (módulo M2 - Ficha Técnica Digital), para retomar más adelante. Última
-actualización: 2026-08-25.
+actualización: 2026-08-26.
+
+## -2.11. Guardar/Cancelar explícitos en el modal, fix de zoom (2026-08-26)
+
+Ajuste sobre el punto -2.10 (mismo día): Tela y Cierre no se guardaban solos con el cambio
+inmediato de antes — el usuario los cambiaba y la única acción disponible era cerrar, sin
+feedback de si había quedado guardado. Se corrigió cambiando el modelo a "borrador + guardar
+explícito":
+
+- **Tela y Cierre ahora son borrador local** (`telaDraft`/`cierreDraft`) hasta que se aprieta
+  "Guardar": no se llama a `PATCH /api/productos/{id}/tipo-tela` ni
+  `PATCH /api/productos/{id}/color-cierre` con cada cambio de selector como antes.
+- **Footer nuevo, abajo a la derecha:** "Cancelar" (antes "Cerrar", mismo comportamiento: no
+  toca el servidor) y "Guardar" (persiste tela y/o cierre si cambiaron, en un solo click, y
+  cierra el modal). El flujo de "Confirmar colores" del click a click sigue siendo aparte —
+  ese sí sigue guardando al toque, no es parte de este borrador.
+- **Excepción:** si se arranca a marcar colores ("Marcar colores"/"Rehacer colores") con una
+  tela todavía sin guardar, esa tela se persiste automáticamente antes de abrir el flujo de
+  clicks — los `ProductoColor` que se van a guardar quedan atados a la paleta de esa tela, no
+  puede quedar como un borrador suelto mientras tanto.
+- **Bug de zoom corregido:** al 100% se veía solo aprox. 1/4 de la imagen, porque el `<canvas>`
+  se mostraba a resolución nativa del archivo (una foto de celular puede tener miles de px de
+  ancho) dentro de un contenedor mucho más chico. Ahora "100%" significa "ajustar la imagen
+  completa a la ventana" (`escalaAjuste`, calculado una vez por imagen comparando su tamaño
+  natural contra el contenedor) y el zoom del usuario es un multiplicador sobre esa base, de
+  10% a 300%.
+
+## -2.10. Modal de ficha rediseñado: ícono de lápiz, dos columnas, zoom (2026-08-26)
+
+Reemplaza el punto -2.9 de más abajo (mismo día, unas horas después): se unificaron Cargar,
+Reemplazar y Editar en un solo punto de entrada.
+
+- **Ícono de lápiz** (arriba a la derecha de cada card, position absolute, solo visible con
+  permiso) reemplaza el botón de texto "Editar" y también a los botones "Cargar"/"Reemplazar"
+  que antes vivían sueltos en la card — ahora es el único disparador del modal
+  (`ModalColoresGotero`), tanto para la primera carga de imagen como para reemplazarla o
+  editar tela/cierre/colores.
+- **Layout de dos columnas dentro del modal** (`grid md:grid-cols-2`): imagen a la izquierda
+  (con controles de zoom −/100%/+ hasta 300%, implementado con `transform: scale()` sobre el
+  `<canvas>`/`<img>` dentro de un contenedor `overflow-auto` — el cálculo de click-a-pixel del
+  gotero sigue funcionando solo porque usa `getBoundingClientRect()`, que ya refleja el
+  tamaño escalado); Tela, Cierre y Colores apilados verticalmente a la derecha, siempre en el
+  mismo popup.
+- **Subir/reemplazar imagen ahora vive adentro del modal:** si el producto no tiene imagen
+  todavía, la columna izquierda muestra un dropzone con botón "Cargar imagen"; si ya tiene,
+  muestra la imagen con zoom y un link "Reemplazar imagen" debajo. Ambos casos usan el mismo
+  `POST /api/productos/{id}/imagen` de siempre.
+- ⚠️ **Cambio de comportamiento importante en "Cerrar":** como ya no existe un trigger
+  "recién subida vs. edición" (todo pasa por el mismo ícono de lápiz), se eliminó por completo
+  la lógica que borraba la imagen del servidor al cancelar (`DELETE /api/productos/{id}/imagen`
+  ya no se llama desde el modal). Ahora "Cerrar" **nunca** toca el servidor — tiene sentido
+  porque la card de solo lectura (ver punto -2.9) ya sabe mostrar "Sin definir" para
+  tela/cierre/colores faltantes, así que una ficha a medio completar dejó de ser un estado
+  "inconsistente" a evitar y pasó a ser un estado normal y visible.
+- **Si el producto ya tiene colores asignados**, el modal no fuerza a rehacer todo el click a
+  click: muestra primero el resumen ya guardado (con gramos) y un botón "Rehacer colores" que
+  recién ahí arranca la secuencia de posiciones desde cero (no prellena; ver limitación ya
+  anotada en el punto -2.9 de abajo, sigue aplicando).
+- **Gramos visibles en la card:** cada línea "Color N" ahora muestra los gramos de esa
+  posición del patrón de corte (ej. "Color 1 (450 g): Marino"), tomados de
+  `patronCorteColores`, no solo del lado del modal.
+
+## -2.9. Selector de tela/cierre movido adentro del modal, editar ficha existente (2026-08-26)
+
+Ajuste sobre el punto -2.8 (mismo día siguiente): los selectores de "Tela" y "Cierre" se
+sacaron de la card de `FichasTecnicasView` (ahí ahora son de solo lectura) y se movieron
+adentro de `ModalColoresGotero`, junto con la posibilidad de editar una ficha ya cargada.
+
+- **Card 100% de solo lectura:** siempre muestra "Tela: X" (o "Sin definir"), "Cierre: X"
+  (solo si es Campera) y una línea "Color N: X" por **cada posición del patrón de corte**
+  (`producto.patronCorteColores`, no solo las ya asignadas) — así se ve de un vistazo qué
+  falta cargar aunque el valor todavía no exista. La única forma de cambiar cualquiera de
+  estos datos ahora es a través del modal.
+- **Nuevo botón "Editar"** (al lado de "Cargar"/"Reemplazar", visible si ya hay imagen y el
+  usuario tiene permiso): abre `ModalColoresGotero` sobre la imagen **ya existente**, sin
+  volver a subir nada. El modal no prellena las posiciones ya asignadas — hay que volver a
+  marcarlas todas por gotero, igual que en la carga inicial (se interpretó así la consigna
+  "abriría la misma ventana que cuando cargás la imagen", literal); si en algún momento se
+  quiere precargar lo ya guardado para solo corregir una posición puntual, es un cambio
+  aparte.
+- **`modoEdicion` en el modal:** si se abrió con "Editar" (imagen preexistente), el botón
+  "Cancelar" pasa a decir "Cerrar" y **no borra la imagen** (antes, `handleCancelar` siempre
+  llamaba a `DELETE /api/productos/{id}/imagen`, lo cual habría borrado una imagen real ya
+  guardada). Si se abrió justo después de subir una imagen nueva, el comportamiento viejo se
+  mantiene igual (Cancelar sí la descarta).
+- **Selector de Tela dentro del modal:** ya no es precondición para abrir el modal — antes,
+  si un producto no tenía tela resuelta (ej. Bandera sin elegir) no se podía ni abrir. Ahora
+  el modal siempre se puede abrir; si no hay tela, muestra el selector como "paso 0" y
+  bloquea el resto (canvas, cierre) hasta elegir una. Cambiar la tela llama al mismo
+  `PATCH /api/productos/{id}/tipo-tela` de antes, pero además **reinicia el progreso** de
+  colores ya marcados en esa sesión del modal (la paleta cambia con la tela, así que un color
+  ya elegido con la tela vieja ya no es válido).
+- **Selector de Cierre dentro del modal (solo Campera):** visible desde el arranque, pero se
+  autocompleta recién cuando se confirma la posición 1 (busca en `coloresCierre` un color con
+  el mismo *nombre* que el Color 1 recién elegido) — se puede corregir a mano en cualquier
+  momento después. Al confirmar todo el modal, si hay un cierre seleccionado se persiste con
+  un segundo llamado a `PATCH /api/productos/{id}/color-cierre` (además del
+  `POST /api/productos/{id}/colores` de siempre), así el valor que ve el usuario en el modal
+  es siempre el que termina guardado, sin depender del autocompletado silencioso que ya hacía
+  el backend en `ProductoService.asignarColores`.
+- **Defaults de tela por tipo de prenda ampliados:** ahora **las 5** prendas del catálogo
+  tienen default (antes Campera y Bandera quedaban sin uno): `Campera → FRIZA`,
+  `Bandera → SPUM` (tela nueva, agregada como quinto valor del enum `TipoTela` junto a
+  FRIZA/JERSEY/PIQUE/CIERRE; `DataInitializer` la siembra sola porque itera
+  `TipoTela.values()`, no hizo falta tocar el seed a mano). `Buzo/Remera/Chomba` sin cambios.
+
+## -2.8. Tipo de tela y color de cierre (2026-08-25)
+
+`PaletaColores` ahora tiene un campo `tipoTela` (enum `TipoTela { FRIZA, JERSEY, PIQUE, CIERRE }`):
+cada fila del catálogo queda atada a una tela específica (o a "cierre"), así que el mismo
+nombre de color existe repetido en varias filas (ej. "Marino" en FRIZA, otra fila "Marino"
+en JERSEY, otra en PIQUE, otra en CIERRE) — son insumos de compra distintos aunque el swatch
+se vea igual. Esto fue una decisión explícita del usuario (se le preguntó si prefería este
+modelo o tener `tipoTela` como campo de `Producto` en vez del catálogo, y eligió esto último
+para poder "unificar después tipo de tela y pedido", pensando en el futuro Planificador de
+Compras de M3).
+
+- **Migración manual de datos (una sola vez, 2026-08-25):** `paleta_colores` ya tenía 11
+  filas reales (10 del seed original + "Natural", creado por el usuario probando el modal de
+  gotero). Se migró a mano en vez de dejar que `ddl-auto=update` agregue la columna
+  `tipo_tela` como `NOT NULL` directamente (mismo problema de siempre, ver punto de
+  toolchain/memoria del proyecto): se agregó nullable, se backfillearon esas 11 filas a
+  `FRIZA` (decisión arbitraria pero razonable, ya que eran de antes de que existiera esta
+  segmentación), se reemplazó el índice único de `nombre` solo por uno compuesto
+  `(nombre, tipo_tela)`, y recién ahí se puso `NOT NULL`. `DataInitializer` siembra las 30
+  filas nuevas (los mismos 10 nombres × JERSEY/PIQUE/CIERRE) de forma idempotente por
+  combinación `(nombre, tipoTela)`, no por `count()==0` (ya no sirve, la tabla no arranca en
+  cero).
+- **`Producto.tipoTela`** (mismo enum, nunca debe valer `CIERRE`, se valida en
+  `ProductoService.actualizarTipoTela`) se precarga con un default al crear el pedido según
+  `TIPO_TELA_POR_DEFECTO` en `PedidoService` (`Buzo→FRIZA`, `Remera→JERSEY`,
+  `Chomba→PIQUE`); `Campera` y `Bandera` quedan sin default (no hay tela obvia) y hay que
+  elegirla a mano. Editable después desde Ficha Técnica (`PATCH /api/productos/{id}/tipo-tela`,
+  mismos roles que cargar la imagen), **no** se agregó a `NuevoPedidoView` — la decisión fue
+  que este campo es cosa de Ficha Técnica, no del alta del pedido.
+- El modal de gotero (`ModalColoresGotero`) ahora exige la tela resuelta (guardada o el
+  default por tipo de prenda) antes de poder abrirse: si el producto no tiene una tela
+  determinable (Campera/Bandera sin elegir), al subir la imagen se avisa "elegí el tipo de
+  tela primero" en vez de abrir el modal. El `GET /api/paleta-colores?tipoTela=X` que usa el
+  modal (y el que crea colores nuevos desde ahí) queda acotado a esa tela específica.
+- **Color de cierre:** solo para `Producto` con `tipoPrenda == "Campera"`
+  (`ProductoService.esCampera`). Nuevo campo `Producto.colorCierre` (FK a `PaletaColores`,
+  debe tener `tipoTela == CIERRE`, si no `409`). Al confirmar los colores del gotero
+  (`POST /api/productos/{id}/colores`), si la prenda es Campera y todavía no tiene cierre
+  elegido, se le asigna automáticamente el color de tipo CIERRE que tenga el mismo *nombre*
+  que el "Color 1" recién elegido (no la misma fila, esa es la de tela) — si no existe un
+  color de cierre con ese nombre exacto, queda sin definir. Nunca pisa una elección manual ya
+  guardada. Editable aparte con `PATCH /api/productos/{id}/color-cierre`.
+- **Filtros de Ficha Técnica:** el filtro de "Color" que ya existía se cambió de filtrar por
+  `idPaletaColor` a filtrar por *nombre* de color (deduplicado, excluyendo los de tipo
+  CIERRE), porque con el catálogo ahora repetido por tela el mismo nombre podía aparecer 3-4
+  veces en el combo con ids distintos. Nuevo filtro de "Tela" (Friza/Jersey/Piqué, sin
+  Cierre) que, a diferencia de los demás filtros (que ocultan pedidos enteros), filtra a
+  **nivel producto**: si el pedido tiene una Campera Friza y una Chomba Piqué y se filtra por
+  Friza, la card del pedido se sigue mostrando pero solo con el slot de la Campera; si
+  ningún producto del pedido matchea la tela elegida, el pedido entero desaparece del
+  listado.
+- ⚠️ Mismo riesgo ya documentado en el punto -2.6/-2.7 (`PedidoService.actualizarPedido`
+  recrea todos los `Producto` en cada edición de pedido): ahora también se pierde el
+  `tipoTela` elegido a mano (vuelve a recalcularse el default) y el `colorCierre` (vuelve a
+  `null`, tendría que re-completarse) cada vez que se edita un pedido desde Pedidos.
+
+## -2.7. Colores por gotero en Ficha Técnica (2026-08-25)
+
+Al cargar/reemplazar la imagen de diseño de un `Producto` (Ficha Técnica), si el producto
+tiene un `PatronCorte` asignado, se abre automáticamente `ModalColoresGotero.tsx`: un modal
+obligatorio (sin cierre por click afuera, solo botón "Cancelar") donde se hace click sobre
+la imagen para asignar, una por una, el color real de cada posición del patrón de corte.
+
+- **Modelo nuevo:** `Producto.patronCorte` (ManyToOne a `PatronCorte`, mismo criterio que
+  `tipoPrenda`: nullable en base por productos legacy, obligatorio en
+  `ProductoCreateRequest`). `PaletaColores` (catálogo de colores estándar de la empresa,
+  sembrado en `DataInitializer` con 10 colores aproximados). `ProductoColor` (el color real
+  asignado a una posición puntual: `producto` + `patronCorteColor` (no un `orden` suelto,
+  para quedar atado al patrón exacto) + `paletaColor` + `metodoDeteccion` (enum, siempre
+  `MANUAL` por ahora) + `coordenadaX/Y` + `rgbDetectado`, estos tres últimos guardados desde
+  ya para auditoría y para una futura detección automática por clustering, fuera de alcance
+  ahora). `uniqueConstraint` sobre (producto, patronCorteColor).
+- **Endpoint `POST /api/productos/{id}/colores`:** reemplaza el set completo de colores del
+  producto (borra e inserta). Valida que el array tenga exactamente la cantidad de
+  `PatronCorteColor` del patrón del producto y que cada posición pertenezca a ese patrón;
+  si no, `409 BusinessRuleException`. Mismos roles que cargar la imagen
+  (`ROLE_ADMINISTRATIVO`/`ROLE_VENDEDOR`/`ROLE_DISENADOR`).
+- **`GET/POST /api/paleta-colores`:** el `GET` (listado de activos) quedó sin restringir a
+  propósito, mismo criterio que `GET /api/tipos-prenda` (catálogo de solo lectura y baja
+  sensibilidad). El `POST` (alta de un color nuevo desde el modal, cuando el detectado no
+  matchea ninguno existente) sí está restringido a los mismos roles que cargan la imagen.
+- **"Cancelar" en el modal descarta la imagen subida:** nuevo endpoint
+  `DELETE /api/productos/{id}/imagen` (mismos roles) que limpia `imagenDisenoUrl` a null. El
+  archivo en disco no se borra físicamente, mismo criterio ya aceptado para Molderías.
+- **Visibilidad de `GET /api/patrones-corte` (listado y detalle) ampliada:** antes exclusiva
+  de `ROLE_ADMINISTRATIVO`, ahora también `ROLE_VENDEDOR` (necesita elegir el patrón al
+  cargar un pedido) y `ROLE_DISENADOR` (necesita leer las posiciones de color para el
+  modal). El alta (`POST`) sigue exclusiva de `ROLE_ADMINISTRATIVO`.
+- **Fix de CORS necesario para que el gotero funcione:** `CorsConfig.java` solo cubría
+  `/api/**`; sin CORS en `/uploads/**` (donde se sirven las imágenes), dibujar la imagen en
+  un `<canvas>` y leer píxeles con `getImageData()` tira `SecurityError` (canvas "tainted")
+  porque el navegador la ve como recurso cross-origin sin cabeceras. Se agregó un mapping de
+  CORS también para `/uploads/**`.
+- **Matching de color desacoplado:** `frontend/src/utils/colorMatch.ts` (RGB del pixel →
+  color de paleta más cercano por distancia euclídea) es una función pura, sin dependencia
+  del modal, para poder reusarla después desde una sugerencia automática sin duplicar
+  lógica. No se implementó ninguna detección automática todavía.
+- **Efecto colateral en el alta/edición de pedidos:** al ser `idPatronCorte` obligatorio en
+  `ProductoCreateRequest`, `NuevoPedidoView.tsx` ahora tiene una columna "Patrón de Corte"
+  por cada prenda, filtrada por el tipo de prenda ya elegido en esa fila (un `PatronCorte`
+  tiene un `tipoPrenda` fijo). Si no hay ningún patrón cargado para ese tipo, el combo queda
+  deshabilitado con el aviso "Sin patrones para este tipo" y el submit se bloquea.
+- ⚠️ **Esto empeora un riesgo ya documentado (ver punto -2.6):** `PedidoService.actualizarPedido`
+  sigue borrando y recreando todos los `Producto` de un pedido en cada edición. Como
+  `ProductoColor` cuelga de `Producto` con `orphanRemoval`, **editar un pedido desde
+  Pedidos ahora también borra los colores del gotero ya cargados** en Ficha Técnica para
+  esas prendas, además de la imagen y el estado que ya se perdían. Sigue sin corregirse acá
+  (el fix real es matchear productos existentes por id en vez de reemplazar la lista).
 
 ## -2.6. Estado de producción por prenda (2026-08-25)
 

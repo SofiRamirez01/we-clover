@@ -3,6 +3,7 @@ package com.weclover.backend.service;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,15 +20,18 @@ import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.entity.Colegio;
 import com.weclover.backend.entity.HistorialEstadoPedido;
 import com.weclover.backend.entity.Pedido;
+import com.weclover.backend.entity.PatronCorte;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.TipoPrenda;
+import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PedidoMapper;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.HistorialEstadoPedidoRepository;
+import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
@@ -41,11 +45,25 @@ public class PedidoService {
 
     private static final String ROL_CLIENTE = "ROLE_CLIENTE";
 
+    /**
+     * Tela por defecto según el nombre del tipo de prenda, precargada al crear el producto
+     * pero editable después desde el selector de tela dentro del modal de gotero (ver
+     * ModalColoresGotero.tsx / ProductoService.actualizarTipoTela).
+     */
+    private static final Map<String, TipoTela> TIPO_TELA_POR_DEFECTO = Map.of(
+        "Buzo", TipoTela.FRIZA,
+        "Remera", TipoTela.JERSEY,
+        "Chomba", TipoTela.PIQUE,
+        "Campera", TipoTela.FRIZA,
+        "Bandera", TipoTela.SPUM
+    );
+
     private final PedidoRepository pedidoRepository;
     private final ColegioRepository colegioRepository;
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
+    private final PatronCorteRepository patronCorteRepository;
     private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
@@ -113,10 +131,15 @@ public class PedidoService {
             TipoPrenda tipoPrenda = tipoPrendaRepository.findById(productoRequest.idTipoPrenda())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "No existe el tipo de prenda con id " + productoRequest.idTipoPrenda()));
+            PatronCorte patronCorte = patronCorteRepository.findById(productoRequest.idPatronCorte())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el patrón de corte con id " + productoRequest.idPatronCorte()));
 
             Producto producto = Producto.builder()
                 .pedido(pedido)
                 .tipoPrenda(tipoPrenda)
+                .patronCorte(patronCorte)
+                .tipoTela(TIPO_TELA_POR_DEFECTO.get(tipoPrenda.getNombre()))
                 .cantidadTotal(productoRequest.cantidadTotal())
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())
@@ -256,10 +279,15 @@ public class PedidoService {
             TipoPrenda tipoPrenda = tipoPrendaRepository.findById(productoRequest.idTipoPrenda())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "No existe el tipo de prenda con id " + productoRequest.idTipoPrenda()));
+            PatronCorte patronCorte = patronCorteRepository.findById(productoRequest.idPatronCorte())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el patrón de corte con id " + productoRequest.idPatronCorte()));
 
             Producto producto = Producto.builder()
                 .pedido(pedido)
                 .tipoPrenda(tipoPrenda)
+                .patronCorte(patronCorte)
+                .tipoTela(TIPO_TELA_POR_DEFECTO.get(tipoPrenda.getNombre()))
                 .cantidadTotal(productoRequest.cantidadTotal())
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())

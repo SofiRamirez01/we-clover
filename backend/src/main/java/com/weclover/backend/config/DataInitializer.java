@@ -1,7 +1,9 @@
 package com.weclover.backend.config;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -9,11 +11,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.weclover.backend.entity.Colegio;
+import com.weclover.backend.entity.PaletaColores;
 import com.weclover.backend.entity.Permiso;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.TipoPrenda;
+import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.repository.ColegioRepository;
+import com.weclover.backend.repository.PaletaColoresRepository;
 import com.weclover.backend.repository.PermisoRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
@@ -34,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final ColegioRepository colegioRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
+    private final PaletaColoresRepository paletaColoresRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -96,6 +102,35 @@ public class DataInitializer implements CommandLineRunner {
                 .descripcion("Diseñador")
                 .permisos(new ArrayList<>())
                 .build());
+        }
+
+        // Catálogo base x cada tela (y "cierre"): mismos 10 nombres/hex para las 4 categorías
+        // de TipoTela, insertados de forma idempotente por combinación (nombre, tipoTela) en
+        // vez de por count()==0, porque esta tabla ya traía datos reales de antes de agregar
+        // la columna tipo_tela (ver doc/pantallas-pendientes.md, migración manual de esa fecha).
+        Map<String, String> paletaBase = new LinkedHashMap<>();
+        paletaBase.put("Marino", "#14213D");
+        paletaBase.put("Blanco", "#FFFFFF");
+        paletaBase.put("Negro", "#000000");
+        paletaBase.put("Verde", "#025939");
+        paletaBase.put("Bordó", "#6E1423");
+        paletaBase.put("Gris", "#808080");
+        paletaBase.put("Beige", "#D8C3A5");
+        paletaBase.put("Celeste", "#75AADB");
+        paletaBase.put("Amarillo", "#FFD500");
+        paletaBase.put("Rojo", "#C8102E");
+
+        for (TipoTela tipoTela : TipoTela.values()) {
+            paletaBase.forEach((nombre, hex) -> {
+                if (!paletaColoresRepository.existsByNombreIgnoreCaseAndTipoTela(nombre, tipoTela)) {
+                    paletaColoresRepository.save(PaletaColores.builder()
+                        .nombre(nombre)
+                        .hex(hex)
+                        .tipoTela(tipoTela)
+                        .activo(true)
+                        .build());
+                }
+            });
         }
 
         System.out.println("--- DATOS SEMILLA CARGADOS CORRECTAMENTE ---");

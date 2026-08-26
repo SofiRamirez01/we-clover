@@ -1,3 +1,5 @@
+import type { TipoTela } from './paletaColores';
+
 export interface TipoPrendaOption {
   id: number;
   nombre: string;
@@ -5,22 +7,51 @@ export interface TipoPrendaOption {
 
 export interface ProductoCreateRequest {
   idTipoPrenda: number;
+  idPatronCorte: number;
   cantidadTotal: number;
   costo: number;
   observaciones?: string;
   imagenDisenoUrl?: string;
 }
 
+export interface PatronCorteColorResponse {
+  id: number;
+  orden: number;
+  gramos: number;
+}
+
+export type MetodoDeteccionColor = 'MANUAL' | 'AUTOMATICO';
+
+export interface ProductoColorResponse {
+  id: number;
+  idPatronCorteColor: number;
+  ordenPatronCorteColor: number;
+  idPaletaColor: number;
+  nombreColor: string;
+  hexColor: string;
+  metodoDeteccion: MetodoDeteccionColor;
+  coordenadaX: number | null;
+  coordenadaY: number | null;
+  rgbDetectado: string | null;
+}
+
 export interface ProductoResponse {
   id: number;
   idTipoPrenda: number | null;
   tipoPrenda: string | null;
+  idPatronCorte: number | null;
+  patronCorteColores: PatronCorteColorResponse[] | null;
+  tipoTela: TipoTela | null;
+  idColorCierre: number | null;
+  nombreColorCierre: string | null;
+  hexColorCierre: string | null;
   cantidadTotal: number;
   costo: number;
   subtotal: number;
   observaciones: string | null;
   imagenDisenoUrl: string | null;
   estadoActual: EstadoPedido;
+  colores: ProductoColorResponse[];
 }
 
 export type EstadoPedido =

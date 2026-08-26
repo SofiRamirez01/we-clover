@@ -1,6 +1,7 @@
 package com.weclover.backend.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,16 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class PatronCorteService {
+
+    /**
+     * Roles habilitados para LEER patrones de corte (listado y detalle): además de
+     * ROLE_ADMINISTRATIVO, ahora también Vendedor (elige el patrón al cargar un pedido) y
+     * Diseñador (lee las posiciones de color para el modal de gotero). El alta sigue
+     * reservada a ROLE_ADMINISTRATIVO (ver crearPatronCorte).
+     */
+    private static final Set<String> ROLES_LECTURA = Set.of(
+        "ROLE_ADMINISTRATIVO", "ROLE_VENDEDOR", "ROLE_DISENADOR"
+    );
 
     private final PatronCorteRepository patronCorteRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
@@ -81,7 +92,7 @@ public class PatronCorteService {
 
     @Transactional(readOnly = true)
     public List<PatronCorteResponse> listarActivos(Long idUsuarioActor) {
-        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_LECTURA);
 
         return patronCorteRepository.findByActivoTrueOrderByNombreAsc().stream()
             .map(patronCorteMapper::toResponse)
@@ -90,7 +101,7 @@ public class PatronCorteService {
 
     @Transactional(readOnly = true)
     public PatronCorteResponse obtenerPatronCorte(Long id, Long idUsuarioActor) {
-        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_LECTURA);
 
         PatronCorte patronCorte = patronCorteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el patrón de corte con id " + id));

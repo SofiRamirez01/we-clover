@@ -1,11 +1,14 @@
 package com.weclover.backend.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -17,6 +20,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,6 +57,34 @@ public class Producto {
     @JoinColumn(name = "id_tipo_prenda")
     private TipoPrenda tipoPrenda;
 
+    /**
+     * Nullable a nivel de base por el mismo motivo que tipoPrenda (productos legacy sin
+     * patrón asignado). Para productos nuevos, el DTO de creación lo exige: define las
+     * posiciones de color que se completan con el modal de gotero (ver ProductoColor).
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_patron_corte")
+    private PatronCorte patronCorte;
+
+    /**
+     * Tela de esta prenda puntual (no la del catálogo de colores: ver TipoTela). Nullable
+     * porque productos legacy no lo tienen y porque Campera/Bandera no tienen una tela por
+     * defecto obvia (ver PedidoService); para Buzo/Remera/Chomba se completa solo al crear
+     * el pedido y queda editable desde Ficha Técnica. Nunca debe valer CIERRE (esa categoría
+     * es solo para el catálogo de colores de cierre, no para la tela de la prenda).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_tela", length = 20)
+    private TipoTela tipoTela;
+
+    /**
+     * Color del cierre, solo aplica a Camperas (ver ProductoService.actualizarColorCierre).
+     * Debe referenciar una fila de PaletaColores con tipoTela = CIERRE.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_color_cierre")
+    private PaletaColores colorCierre;
+
     @Column(name = "cantidad_total", nullable = false)
     private int cantidadTotal;
 
@@ -81,4 +113,8 @@ public class Producto {
     @LastModifiedDate
     @Column(name = "fecha_actualizacion", nullable = false)
     private LocalDateTime fechaActualizacion;
+
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductoColor> colores = new ArrayList<>();
 }

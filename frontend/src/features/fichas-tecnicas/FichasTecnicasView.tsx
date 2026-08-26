@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AppHeader from '../../components/AppHeader';
 import { useAuth } from '../../context/AuthContext';
 import { listarPedidos } from '../../services/pedidoService';
-import { subirImagenDisenoProducto } from '../../services/productoService';
+import { listarPaletaColores } from '../../services/paletaColoresService';
 import { urlArchivoSubido } from '../../utils/urlArchivos';
-import { extraerMensajeError } from '../../utils/errores';
 import EstadoBadge from './EstadoBadge';
 import EstadoProductoControl from './EstadoProductoControl';
 import ImagenPreviewModal from './ImagenPreviewModal';
+import ModalColoresGotero from './ModalColoresGotero';
 import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS } from '../../types/pedido';
 import type { EstadoPedido, PedidoResponse, ProductoResponse } from '../../types/pedido';
-
-const TIPOS_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png'];
+import { TIPOS_TELA_PRENDA, TIPO_TELA_LABELS } from '../../types/paletaColores';
+import type { PaletaColorResponse, TipoTela } from '../../types/paletaColores';
+import { TIPO_PRENDA_CAMPERA, telaEfectiva } from './telaUtils';
 
 /** Roles habilitados para cargar/reemplazar la imagen de diseño (debe coincidir con ProductoService.java). */
 const ROLES_CARGA_DISENIO = ['ROLE_ADMINISTRATIVO', 'ROLE_VENDEDOR', 'ROLE_DISENADOR'];
@@ -41,56 +41,55 @@ const NoCargadoIcon = () => (
   </svg>
 );
 
+const PencilIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+  </svg>
+);
+
 interface Filtros {
   buscar: string;
   estado: EstadoPedido | '';
+  nombreColor: string;
+  tipoTela: TipoTela | '';
 }
 
-const filtrosIniciales: Filtros = { buscar: '', estado: '' };
+const filtrosIniciales: Filtros = { buscar: '', estado: '', nombreColor: '', tipoTela: '' };
 
 interface ImagenProductoSlotProps {
   producto: ProductoResponse;
   puedeCargar: boolean;
   puedeCambiarEstado: boolean;
+  coloresCierre: PaletaColorResponse[];
   onActualizado: (producto: ProductoResponse) => void;
 }
 
-function ImagenProductoSlot({ producto, puedeCargar, puedeCambiarEstado, onActualizado }: ImagenProductoSlotProps) {
+function ImagenProductoSlot({ producto, puedeCargar, puedeCambiarEstado, coloresCierre, onActualizado }: ImagenProductoSlotProps) {
   const [errorImagen, setErrorImagen] = useState(false);
-  const [subiendo, setSubiendo] = useState(false);
-  const [errorSubida, setErrorSubida] = useState<string | null>(null);
   const [previewAbierto, setPreviewAbierto] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const tieneImagen = Boolean(producto.imagenDisenoUrl) && !errorImagen;
   const urlImagen = tieneImagen ? urlArchivoSubido(producto.imagenDisenoUrl as string) : null;
-
-  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!TIPOS_IMAGEN_PERMITIDOS.includes(file.type)) {
-      setErrorSubida('Formato no válido: solo JPG o PNG');
-      if (inputRef.current) inputRef.current.value = '';
-      return;
-    }
-
-    setErrorSubida(null);
-    setSubiendo(true);
-    try {
-      const actualizado = await subirImagenDisenoProducto(producto.id, file);
-      setErrorImagen(false);
-      onActualizado(actualizado);
-    } catch (err) {
-      setErrorSubida(extraerMensajeError(err, 'No se pudo subir la imagen.'));
-    } finally {
-      setSubiendo(false);
-      if (inputRef.current) inputRef.current.value = '';
-    }
-  }
+  const esCampera = producto.tipoPrenda === TIPO_PRENDA_CAMPERA;
+  const telaActual = telaEfectiva(producto);
+  const posiciones = producto.patronCorteColores ?? [];
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-wc-border p-2">
+    <div className="relative flex items-center gap-3 rounded-lg border border-wc-border p-2">
+      {puedeCargar && (
+        <button
+          type="button"
+          onClick={() => setModalAbierto(true)}
+          aria-label="Editar ficha de colores"
+          title="Editar ficha de colores"
+          className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-wc-border bg-white text-wc-text-muted shadow-sm transition hover:bg-wc-bg hover:text-wc-text"
+        >
+          <PencilIcon />
+        </button>
+      )}
+
       <button
         type="button"
         onClick={() => tieneImagen && setPreviewAbierto(true)}
@@ -122,9 +121,58 @@ function ImagenProductoSlot({ producto, puedeCargar, puedeCambiarEstado, onActua
         />
       )}
 
+      {modalAbierto && (
+        <ModalColoresGotero
+          producto={producto}
+          coloresCierre={coloresCierre}
+          onActualizado={onActualizado}
+          onCerrar={() => setModalAbierto(false)}
+        />
+      )}
+
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-semibold text-wc-text">{producto.tipoPrenda ?? 'Sin tipo'}</p>
         <p className="text-[11px] text-wc-text-muted">{producto.cantidadTotal} unidades</p>
+
+        <div className="mt-1 flex flex-col gap-0.5 text-[11px] text-wc-text-muted">
+          <span>
+            Tela: <span className="font-medium text-wc-text">{telaActual ? TIPO_TELA_LABELS[telaActual] : 'Sin definir'}</span>
+          </span>
+
+          {esCampera && (
+            <span className="flex items-center gap-1.5">
+              Cierre: <span className="font-medium text-wc-text">{producto.nombreColorCierre ?? 'Sin definir'}</span>
+              {producto.hexColorCierre && (
+                <span
+                  title={producto.hexColorCierre}
+                  className="h-3 w-3 shrink-0 rounded-full border border-wc-border"
+                  style={{ backgroundColor: producto.hexColorCierre }}
+                />
+              )}
+            </span>
+          )}
+
+          {posiciones.length > 0 &&
+            [...posiciones]
+              .sort((a, b) => a.orden - b.orden)
+              .map((posicion) => {
+                const asignado = producto.colores.find((c) => c.idPatronCorteColor === posicion.id);
+                return (
+                  <span key={posicion.id} className="flex items-center gap-1.5">
+                    Color {posicion.orden} ({posicion.gramos} g):{' '}
+                    <span className="font-medium text-wc-text">{asignado?.nombreColor ?? 'Sin definir'}</span>
+                    {asignado && (
+                      <span
+                        title={asignado.hexColor}
+                        className="h-3 w-3 shrink-0 rounded-full border border-wc-border"
+                        style={{ backgroundColor: asignado.hexColor }}
+                      />
+                    )}
+                  </span>
+                );
+              })}
+        </div>
+
         <div className="mt-1">
           <EstadoProductoControl
             producto={producto}
@@ -132,28 +180,7 @@ function ImagenProductoSlot({ producto, puedeCargar, puedeCambiarEstado, onActua
             onActualizado={onActualizado}
           />
         </div>
-        {errorSubida && <p className="text-[10px] font-medium text-red-600">{errorSubida}</p>}
       </div>
-
-      {puedeCargar && (
-        <label
-          className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold transition ${
-            subiendo
-              ? 'cursor-wait bg-wc-bg text-wc-text-muted'
-              : 'cursor-pointer bg-wc-green/10 text-wc-green hover:bg-wc-green/20'
-          }`}
-        >
-          {subiendo ? 'Subiendo…' : tieneImagen ? 'Reemplazar' : 'Cargar'}
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-            className="hidden"
-            disabled={subiendo}
-            onChange={handleFile}
-          />
-        </label>
-      )}
     </div>
   );
 }
@@ -166,6 +193,8 @@ export default function FichasTecnicasView() {
   const [pedidos, setPedidos] = useState<PedidoResponse[]>([]);
   const [estadoCarga, setEstadoCarga] = useState<'cargando' | 'listo' | 'error'>('cargando');
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciales);
+  const [paletaColores, setPaletaColores] = useState<PaletaColorResponse[]>([]);
+  const [coloresCierre, setColoresCierre] = useState<PaletaColorResponse[]>([]);
 
   useEffect(() => {
     let cancelado = false;
@@ -177,6 +206,34 @@ export default function FichasTecnicasView() {
       })
       .catch(() => {
         if (!cancelado) setEstadoCarga('error');
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+    listarPaletaColores()
+      .then((data) => {
+        if (!cancelado) setPaletaColores(data);
+      })
+      .catch(() => {
+        /* si falla, el filtro de color queda vacío pero el resto de la pantalla funciona igual */
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+    listarPaletaColores('CIERRE')
+      .then((data) => {
+        if (!cancelado) setColoresCierre(data);
+      })
+      .catch(() => {
+        /* si falla, el selector de color de cierre queda vacío */
       });
     return () => {
       cancelado = true;
@@ -202,18 +259,43 @@ export default function FichasTecnicasView() {
     );
   }
 
+  const nombresColorFiltro = useMemo(
+    () =>
+      Array.from(new Set(paletaColores.filter((c) => c.tipoTela !== 'CIERRE').map((c) => c.nombre))).sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [paletaColores],
+  );
+
   const pedidosFiltrados = useMemo(() => {
     const buscar = filtros.buscar.trim().toLowerCase();
-    return pedidos.filter((pedido) => {
-      if (buscar) {
-        const coincide =
-          pedido.codigoInterno.toLowerCase().includes(buscar) ||
-          pedido.nombreColegio.toLowerCase().includes(buscar);
-        if (!coincide) return false;
-      }
-      if (filtros.estado && pedido.estadoActual !== filtros.estado) return false;
-      return true;
-    });
+    return pedidos
+      .filter((pedido) => {
+        if (buscar) {
+          const coincide =
+            pedido.codigoInterno.toLowerCase().includes(buscar) ||
+            pedido.nombreColegio.toLowerCase().includes(buscar);
+          if (!coincide) return false;
+        }
+        if (filtros.estado && pedido.estadoActual !== filtros.estado) return false;
+        if (
+          filtros.nombreColor !== '' &&
+          !pedido.productos.some((producto) =>
+            producto.colores.some((color) => color.nombreColor === filtros.nombreColor),
+          )
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .map((pedido) => {
+        if (!filtros.tipoTela) return pedido;
+        return {
+          ...pedido,
+          productos: pedido.productos.filter((producto) => telaEfectiva(producto) === filtros.tipoTela),
+        };
+      })
+      .filter((pedido) => pedido.productos.length > 0);
   }, [pedidos, filtros]);
 
   return (
@@ -247,6 +329,36 @@ export default function FichasTecnicasView() {
               {ESTADOS_PEDIDO.map((estado) => (
                 <option key={estado} value={estado}>
                   {ESTADO_PEDIDO_LABELS[estado]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="relative">
+            <select
+              value={filtros.nombreColor}
+              onChange={(e) => actualizarFiltro('nombreColor', e.target.value)}
+              className="rounded-lg border border-wc-border bg-white py-2 pl-3 pr-8 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20"
+            >
+              <option value="">Color (todos)</option>
+              {nombresColorFiltro.map((nombre) => (
+                <option key={nombre} value={nombre}>
+                  {nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="relative">
+            <select
+              value={filtros.tipoTela}
+              onChange={(e) => actualizarFiltro('tipoTela', e.target.value as TipoTela | '')}
+              className="rounded-lg border border-wc-border bg-white py-2 pl-3 pr-8 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20"
+            >
+              <option value="">Tela (todas)</option>
+              {TIPOS_TELA_PRENDA.map((tela) => (
+                <option key={tela} value={tela}>
+                  {TIPO_TELA_LABELS[tela]}
                 </option>
               ))}
             </select>
@@ -288,6 +400,7 @@ export default function FichasTecnicasView() {
                       producto={producto}
                       puedeCargar={puedeCargar}
                       puedeCambiarEstado={puedeCambiarEstado}
+                      coloresCierre={coloresCierre}
                       onActualizado={(actualizado) => actualizarProducto(pedido.id, actualizado)}
                     />
                   ))}
