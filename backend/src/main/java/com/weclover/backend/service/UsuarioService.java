@@ -13,7 +13,6 @@ import com.weclover.backend.dto.usuario.UsuarioUpdateRequest;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
-import com.weclover.backend.exception.ForbiddenException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.UsuarioMapper;
 import com.weclover.backend.repository.RolRepository;
@@ -32,9 +31,6 @@ public class UsuarioService {
      */
     private static final String ROL_CLIENTE = "ROLE_CLIENTE";
 
-    /** Único rol habilitado para editar o eliminar usuarios desde esta pantalla. */
-    private static final String ROL_ADMINISTRATIVO = "ROLE_ADMINISTRATIVO";
-
     /** Contraseña provisoria hasta que exista el flujo de invitación por mail (ver doc/pantallas-pendientes.md). */
     private static final String PASSWORD_PROVISORIA = "123";
 
@@ -42,6 +38,7 @@ public class UsuarioService {
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
+    private final AutorizacionService autorizacionService;
 
     @Transactional(readOnly = true)
     public List<RolResponse> listarRolesCorporativos() {
@@ -52,14 +49,18 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioResponse> listarUsuariosCorporativos() {
+    public List<UsuarioResponse> listarUsuariosCorporativos(Long idUsuarioActor) {
+        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+
         return usuarioRepository.findByRolNombreNotAndHabilitadoTrueOrderByNombreAsc(ROL_CLIENTE).stream()
             .map(usuarioMapper::toResponse)
             .toList();
     }
 
     @Transactional
-    public UsuarioResponse crearUsuario(UsuarioCreateRequest request) {
+    public UsuarioResponse crearUsuario(UsuarioCreateRequest request, Long idUsuarioActor) {
+        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+
         Rol rol = obtenerRolCorporativo(request.idRol());
 
         if (usuarioRepository.findByEmail(request.email()).isPresent()) {
@@ -81,7 +82,7 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponse actualizarUsuario(Long id, UsuarioUpdateRequest request, Long idUsuarioActor) {
-        verificarActorAdministrativo(idUsuarioActor);
+        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
 
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con id " + id));
@@ -110,7 +111,7 @@ public class UsuarioService {
      */
     @Transactional
     public void eliminarUsuario(Long id, Long idUsuarioActor) {
-        verificarActorAdministrativo(idUsuarioActor);
+        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
 
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con id " + id));
@@ -129,19 +130,5 @@ public class UsuarioService {
                     + "se genera automáticamente al crear un pedido");
         }
         return rol;
-    }
-
-    private void verificarActorAdministrativo(Long idUsuarioActor) {
-        if (idUsuarioActor == null) {
-            throw new ForbiddenException("No se pudo identificar al usuario que realiza la acción");
-        }
-
-        Usuario actor = usuarioRepository.findById(idUsuarioActor)
-            .orElseThrow(() -> new ForbiddenException("El usuario que realiza la acción no existe"));
-
-        if (!ROL_ADMINISTRATIVO.equals(actor.getRol().getNombre())) {
-            throw new ForbiddenException(
-                "Solo un usuario con rol " + ROL_ADMINISTRATIVO + " puede editar o eliminar usuarios");
-        }
     }
 }

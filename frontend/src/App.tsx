@@ -5,6 +5,8 @@ import NuevoPedidoView from './components/NuevoPedidoView';
 import PedidosListView from './components/PedidosListView';
 import UsuariosView from './components/UsuariosView';
 import LoginView from './components/LoginView';
+import PatronesCorteView from './features/patrones-corte/PatronesCorteView';
+import FichasTecnicasView from './features/fichas-tecnicas/FichasTecnicasView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { PedidoResponse } from './types/pedido';
 import './App.css';
@@ -56,8 +58,12 @@ function AppShell() {
     contenido = (
       <NuevoPedidoView onCreado={volverAPedidos} onVolver={cancelarNuevoPedido} pedidoAEditar={pedidoAEditar} />
     );
-  } else {
+  } else if (view === 'usuarios') {
     contenido = <UsuariosView />;
+  } else if (view === 'patrones-corte') {
+    contenido = <PatronesCorteView />;
+  } else {
+    contenido = <FichasTecnicasView />;
   }
 
   return (

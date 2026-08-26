@@ -20,6 +20,7 @@ export interface ProductoResponse {
   subtotal: number;
   observaciones: string | null;
   imagenDisenoUrl: string | null;
+  estadoActual: EstadoPedido;
 }
 
 export type EstadoPedido =

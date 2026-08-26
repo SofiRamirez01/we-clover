@@ -1,0 +1,39 @@
+/*
+ * Solo capa de utilidades de Tailwind (sin "preflight"/reset global) para no
+ * pisar el CSS plano que ya usan las pantallas existentes (Pedidos, Usuarios,
+ * Login). Pensado para features nuevas construidas 100% con clases utilitarias,
+ * como frontend/src/features/patrones-corte.
+ */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme {
+  --color-wc-green: #025939;
+  --color-wc-green-dark: #007450;
+  --color-wc-border: #e4e4e0;
+  --color-wc-bg: #f5f6f3;
+  --color-wc-text: #1f2421;
+  --color-wc-text-muted: #6b7268;
+}
+
+/*
+ * shared.css define `input, select, textarea { padding, border, border-radius, ... }`
+ * sin @layer, para las pantallas viejas en CSS plano. Por spec de CSS Cascade Layers,
+ * una regla sin layer le gana SIEMPRE a cualquier regla dentro de un @layer (acá,
+ * `utilities`), sin importar el orden de los <link>/@import ni la especificidad. Sin
+ * este reset, las clases de Tailwind para padding/border/etc. en inputs y selects
+ * quedaban pisadas silenciosamente por esos valores globales. Se aplica solo dentro
+ * de `.tw-scope` (la feature de patrones-corte), no en toda la app.
+ */
+.tw-scope input,
+.tw-scope select,
+.tw-scope textarea {
+  padding: revert-layer;
+  border: revert-layer;
+  border-radius: revert-layer;
+  background: revert-layer;
+  font-size: revert-layer;
+  color: revert-layer;
+  outline: revert-layer;
+  transition: revert-layer;
+}

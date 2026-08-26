@@ -1,8 +1,166 @@
-# Pendientes de las pantallas de Login / Pedidos / Usuarios
+# Pendientes de las pantallas de Login / Pedidos / Usuarios / Patrones de Corte
 
 Lista de lo que quedó afuera a propósito al construir el login, el listado y la carga de
-pedidos, y el alta de usuarios corporativos (módulo M1 - Seguridad y CRM), para retomar
-más adelante. Última actualización: 2026-08-21.
+pedidos, el alta de usuarios corporativos (módulo M1 - Seguridad y CRM) y el alta de
+patrones de corte (módulo M2 - Ficha Técnica Digital), para retomar más adelante. Última
+actualización: 2026-08-25.
+
+## -2.6. Estado de producción por prenda (2026-08-25)
+
+Cada `Producto` (prenda) ahora tiene su propio `estadoActual` (mismo enum `EstadoPedido` que
+usa `Pedido.estadoActual`), independiente del estado "general" del pedido — cambiar el de
+una prenda no toca el del pedido, tal como se pidió explícitamente. Se ve como un select con
+el mismo color que `EstadoBadge` en cada mini-slot de la pestaña Ficha Técnica.
+
+- **Roles habilitados para cambiar el estado de una prenda:** `ROLE_ADMINISTRATIVO` y
+  `ROLE_PLANTA` (distinto del set que puede cargar la imagen de diseño —
+  `ROLE_ADMINISTRATIVO`/`ROLE_VENDEDOR`/`ROLE_DISENADOR` — decisión explícita: quien produce
+  es quien reporta en qué etapa está cada prenda). Nuevo endpoint
+  `PATCH /api/productos/{id}/estado`, mismo patrón de autorización que el resto
+  (`AutorizacionService.verificarRolPermitido`).
+- **Sin historial propio:** a diferencia del estado del pedido (que sí tiene
+  `HistorialEstadoPedido`, con quién/cuándo/observaciones), el cambio de estado de una
+  prenda **no queda registrado en ningún lado** más que el valor actual — no hay auditoría
+  de "quién lo cambió y cuándo" a nivel prenda. Si el negocio necesita esa trazabilidad
+  también acá (CLAUDE.md la pide para pedidos en general), habría que agregar una tabla
+  análoga a `historial_estado_pedido` pero por producto.
+- **Al crear un producto nuevo**, su `estadoActual` arranca igual al estado que tenga el
+  pedido en ese momento (`request.estado()`), tanto en alta como en edición de pedido.
+- ⚠️ **Riesgo pre-existente que esto vuelve más importante:** `PedidoService.actualizarPedido`
+  borra y recrea **todos** los `Producto` de un pedido cada vez que se edita (`clear()` +
+  alta de cero), en vez de actualizar los existentes por id. Esto ya perdía
+  `imagenDisenoUrl` en cada edición; ahora también resetea `estadoActual` al valor del
+  pedido, perdiendo cualquier progreso de producción que se hubiera cargado por prenda.
+  No se corrigió en este cambio (es un refactor más grande — habría que matchear productos
+  por id en vez de reemplazar la lista), pero es importante tenerlo presente: **editar un
+  pedido desde la pantalla de Pedidos borra el trabajo cargado en Ficha Técnica** para esa
+  prenda (imagen y estado).
+
+## -2.5. Ficha Técnica (nueva pestaña, 2026-08-25): portfolio de diseños por prenda
+
+Pestaña nueva en el sidebar raíz (visible para todos los roles logueados, sin gate de
+Config), `frontend/src/features/fichas-tecnicas/FichasTecnicasView.tsx`. Reutiliza
+`GET /api/pedidos` (no hay endpoint nuevo de listado) y muestra una tarjeta por **pedido**
+(no por prenda) con Nº de Ficha, Colegio/Localidad y Estado, y adentro un "mini-slot" por
+cada `Producto` del pedido (tipo de prenda + cantidad + imagen). A propósito **no muestra
+precios** (eso vive en la pestaña Pedidos).
+
+- **Endpoint nuevo:** `POST /api/productos/{id}/imagen` (multipart, campo `imagen`), sube
+  a `Producto.imagenDisenoUrl` (columna que ya existía en el modelo pero nunca tuvo UI de
+  carga real — antes solo se podía escribir una URL a mano). Reutiliza el mismo
+  `AlmacenamientoImagenService` que Molderías (se extrajo de `PatronCorteService` a este
+  servicio compartido en este mismo cambio, para no duplicar la validación JPG/PNG + guardado
+  en disco). Carpeta: `backend/uploads/fichas-tecnicas/`.
+- **Roles habilitados para cargar/reemplazar la imagen:** `ROLE_ADMINISTRATIVO`,
+  `ROLE_VENDEDOR` y `ROLE_DISENADOR` (rol nuevo, creado en `DataInitializer` de forma
+  idempotente vía `findByNombre` porque los demás roles de este entorno ya existían fuera
+  del seed). El resto de los roles logueados (`ROLE_PLANTA`, `ROLE_COBRANZAS`) **ven** el
+  portfolio pero no tienen el botón "Cargar"/"Reemplazar" — decisión explícita del usuario,
+  distinta de la visibilidad de la pestaña en sí (esa es para todos). Verificado también
+  server-side (`AutorizacionService.verificarRolPermitido`, generalizado a partir del viejo
+  `verificarRolAdministrativo` para aceptar un `Set<String>` de roles).
+- Placeholder **"No cargado"** (ícono + texto) se muestra siempre que `imagenDisenoUrl` sea
+  null o la imagen falle al cargar (`onError`), para que todas las prendas sin diseño se
+  vean igual.
+- Sin filtro de tipo de prenda/color acá (a diferencia de Molderías) — solo Buscar (ficha o
+  colegio) y Estado. Se listan **todos** los pedidos sin restringir por estado por defecto
+  (se preguntó explícitamente y se eligió esta opción sobre "solo Listo para Producción en
+  adelante").
+- No hay selector de tamaño de vista (el de Molderías no se pidió acá).
+- Un pedido puede tener productos con `tipoPrenda == null` (ver punto 0, productos viejos
+  sin tipo indexado) — se muestran como "Sin tipo" en el slot, sigue siendo cargable.
+
+## -2. Patrones de Corte: `PatronCorte`/`PatronCorteColor` no son `Molderia`/`PiezaMolderia`
+
+El diagrama de clases de CLAUDE.md modela la moldería como `Molderia` + `PiezaMolderia`
+(piezas con `geometriaPoligono` para el nesting/tizada de M4). El alta de "Patrones de
+Corte" (`PatronCorte`/`PatronCorteColor`, gramos de Friza por color, pensado para el
+cálculo de compras por color de M3) se agregó como entidades **nuevas y separadas**, no
+como reemplazo de `Molderia`/`PiezaMolderia` — resuelven necesidades distintas (compras
+por color vs. nesting geométrico). Falta decidir si en algún momento se relacionan entre
+sí (por ejemplo, si un `PatronCorte` term extends `Molderia` o si son conceptos
+totalmente independientes del negocio) y, si corresponde, reflejarlo en el diagrama.
+
+Otros pendientes de esta pantalla (`frontend/src/features/patrones-corte/`,
+`POST/GET /api/patrones-corte`):
+- Solo alta y listado/detalle; no hay edición ni baja (el campo `activo` existe en el
+  modelo para desactivar sin borrar, pero nada en la API ni en el front lo usa todavía).
+- Las imágenes se guardan en disco local (`backend/uploads/patrones-corte/`, configurable
+  vía `app.uploads.*` en `application.properties`) y se sirven como recurso estático de
+  Spring en `/uploads/**`. No hay backup ni límite de espacio — revisar antes de producción
+  o migrar a un storage tipo S3.
+- `cantidadColores` está limitado a 1-5 tanto en el front (stepper) como en la validación
+  del back (`@Size` en `PatronCorteCreateRequest`), aunque el pedido original mencionaba
+  "1 a 3, ampliable a futuro" — se dejó en 5 porque la consigna del formulario pedía ese
+  tope explícitamente. Ajustar `MAX_COLORES` (front) y el `@Size` (back) si cambia.
+- Esta pantalla se construyó con **Tailwind CSS** (recién instalado, `frontend/src/styles/tailwind.css`,
+  solo capa de utilidades, sin "preflight"/reset global a propósito para no romper visualmente
+  las pantallas viejas en CSS plano). El resto del front sigue en CSS plano por componente.
+  Conviven ambos enfoques; no hay plan de migrar las pantallas viejas a Tailwind todavía.
+- **(2026-08-25)** `PatronCorte` ahora tiene `numeroInterno` (`Integer`, obligatorio, `UNIQUE`
+  a nivel de base — lo setea el usuario en el alta, no es el `id` autogenerado) y una FK real
+  a `TipoPrenda` (`idTipoPrenda`, el mismo catálogo de 5 valores que usa `Producto`, combo en
+  el front vía `GET /api/tipos-prenda`). Al agregar estas dos columnas `NOT NULL` se borraron
+  las 2 filas de prueba que había en `patrones_corte`/`patron_corte_colores` (eran datos de
+  testing de esta misma sesión, no del negocio) para evitar el problema conocido de
+  `ddl-auto=update` con columnas `NOT NULL` sobre filas ya existentes (ver punto de
+  toolchain/memoria del proyecto). Si en algún momento hay patrones de corte reales cargados,
+  cualquier `NOT NULL` nuevo va a necesitar el mismo baile de nullable→backfill→`ALTER`.
+- **(2026-08-25)** La pestaña "Molderías" ahora es un portfolio: `MolderiasListView.tsx`
+  (grilla de tarjetas con imagen, `#numeroInterno nombre`, tipo de prenda, cantidad de
+  colores y gramos por color, con buscador + filtro por tipo de prenda + filtro por
+  cantidad de colores, 100% client-side) es la vista por defecto, y "+ Nueva Moldería"
+  navega al formulario de alta ya existente (`CargaPatronCorteForm`, que ahora acepta un
+  `onCreado` opcional para volver al listado con un banner de éxito, en vez de limpiarse
+  in-place). Sigue sin haber edición/baja/detalle — solo alta y listado.
+- **(2026-08-25)** El portfolio de Molderías ordena siempre por `numeroInterno` ascendente
+  (se aplica en el `useMemo` de filtrado, después de filtrar), y tiene un selector de
+  tamaño de vista tipo explorador de Windows (`VistaPortfolioMenu.tsx`: Iconos muy
+  grandes/grandes/medianos/pequeños/Lista). La preferencia se guarda en `localStorage`
+  (`wc-molderias-tamano-vista`) por navegador, no por usuario ni servidor. En "Iconos
+  pequeños" y "Lista" la info (tipo/colores/peso) se muestra compacta en una sola línea en
+  vez de las 3 líneas separadas, para que entre en el espacio más chico, pero sigue
+  presente en todos los tamaños.
+- **Bug real encontrado y arreglado (2026-08-25):** `shared.css` define
+  `input, select, textarea { padding, border, border-radius, ... }` **sin** envolverlo en
+  un `@layer`. Por el spec de CSS Cascade Layers, una regla sin layer le gana siempre a
+  cualquier regla dentro de un `@layer` (acá, las utilidades de Tailwind), sin importar el
+  orden de los imports ni la especificidad — por eso `pl-8`, `rounded-lg`, `bg-white`, etc.
+  en los `<select>`/`<input>` de esta feature quedaban pisados en silencio por esos valores
+  globales (se notó porque el ícono de los filtros quedaba superpuesto con el texto). Fix:
+  `frontend/src/styles/tailwind.css` agrega una regla `.tw-scope input/select/textarea { ...:
+  revert-layer; }`, y el contenedor raíz de `PatronesCorteView.tsx` lleva la clase
+  `tw-scope`. **Cualquier futura pantalla en Tailwind necesita este mismo wrapper
+  `tw-scope`** (o una solución equivalente) mientras `shared.css` siga sin estar en un
+  layer — de lo contrario sus inputs/selects van a heredar el look de las pantallas viejas
+  en vez del de Tailwind, silenciosamente.
+
+## -3. Submenú "Config" (Molderías + Usuarios): acceso restringido a `ROLE_ADMINISTRATIVO`
+
+`Sidebar.tsx` ahora tiene dos "páginas" dentro del mismo panel: el menú raíz y, detrás de un
+ítem "Config" con flecha de vuelta, el submenú con "MOLDERÍAS" (`patrones-corte`) y
+"USUARIOS". El ítem "Config" y todo el submenú están completamente ocultos para cualquier
+usuario cuyo `rol` (`useAuth().usuario.rol`) no sea exactamente `ROLE_ADMINISTRATIVO`
+(2026-08-25).
+
+Esto se reforzó también en el backend (no solo ocultando el botón), reusando el mismo patrón
+provisorio de header `X-Usuario-Id` que ya validaba editar/eliminar usuarios — se extrajo a
+`AutorizacionService.verificarRolAdministrativo(idUsuarioActor)`, inyectado ahora en
+`UsuarioService` (las 4 operaciones: crear, listar corporativos, actualizar, eliminar) y en
+`PatronCorteService` (las 3: crear, listar, obtener). **Sigue siendo la misma seguridad
+"provisoria" de siempre** (ver punto 1): el cliente declara su propio id en el header, nada
+está firmado. Cuando exista JWT real, este es uno de los lugares a migrar.
+
+`GET /api/roles/corporativos` (catálogo de roles para el combo del alta de usuario) quedó
+**sin restringir** a propósito — es de solo lectura y de sensibilidad baja, igual que
+`GET /api/tipos-prenda`.
+
+Pendiente a futuro: cuando se construya el Planificador de Compras (M3), que necesita leer
+`PatronCorte`/`PatronCorteColor` para calcular gramos de tela por color, los `GET` de
+`/api/patrones-corte` van a tener que dejar de ser exclusivos de `ROLE_ADMINISTRATIVO` (o
+ese módulo va a necesitar su propio rol/permiso). No se resolvió ahora porque ese módulo
+todavía no existe.
+- definir como va a ser esta pestaña que primero se pensó para cargar las fichas técnicas de los colegios como para tener la vista del drive, pero quizás un botón dentro de esta pestaña que puedas cargar o editar molderias, porque eso se configura una vez y no se toca generalmente
 
 ## -1. Listado de Pedidos: agrupación de estados en 3 categorías (decisión propia, a confirmar)
 

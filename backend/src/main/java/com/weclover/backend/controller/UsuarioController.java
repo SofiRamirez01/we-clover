@@ -30,14 +30,17 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @PostMapping
-    public ResponseEntity<UsuarioResponse> crearUsuario(@Valid @RequestBody UsuarioCreateRequest request) {
-        UsuarioResponse response = usuarioService.crearUsuario(request);
+    public ResponseEntity<UsuarioResponse> crearUsuario(
+            @Valid @RequestBody UsuarioCreateRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        UsuarioResponse response = usuarioService.crearUsuario(request, idUsuarioActor);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/corporativos")
-    public List<UsuarioResponse> listarUsuariosCorporativos() {
-        return usuarioService.listarUsuariosCorporativos();
+    public List<UsuarioResponse> listarUsuariosCorporativos(
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return usuarioService.listarUsuariosCorporativos(idUsuarioActor);
     }
 
     @PutMapping("/{id}")

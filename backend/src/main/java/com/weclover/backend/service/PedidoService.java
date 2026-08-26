@@ -121,6 +121,7 @@ public class PedidoService {
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())
                 .imagenDisenoUrl(productoRequest.imagenDisenoUrl())
+                .estadoActual(request.estado())
                 .build();
             pedido.getProductos().add(producto);
         }
@@ -263,6 +264,7 @@ public class PedidoService {
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())
                 .imagenDisenoUrl(productoRequest.imagenDisenoUrl())
+                .estadoActual(request.estado())
                 .build();
             pedido.getProductos().add(producto);
         }

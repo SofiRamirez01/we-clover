@@ -9,6 +9,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -53,6 +55,15 @@ public class Producto {
 
     @Column(name = "cantidad_total", nullable = false)
     private int cantidadTotal;
+
+    /**
+     * Estado de producción propio de esta prenda (mismo enum que Pedido.estadoActual, para
+     * seguimiento más fino dentro de la producción). El estado del pedido se sigue manejando
+     * aparte como el estado "general" — cambiar el de una prenda no lo modifica.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_actual", nullable = false, length = 30)
+    private EstadoPedido estadoActual;
 
     @Column(nullable = false)
     private float costo;

@@ -50,6 +50,7 @@ El despliegue será monolítico utilizando una arquitectura estricta en capas (N
 * Escribe código limpio, documentado, aplicando principios SOLID.
 * Utiliza nombres en español para el dominio del negocio (ej. `Pedido`, `FichaTecnica`, `cortarTela()`), pero convenciones en inglés para la sintaxis técnica, verbos HTTP y utilidades si es estándar.
 * Si ves un riesgo de seguridad o una mala práctica en mi código, adviérteme y propón la solución arquitectónica correcta.
+* Si las instrucciones son ambiguas o le falta contexto, no asumas ni des por sentado nada, haceme las preguntas necesaras para aclarar las dudas antes de generar el resultado final
 
 
 

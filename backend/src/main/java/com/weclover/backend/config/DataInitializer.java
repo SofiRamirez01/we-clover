@@ -86,6 +86,18 @@ public class DataInitializer implements CommandLineRunner {
                 .forEach(nombre -> tipoPrendaRepository.save(TipoPrenda.builder().nombre(nombre).build()));
         }
 
+        // Rol nuevo para la carga de imágenes de diseño en Ficha Técnica (ver ProductoService).
+        // Se verifica por nombre en vez de por rolRepository.count()==0 porque los demás roles
+        // de este entorno (ROLE_ADMINISTRATIVO, ROLE_PLANTA, ROLE_COBRANZAS) ya se crearon a mano
+        // por fuera de este seed, así que ese count ya no es 0 acá.
+        if (rolRepository.findByNombre("ROLE_DISENADOR").isEmpty()) {
+            rolRepository.save(Rol.builder()
+                .nombre("ROLE_DISENADOR")
+                .descripcion("Diseñador")
+                .permisos(new ArrayList<>())
+                .build());
+        }
+
         System.out.println("--- DATOS SEMILLA CARGADOS CORRECTAMENTE ---");
     }
 }

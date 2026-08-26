@@ -1,5 +1,7 @@
 package com.weclover.backend.dto.producto;
 
+import com.weclover.backend.entity.EstadoPedido;
+
 public record ProductoResponse(
     Long id,
     Long idTipoPrenda,
@@ -8,6 +10,7 @@ public record ProductoResponse(
     float costo,
     float subtotal,
     String observaciones,
-    String imagenDisenoUrl
+    String imagenDisenoUrl,
+    EstadoPedido estadoActual
 ) {
 }
