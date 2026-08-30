@@ -1,5 +1,6 @@
 package com.weclover.backend.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,5 +11,8 @@ public interface PatronCorteRepository extends JpaRepository<PatronCorte, Long> 
 
     List<PatronCorte> findByActivoTrueOrderByNombreAsc();
 
-    boolean existsByNumeroInterno(Integer numeroInterno);
+    List<PatronCorte> findByActivoTrueAndTiposPrenda_IdOrderByNombreAsc(Long idTipoPrenda);
+
+    /** Usado para validar unicidad de numeroInterno por tipo de prenda (no global, ver PatronCorte.numeroInterno). */
+    List<PatronCorte> findDistinctByNumeroInternoAndTiposPrenda_IdIn(Integer numeroInterno, Collection<Long> idsTipoPrenda);
 }

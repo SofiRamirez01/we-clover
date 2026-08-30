@@ -51,6 +51,8 @@ El despliegue será monolítico utilizando una arquitectura estricta en capas (N
 * Utiliza nombres en español para el dominio del negocio (ej. `Pedido`, `FichaTecnica`, `cortarTela()`), pero convenciones en inglés para la sintaxis técnica, verbos HTTP y utilidades si es estándar.
 * Si ves un riesgo de seguridad o una mala práctica en mi código, adviérteme y propón la solución arquitectónica correcta.
 * Si las instrucciones son ambiguas o le falta contexto, no asumas ni des por sentado nada, haceme las preguntas necesaras para aclarar las dudas antes de generar el resultado final
+* Si levantas algun servicio para probar, asegurate de frenar todo antes de finalizar la respuesta, que no queden procesos corriendo en segundo plano, salvo que haga falta, pero avisame.
+* El diagrama de clases es un punto de partida, no una especificación completa: no define unicidad de campos, nullability de relaciones, qué se puede repetir, reglas de cascada/borrado, ni la mayoría de las restricciones reales del negocio. Cuando tengas que tomar una decisión de este tipo sobre una entidad (¿este campo es único a nivel global o solo dentro de otro? ¿esta FK puede ser null? ¿se puede repetir esta combinación de datos? ¿qué pasa si se borra el padre?) y no esté explícitamente aclarada en el pedido, no la definas por tu cuenta ni elijas la opción que te parezca más razonable: preguntame antes de programarla. Yo tengo el contexto del negocio real (We Clover) que el diagrama no capturó y quiero participar de esas decisiones de diseño, no solo revisarlas después de implementadas.
 
 
 

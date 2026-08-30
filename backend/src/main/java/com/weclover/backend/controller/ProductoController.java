@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,9 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.weclover.backend.dto.producto.ActualizarColorCierreRequest;
+import com.weclover.backend.dto.producto.ActualizarPatronCorteRequest;
 import com.weclover.backend.dto.producto.ActualizarTipoTelaRequest;
 import com.weclover.backend.dto.producto.CambioEstadoProductoRequest;
 import com.weclover.backend.dto.producto.ProductoColoresRequest;
+import com.weclover.backend.dto.producto.ProductoInsumosSecundariosRequest;
 import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.service.ProductoService;
 
@@ -60,6 +63,14 @@ public class ProductoController {
         return productoService.asignarColores(id, request, idUsuarioActor);
     }
 
+    @PatchMapping("/{id}/patron-corte")
+    public ProductoResponse actualizarPatronCorte(
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarPatronCorteRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return productoService.actualizarPatronCorte(id, request, idUsuarioActor);
+    }
+
     @PatchMapping("/{id}/tipo-tela")
     public ProductoResponse actualizarTipoTela(
             @PathVariable Long id,
@@ -74,5 +85,13 @@ public class ProductoController {
             @Valid @RequestBody ActualizarColorCierreRequest request,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return productoService.actualizarColorCierre(id, request, idUsuarioActor);
+    }
+
+    @PutMapping("/{id}/insumos-secundarios")
+    public ProductoResponse actualizarInsumosSecundarios(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductoInsumosSecundariosRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return productoService.actualizarInsumosSecundarios(id, request, idUsuarioActor);
     }
 }

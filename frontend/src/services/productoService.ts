@@ -1,6 +1,6 @@
 import api from './api';
 import type { EstadoPedido, ProductoResponse } from '../types/pedido';
-import type { ProductoColorItemRequest, TipoTela } from '../types/paletaColores';
+import type { ProductoColorItemRequest, ProductoInsumoSecundarioItemRequest, TipoTela } from '../types/paletaColores';
 
 export async function subirImagenDisenoProducto(idProducto: number, imagen: File): Promise<ProductoResponse> {
   const formData = new FormData();
@@ -28,6 +28,12 @@ export async function asignarColoresProducto(
   return data;
 }
 
+/** idPatronCorte puede ser null para desasignar la moldería del producto. */
+export async function actualizarPatronCorteProducto(idProducto: number, idPatronCorte: number | null): Promise<ProductoResponse> {
+  const { data } = await api.patch<ProductoResponse>(`/productos/${idProducto}/patron-corte`, { idPatronCorte });
+  return data;
+}
+
 export async function actualizarTipoTelaProducto(idProducto: number, tipoTela: TipoTela): Promise<ProductoResponse> {
   const { data } = await api.patch<ProductoResponse>(`/productos/${idProducto}/tipo-tela`, { tipoTela });
   return data;
@@ -35,5 +41,14 @@ export async function actualizarTipoTelaProducto(idProducto: number, tipoTela: T
 
 export async function actualizarColorCierreProducto(idProducto: number, idPaletaColor: number): Promise<ProductoResponse> {
   const { data } = await api.patch<ProductoResponse>(`/productos/${idProducto}/color-cierre`, { idPaletaColor });
+  return data;
+}
+
+/** Reemplaza todo el set de insumos secundarios del producto (capucha, puños, cierre y libres) de una vez. */
+export async function actualizarInsumosSecundariosProducto(
+  idProducto: number,
+  insumos: ProductoInsumoSecundarioItemRequest[],
+): Promise<ProductoResponse> {
+  const { data } = await api.put<ProductoResponse>(`/productos/${idProducto}/insumos-secundarios`, { insumos });
   return data;
 }

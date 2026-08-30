@@ -3,6 +3,8 @@ package com.weclover.backend.service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -13,22 +15,29 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.weclover.backend.dto.producto.ActualizarColorCierreRequest;
+import com.weclover.backend.dto.producto.ActualizarPatronCorteRequest;
 import com.weclover.backend.dto.producto.ActualizarTipoTelaRequest;
 import com.weclover.backend.dto.producto.CambioEstadoProductoRequest;
 import com.weclover.backend.dto.producto.ProductoColorItemRequest;
 import com.weclover.backend.dto.producto.ProductoColoresRequest;
+import com.weclover.backend.dto.producto.ProductoInsumoSecundarioItemRequest;
+import com.weclover.backend.dto.producto.ProductoInsumosSecundariosRequest;
 import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.entity.MetodoDeteccionColor;
 import com.weclover.backend.entity.PaletaColores;
+import com.weclover.backend.entity.PatronCorte;
 import com.weclover.backend.entity.PatronCorteColor;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.ProductoColor;
+import com.weclover.backend.entity.ProductoInsumoSecundario;
 import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.ProductoMapper;
 import com.weclover.backend.repository.PaletaColoresRepository;
+import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.ProductoRepository;
+import com.weclover.backend.repository.TipoTelaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -53,8 +62,37 @@ public class ProductoService {
     /** Único tipo de prenda que tiene cierre (ver actualizarColorCierre y el default en asignarColores). */
     private static final String TIPO_PRENDA_CAMPERA = "Campera";
 
+    /** Código estable de la fila "Cierre" en tipos_tela (ver TipoTela.codigo). */
+    private static final String CODIGO_TIPO_TELA_CIERRE = "CIERRE";
+
+    /** Descripción fija del insumo Cierre (ver ProductoInsumoSecundario.descripcion: es la
+     *  identidad real de la fila, no el tipo de tela). */
+    private static final String DESCRIPCION_CIERRE = "Cierre";
+
+    /** Tipo de tela + descripción sugeridos para un insumo secundario automático (ver CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA). */
+    private record InsumoSugerido(String codigoTipoTela, String descripcion) {}
+
+    /**
+     * Insumos secundarios sugeridos automáticamente al confirmar los colores del gotero
+     * (ver asignarColores → sugerirInsumoSecundario), según el tipo de prenda. Son solo un
+     * punto de partida editable: nunca pisan una elección manual ya guardada (se matchea por
+     * descripcion, no por tipo de tela — ver ProductoInsumoSecundario). Si el negocio agrega
+     * una prenda nueva con insumos sugeridos propios, este es el único lugar a tocar (los
+     * tipos de tela en sí ya son 100% de datos, ver TipoTela).
+     */
+    private static final Map<String, List<InsumoSugerido>> CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA = Map.of(
+        "Buzo", List.of(new InsumoSugerido("JERSEY", "Capucha"), new InsumoSugerido("RIBB", "Puños y cintura")),
+        "Campera", List.of(
+            new InsumoSugerido(CODIGO_TIPO_TELA_CIERRE, DESCRIPCION_CIERRE),
+            new InsumoSugerido("JERSEY", "Capucha"),
+            new InsumoSugerido("RIBB", "Puños y cintura")
+        )
+    );
+
     private final ProductoRepository productoRepository;
     private final PaletaColoresRepository paletaColoresRepository;
+    private final TipoTelaRepository tipoTelaRepository;
+    private final PatronCorteRepository patronCorteRepository;
     private final ProductoMapper productoMapper;
     private final AutorizacionService autorizacionService;
     private final AlmacenamientoImagenService almacenamientoImagenService;
@@ -75,7 +113,7 @@ public class ProductoService {
         String url = almacenamientoImagenService.guardar(imagen, directorioUploads, urlBase);
         producto.setImagenDisenoUrl(url);
 
-        return productoMapper.toResponse(productoRepository.save(producto));
+        return construirRespuesta(productoRepository.save(producto));
     }
 
     /**
@@ -92,7 +130,7 @@ public class ProductoService {
 
         producto.setImagenDisenoUrl(null);
 
-        return productoMapper.toResponse(productoRepository.save(producto));
+        return construirRespuesta(productoRepository.save(producto));
     }
 
     @Transactional
@@ -104,7 +142,7 @@ public class ProductoService {
 
         producto.setEstadoActual(request.estado());
 
-        return productoMapper.toResponse(productoRepository.save(producto));
+        return construirRespuesta(productoRepository.save(producto));
     }
 
     /**
@@ -175,37 +213,85 @@ public class ProductoService {
                 .build());
         }
 
-        // Default del color de cierre: mismo nombre que el "Color 1" recién elegido, pero
-        // buscado dentro de los colores catalogados como CIERRE (no necesariamente la misma
-        // fila, porque esa es la de la tela). Si no existe un color de cierre con ese nombre
-        // exacto, queda sin definir y hay que elegirlo a mano (ver actualizarColorCierre). No
-        // pisa una elección manual ya guardada.
-        if (esCampera(producto) && producto.getColorCierre() == null && colorPosicionUno != null) {
-            paletaColoresRepository.findByNombreIgnoreCaseAndTipoTela(colorPosicionUno.getNombre(), TipoTela.CIERRE)
-                .ifPresent(producto::setColorCierre);
+        // Default de insumos secundarios (cierre, capucha en Jersey, puños/cintura en Ribb,
+        // según el tipo de prenda): mismo nombre que el "Color 1" recién elegido, buscado
+        // dentro de la categoría de tela de cada insumo (no necesariamente la misma fila,
+        // porque esa es la de la tela del cuerpo). Si no existe un color con ese nombre
+        // exacto en esa categoría, ese insumo queda sin sugerir y hay que completarlo a mano
+        // (ver actualizarInsumosSecundarios). Nunca pisa una elección manual ya guardada.
+        if (colorPosicionUno != null && producto.getTipoPrenda() != null) {
+            List<InsumoSugerido> sugeridos = CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA
+                .getOrDefault(producto.getTipoPrenda().getNombre(), List.of());
+            for (InsumoSugerido sugerido : sugeridos) {
+                sugerirInsumoSecundario(producto, colorPosicionUno, sugerido.codigoTipoTela(), sugerido.descripcion());
+            }
         }
 
-        return productoMapper.toResponse(productoRepository.save(producto));
+        return construirRespuesta(productoRepository.save(producto));
     }
 
     /**
-     * Tela de esta prenda puntual. Nunca se acepta CIERRE acá (esa categoría del enum es
-     * solo para el catálogo de colores de cierre, no para la tela de una prenda).
+     * Moldería (PatronCorte, ver nombre de negocio en el frontend) de esta prenda puntual.
+     * Ya no se elige en el alta del pedido (ver ProductoCreateRequest) — se completa después
+     * desde Ficha Técnica. idPatronCorte puede ser null para desasignarla. Si la moldería
+     * cambia (a otra distinta o a ninguna), se descartan los colores ya marcados: quedaban
+     * atados a posiciones (PatronCorteColor) de la moldería anterior, que ya no existen para
+     * este producto.
+     */
+    @Transactional
+    public ProductoResponse actualizarPatronCorte(Long idProducto, ActualizarPatronCorteRequest request, Long idUsuarioActor) {
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_CARGA_DISENIO);
+
+        Producto producto = productoRepository.findById(idProducto)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el producto con id " + idProducto));
+
+        PatronCorte nuevoPatronCorte = null;
+        if (request.idPatronCorte() != null) {
+            nuevoPatronCorte = patronCorteRepository.findById(request.idPatronCorte())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el patrón de corte con id " + request.idPatronCorte()));
+
+            if (producto.getTipoPrenda() != null
+                    && !nuevoPatronCorte.getTiposPrenda().contains(producto.getTipoPrenda())) {
+                throw new BusinessRuleException(
+                    "Esta moldería no aplica al tipo de prenda de este producto");
+            }
+        }
+
+        Long idPatronCorteActual = producto.getPatronCorte() != null ? producto.getPatronCorte().getId() : null;
+        Long idPatronCorteNuevo = nuevoPatronCorte != null ? nuevoPatronCorte.getId() : null;
+        if (!Objects.equals(idPatronCorteActual, idPatronCorteNuevo)) {
+            producto.getColores().clear();
+        }
+
+        producto.setPatronCorte(nuevoPatronCorte);
+
+        return construirRespuesta(productoRepository.save(producto));
+    }
+
+    /**
+     * Tela de esta prenda puntual. Se rechaza cualquier TipoTela con telaCuerpo=false (ej.
+     * Cierre, o a futuro Ribb): esas categorías son insumos secundarios, no la tela
+     * principal de la prenda.
      */
     @Transactional
     public ProductoResponse actualizarTipoTela(Long idProducto, ActualizarTipoTelaRequest request, Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_CARGA_DISENIO);
 
-        if (request.tipoTela() == TipoTela.CIERRE) {
-            throw new BusinessRuleException("CIERRE no es un tipo de tela válido para una prenda");
+        TipoTela tipoTela = tipoTelaRepository.findByCodigo(request.tipoTela())
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el tipo de tela " + request.tipoTela()));
+
+        if (!tipoTela.isTelaCuerpo()) {
+            throw new BusinessRuleException(
+                tipoTela.getNombre() + " no es un tipo de tela válido para una prenda");
         }
 
         Producto producto = productoRepository.findById(idProducto)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el producto con id " + idProducto));
 
-        producto.setTipoTela(request.tipoTela());
+        producto.setTipoTela(tipoTela);
 
-        return productoMapper.toResponse(productoRepository.save(producto));
+        return construirRespuesta(productoRepository.save(producto));
     }
 
     /** Solo aplica a Camperas (ver TIPO_PRENDA_CAMPERA); el color debe ser de la categoría CIERRE. */
@@ -224,17 +310,172 @@ public class ProductoService {
             .orElseThrow(() -> new ResourceNotFoundException(
                 "No existe el color de paleta con id " + request.idPaletaColor()));
 
-        if (color.getTipoTela() != TipoTela.CIERRE) {
+        TipoTela cierre = obtenerTipoTelaCierre();
+        if (!color.getTipoTela().getId().equals(cierre.getId())) {
             throw new BusinessRuleException("El color elegido no es un color de cierre");
         }
 
-        producto.setColorCierre(color);
+        upsertInsumoSecundario(producto, cierre, DESCRIPCION_CIERRE, color, 1f);
 
-        return productoMapper.toResponse(productoRepository.save(producto));
+        return construirRespuesta(productoRepository.save(producto));
+    }
+
+    /**
+     * Reemplaza el set completo de insumos secundarios del producto (capucha, puños y
+     * cintura, cierre, o cualquier otro agregado a mano desde el modal) — mismo criterio
+     * de "reemplazar todo" que asignarColores usa para los colores del patrón. A propósito
+     * sin restricción de qué tipo de prenda puede tener qué insumo (eso lo decide el
+     * frontend armando la lista); actualizarColorCierre sigue siendo el único lugar que
+     * valida específicamente "solo Campera puede tener Cierre", para no duplicar esa regla
+     * acá y mantener ese endpoint funcionando en paralelo sin cambios de comportamiento.
+     */
+    @Transactional
+    public ProductoResponse actualizarInsumosSecundarios(
+            Long idProducto, ProductoInsumosSecundariosRequest request, Long idUsuarioActor) {
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_CARGA_DISENIO);
+
+        Producto producto = productoRepository.findById(idProducto)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el producto con id " + idProducto));
+
+        List<ProductoInsumoSecundarioItemRequest> items = request.insumos();
+
+        // Sin validación de duplicados a propósito: la descripcion puede repetirse (ej. dos
+        // "Puños y cintura" de distinto color, uno por puño) — ver ProductoInsumoSecundario.
+        // Por eso acá se insertan todas las filas nuevas directamente, sin pasar por
+        // upsertInsumoSecundario (que matchea por descripcion): si dos items del pedido
+        // comparten descripcion, ese helper actualizaría el primero en vez de agregar un
+        // segundo. Mismo problema de flush que asignarColores: sin forzar el DELETE de las
+        // filas viejas antes de insertar las nuevas, Hibernate podría violar alguna
+        // constraint al reemplazar un insumo ya existente.
+        producto.getInsumosSecundarios().clear();
+        productoRepository.saveAndFlush(producto);
+
+        for (ProductoInsumoSecundarioItemRequest item : items) {
+            TipoTela tipoTela = tipoTelaRepository.findById(item.idTipoTela())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el tipo de tela con id " + item.idTipoTela()));
+            PaletaColores color = paletaColoresRepository.findById(item.idPaletaColor())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el color de paleta con id " + item.idPaletaColor()));
+
+            if (!color.getTipoTela().getId().equals(tipoTela.getId())) {
+                throw new BusinessRuleException(
+                    "El color elegido no pertenece al tipo de tela " + tipoTela.getNombre());
+            }
+
+            producto.getInsumosSecundarios().add(ProductoInsumoSecundario.builder()
+                .producto(producto)
+                .descripcion(item.descripcion().trim())
+                .tipoTela(tipoTela)
+                .color(color)
+                .cantidad(item.cantidad())
+                .build());
+        }
+
+        return construirRespuesta(productoRepository.save(producto));
     }
 
     private boolean esCampera(Producto producto) {
         return producto.getTipoPrenda() != null
             && TIPO_PRENDA_CAMPERA.equalsIgnoreCase(producto.getTipoPrenda().getNombre());
+    }
+
+    private TipoTela obtenerTipoTelaCierre() {
+        return tipoTelaRepository.findByCodigo(CODIGO_TIPO_TELA_CIERRE)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "No existe el tipo de tela " + CODIGO_TIPO_TELA_CIERRE + " en el catálogo"));
+    }
+
+    private Optional<ProductoInsumoSecundario> obtenerInsumoCierre(Producto producto) {
+        return producto.getInsumosSecundarios().stream()
+            .filter(insumo -> DESCRIPCION_CIERRE.equals(insumo.getDescripcion()))
+            .findFirst();
+    }
+
+    /**
+     * Sugiere un insumo secundario con descripcion=descripcion (ej. "Capucha") y
+     * tipoTela=codigoTipoTela, con el mismo nombre de color que colorPosicionUno, buscado en
+     * esa categoría de tela. No hace nada si: el tipo de tela no existe en el catálogo, ya
+     * hay un insumo con esa descripcion para el producto (no pisa una elección manual — se
+     * matchea por descripcion, no por tipo de tela, ver ProductoInsumoSecundario), o no hay
+     * un color con ese nombre exacto en esa categoría (queda para completar a mano). La
+     * cantidad sugerida sale de TipoTela.gramosSugerido si es por peso, o 1 si es por unidad
+     * (ej. Cierre) — mismo criterio 100% de datos, sin hardcodear cantidades por tipo acá.
+     */
+    private void sugerirInsumoSecundario(Producto producto, PaletaColores colorPosicionUno, String codigoTipoTela, String descripcion) {
+        Optional<TipoTela> tipoTelaOpt = tipoTelaRepository.findByCodigo(codigoTipoTela);
+        if (tipoTelaOpt.isEmpty()) {
+            return;
+        }
+        TipoTela tipoTela = tipoTelaOpt.get();
+
+        boolean yaExiste = producto.getInsumosSecundarios().stream()
+            .anyMatch(insumo -> descripcion.equals(insumo.getDescripcion()));
+        if (yaExiste) {
+            return;
+        }
+
+        paletaColoresRepository.findByNombreIgnoreCaseAndTipoTela(colorPosicionUno.getNombre(), tipoTela)
+            .ifPresent(color -> {
+                float cantidad = tipoTela.isEsPorPeso()
+                    ? (tipoTela.getGramosSugerido() != null ? tipoTela.getGramosSugerido() : 0f)
+                    : 1f;
+                upsertInsumoSecundario(producto, tipoTela, descripcion, color, cantidad);
+            });
+    }
+
+    /** Upsert por (producto, descripcion): si ya había una fila con esa descripcion, la
+     *  reemplaza (incluido el tipoTela, que puede cambiar) en vez de duplicar. */
+    private void upsertInsumoSecundario(Producto producto, TipoTela tipoTela, String descripcion, PaletaColores color, float cantidad) {
+        Optional<ProductoInsumoSecundario> existente = producto.getInsumosSecundarios().stream()
+            .filter(insumo -> descripcion.equals(insumo.getDescripcion()))
+            .findFirst();
+
+        if (existente.isPresent()) {
+            existente.get().setTipoTela(tipoTela);
+            existente.get().setColor(color);
+            existente.get().setCantidad(cantidad);
+        } else {
+            producto.getInsumosSecundarios().add(ProductoInsumoSecundario.builder()
+                .producto(producto)
+                .descripcion(descripcion)
+                .tipoTela(tipoTela)
+                .color(color)
+                .cantidad(cantidad)
+                .build());
+        }
+    }
+
+    /**
+     * Envoltorio de productoMapper.toResponse() que completa idColorCierre/nombreColorCierre/
+     * hexColorCierre a partir de ProductoInsumoSecundario (ya no son un campo directo de
+     * Producto), para mantener exactamente el mismo contrato de ProductoResponse que existía
+     * con el viejo Producto.colorCierre. Público porque PedidoService también lo necesita:
+     * PedidoMapper arma PedidoResponse.productos vía ProductoMapper directo (MapStruct), que
+     * por sí solo no sabe completar estos tres campos derivados.
+     */
+    public ProductoResponse construirRespuesta(Producto producto) {
+        ProductoResponse base = productoMapper.toResponse(producto);
+        ProductoInsumoSecundario cierre = obtenerInsumoCierre(producto).orElse(null);
+
+        return new ProductoResponse(
+            base.id(),
+            base.idTipoPrenda(),
+            base.tipoPrenda(),
+            base.idPatronCorte(),
+            base.patronCorteColores(),
+            base.tipoTela(),
+            cierre != null ? cierre.getColor().getId() : null,
+            cierre != null ? cierre.getColor().getNombre() : null,
+            cierre != null ? cierre.getColor().getHex() : null,
+            base.cantidadTotal(),
+            base.costo(),
+            base.subtotal(),
+            base.observaciones(),
+            base.imagenDisenoUrl(),
+            base.estadoActual(),
+            base.colores(),
+            base.insumosSecundarios()
+        );
     }
 }

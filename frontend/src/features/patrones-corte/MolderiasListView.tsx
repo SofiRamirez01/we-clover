@@ -44,8 +44,63 @@ const CONFIG_TAMANO: Record<Exclude<TamanoVista, 'lista'>, { grid: string; gap: 
   pequeno: { grid: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8', gap: 'gap-3', padding: 'p-2', titulo: 'text-[11px]', detalle: 'compacto' },
 };
 
+/**
+ * Separación fija del portfolio pedida por el negocio: primero Buzo/Campera (comparten
+ * moldería), después Chomba/Remera (ídem), y una tercera sección "Otros diseños" para
+ * cualquier tipo de prenda que se agregue al catálogo más adelante (hoy sería Bandera). Si
+ * una moldería aplicara a tipos de más de una familia (no pasa hoy en los datos reales, pero
+ * el modelo Many-to-Many lo permitiría), se prioriza en el orden de esta lista para no
+ * duplicarla en dos secciones.
+ */
+const FAMILIAS_MOLDERIA: { clave: string; titulo: string; tiposPrenda: string[] }[] = [
+  { clave: 'buzo-campera', titulo: 'Buzos y Camperas', tiposPrenda: ['Buzo', 'Campera'] },
+  { clave: 'chomba-remera', titulo: 'Chombas y Remeras', tiposPrenda: ['Chomba', 'Remera'] },
+];
+
+interface GrupoMolderias {
+  clave: string;
+  titulo: string;
+  patrones: PatronCorteResponse[];
+}
+
+/** Una sección solo aparece si tiene al menos una moldería después de aplicar los filtros. */
+function agruparPorFamilia(patrones: PatronCorteResponse[]): GrupoMolderias[] {
+  const yaAgrupados = new Set<number>();
+  const grupos: GrupoMolderias[] = [];
+
+  for (const familia of FAMILIAS_MOLDERIA) {
+    const delGrupo = patrones.filter((p) => p.tiposPrenda.some((t) => familia.tiposPrenda.includes(t.nombre)));
+    delGrupo.forEach((p) => yaAgrupados.add(p.id));
+    if (delGrupo.length > 0) {
+      grupos.push({ clave: familia.clave, titulo: familia.titulo, patrones: delGrupo });
+    }
+  }
+
+  const otros = patrones.filter((p) => !yaAgrupados.has(p.id));
+  if (otros.length > 0) {
+    grupos.push({ clave: 'otros', titulo: 'Otros diseños', patrones: otros });
+  }
+
+  return grupos;
+}
+
+function SeccionEncabezado({ titulo, cantidad }: { titulo: string; cantidad: number }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="h-4 w-1 rounded-full bg-wc-green" aria-hidden="true" />
+      <h2 className="text-sm font-bold text-wc-text">{titulo}</h2>
+      <span className="text-xs text-wc-text-muted">({cantidad})</span>
+      <div className="h-px flex-1 bg-wc-border" />
+    </div>
+  );
+}
+
 function formatearPesos(patron: PatronCorteResponse): string {
   return patron.colores.map((c) => `${c.gramos} g`).join(', ');
+}
+
+function formatearTipos(patron: PatronCorteResponse): string {
+  return patron.tiposPrenda.map((t) => t.nombre).join(' / ');
 }
 
 function leerTamanoGuardado(): TamanoVista {
@@ -136,12 +191,14 @@ export default function MolderiasListView({ onNueva, mensajeExito }: MolderiasLi
             patron.nombre.toLowerCase().includes(buscar) || String(patron.numeroInterno).includes(buscar);
           if (!coincide) return false;
         }
-        if (filtros.idTipoPrenda && String(patron.idTipoPrenda) !== filtros.idTipoPrenda) return false;
+        if (filtros.idTipoPrenda && !patron.tiposPrenda.some((t) => String(t.id) === filtros.idTipoPrenda)) return false;
         if (filtros.cantidadColores && String(patron.cantidadColores) !== filtros.cantidadColores) return false;
         return true;
       })
       .sort((a, b) => a.numeroInterno - b.numeroInterno);
   }, [patrones, filtros]);
+
+  const grupos = useMemo(() => agruparPorFamilia(patronesFiltrados), [patronesFiltrados]);
 
   const config = tamanoVista === 'lista' ? null : CONFIG_TAMANO[tamanoVista];
 
@@ -222,30 +279,37 @@ export default function MolderiasListView({ onNueva, mensajeExito }: MolderiasLi
       )}
 
       {estadoCarga === 'listo' && patronesFiltrados.length > 0 && tamanoVista === 'lista' && (
-        <div className="flex flex-col gap-2">
-          {patronesFiltrados.map((patron) => (
-            <div
-              key={patron.id}
-              className="flex items-center gap-4 rounded-lg border border-wc-border bg-white px-4 py-2.5 shadow-sm"
-            >
-              <div className="h-12 w-12 flex-shrink-0">
-                <PatronImagen patron={patron} size={22} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-wc-text">
-                  #{patron.numeroInterno} {patron.nombre}
-                </p>
-                <p className="text-xs text-wc-text-muted sm:hidden">
-                  {patron.tipoPrenda} · {patron.cantidadColores} color{patron.cantidadColores > 1 ? 'es' : ''} ·{' '}
-                  {formatearPesos(patron)}
-                </p>
-              </div>
-              <div className="hidden w-28 shrink-0 text-xs text-wc-text-muted sm:block">{patron.tipoPrenda}</div>
-              <div className="hidden w-16 shrink-0 text-center text-xs text-wc-text-muted sm:block">
-                {patron.cantidadColores}
-              </div>
-              <div className="hidden w-40 shrink-0 text-right text-xs text-wc-text-muted sm:block">
-                {formatearPesos(patron)}
+        <div className="flex flex-col gap-6">
+          {grupos.map((grupo) => (
+            <div key={grupo.clave} className="flex flex-col gap-3">
+              <SeccionEncabezado titulo={grupo.titulo} cantidad={grupo.patrones.length} />
+              <div className="flex flex-col gap-2">
+                {grupo.patrones.map((patron) => (
+                  <div
+                    key={patron.id}
+                    className="flex items-center gap-4 rounded-lg border border-wc-border bg-white px-4 py-2.5 shadow-sm"
+                  >
+                    <div className="h-12 w-12 flex-shrink-0">
+                      <PatronImagen patron={patron} size={22} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-wc-text">
+                        #{patron.numeroInterno} {patron.nombre}
+                      </p>
+                      <p className="text-xs text-wc-text-muted sm:hidden">
+                        {formatearTipos(patron)} · {patron.cantidadColores} color{patron.cantidadColores > 1 ? 'es' : ''} ·{' '}
+                        {formatearPesos(patron)}
+                      </p>
+                    </div>
+                    <div className="hidden w-28 shrink-0 text-xs text-wc-text-muted sm:block">{formatearTipos(patron)}</div>
+                    <div className="hidden w-16 shrink-0 text-center text-xs text-wc-text-muted sm:block">
+                      {patron.cantidadColores}
+                    </div>
+                    <div className="hidden w-40 shrink-0 text-right text-xs text-wc-text-muted sm:block">
+                      {formatearPesos(patron)}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
@@ -253,37 +317,44 @@ export default function MolderiasListView({ onNueva, mensajeExito }: MolderiasLi
       )}
 
       {estadoCarga === 'listo' && patronesFiltrados.length > 0 && config && (
-        <div className={`grid ${config.grid} ${config.gap}`}>
-          {patronesFiltrados.map((patron) => (
-            <div
-              key={patron.id}
-              className={`flex flex-col gap-3 rounded-xl border border-wc-border bg-white ${config.padding} shadow-sm`}
-            >
-              <PatronImagen patron={patron} />
-              <div>
-                <h3 className={`${config.titulo} font-bold text-wc-text`}>
-                  #{patron.numeroInterno} {patron.nombre}
-                </h3>
-                {config.detalle === 'completo' ? (
-                  <dl className="mt-1.5 flex flex-col gap-1 text-xs text-wc-text-muted">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <dt className="font-medium text-wc-text">Tipo</dt>
-                      <dd className="text-right">{patron.tipoPrenda}</dd>
+        <div className="flex flex-col gap-6">
+          {grupos.map((grupo) => (
+            <div key={grupo.clave} className="flex flex-col gap-3">
+              <SeccionEncabezado titulo={grupo.titulo} cantidad={grupo.patrones.length} />
+              <div className={`grid ${config.grid} ${config.gap}`}>
+                {grupo.patrones.map((patron) => (
+                  <div
+                    key={patron.id}
+                    className={`flex flex-col gap-3 rounded-xl border border-wc-border bg-white ${config.padding} shadow-sm`}
+                  >
+                    <PatronImagen patron={patron} />
+                    <div>
+                      <h3 className={`${config.titulo} font-bold text-wc-text`}>
+                        #{patron.numeroInterno} {patron.nombre}
+                      </h3>
+                      {config.detalle === 'completo' ? (
+                        <dl className="mt-1.5 flex flex-col gap-1 text-xs text-wc-text-muted">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <dt className="font-medium text-wc-text">Tipo</dt>
+                            <dd className="text-right">{formatearTipos(patron)}</dd>
+                          </div>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <dt className="font-medium text-wc-text">Cantidad de colores</dt>
+                            <dd className="text-right">{patron.cantidadColores}</dd>
+                          </div>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <dt className="font-medium text-wc-text">Peso por color</dt>
+                            <dd className="text-right">{formatearPesos(patron)}</dd>
+                          </div>
+                        </dl>
+                      ) : (
+                        <p className="mt-1 text-[10px] leading-snug text-wc-text-muted">
+                          {formatearTipos(patron)} · {patron.cantidadColores} col. · {formatearPesos(patron)}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <dt className="font-medium text-wc-text">Cantidad de colores</dt>
-                      <dd className="text-right">{patron.cantidadColores}</dd>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <dt className="font-medium text-wc-text">Peso por color</dt>
-                      <dd className="text-right">{formatearPesos(patron)}</dd>
-                    </div>
-                  </dl>
-                ) : (
-                  <p className="mt-1 text-[10px] leading-snug text-wc-text-muted">
-                    {patron.tipoPrenda} · {patron.cantidadColores} col. · {formatearPesos(patron)}
-                  </p>
-                )}
+                  </div>
+                ))}
               </div>
             </div>
           ))}

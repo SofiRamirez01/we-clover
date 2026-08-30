@@ -68,22 +68,14 @@ public class Producto {
 
     /**
      * Tela de esta prenda puntual (no la del catálogo de colores: ver TipoTela). Nullable
-     * porque productos legacy no lo tienen y porque Campera/Bandera no tienen una tela por
-     * defecto obvia (ver PedidoService); para Buzo/Remera/Chomba se completa solo al crear
-     * el pedido y queda editable desde Ficha Técnica. Nunca debe valer CIERRE (esa categoría
-     * es solo para el catálogo de colores de cierre, no para la tela de la prenda).
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_tela", length = 20)
-    private TipoTela tipoTela;
-
-    /**
-     * Color del cierre, solo aplica a Camperas (ver ProductoService.actualizarColorCierre).
-     * Debe referenciar una fila de PaletaColores con tipoTela = CIERRE.
+     * porque productos legacy no lo tienen; para Buzo/Remera/Chomba/Campera/Bandera se
+     * completa solo al crear el pedido con un default (ver PedidoService) y queda editable
+     * desde Ficha Técnica. Solo se aceptan filas de TipoTela con telaCuerpo=true (se valida
+     * en ProductoService.actualizarTipoTela).
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "id_color_cierre")
-    private PaletaColores colorCierre;
+    @JoinColumn(name = "id_tipo_tela")
+    private TipoTela tipoTela;
 
     @Column(name = "cantidad_total", nullable = false)
     private int cantidadTotal;
@@ -117,4 +109,12 @@ public class Producto {
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ProductoColor> colores = new ArrayList<>();
+
+    /**
+     * Insumos secundarios de esta prenda puntual (ej. el color de cierre de una Campera).
+     * Reemplaza al viejo campo colorCierre — como mucho una fila por TipoTela distinto.
+     */
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductoInsumoSecundario> insumosSecundarios = new ArrayList<>();
 }

@@ -2,6 +2,7 @@ package com.weclover.backend.service;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -58,21 +59,20 @@ public class PatronCorteService {
             }
         }
 
-        if (patronCorteRepository.existsByNumeroInterno(request.numeroInterno())) {
-            throw new BusinessRuleException(
-                "Ya existe un patrón de corte con el número interno " + request.numeroInterno());
-        }
+        List<TipoPrenda> tiposPrenda = request.idsTipoPrenda().stream()
+            .distinct()
+            .map(id -> tipoPrendaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No existe el tipo de prenda con id " + id)))
+            .toList();
 
-        TipoPrenda tipoPrenda = tipoPrendaRepository.findById(request.idTipoPrenda())
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "No existe el tipo de prenda con id " + request.idTipoPrenda()));
+        validarNumeroInternoDisponible(request.numeroInterno(), tiposPrenda);
 
         String imagenUrl = almacenamientoImagenService.guardar(request.imagen(), directorioUploads, urlBase);
 
         PatronCorte patronCorte = PatronCorte.builder()
             .numeroInterno(request.numeroInterno())
             .nombre(request.nombre())
-            .tipoPrenda(tipoPrenda)
+            .tiposPrenda(tiposPrenda)
             .imagenUrl(imagenUrl)
             .cantidadColores(gramosPorColor.size())
             .activo(true)
@@ -90,11 +90,39 @@ public class PatronCorteService {
         return patronCorteMapper.toResponse(guardado);
     }
 
+    /**
+     * numeroInterno no es único a nivel global: dos molderías que no comparten ningún tipo de
+     * prenda pueden repetir número (ej. moldería #1 de Buzo/Campera y moldería #1 de
+     * Chomba/Remera son numeraciones independientes, una por "familia" de tipo de prenda). Solo
+     * es inválido si ya existe una moldería con ese número para alguno de los tipos de prenda
+     * que se está por asignar.
+     */
+    private void validarNumeroInternoDisponible(Integer numeroInterno, List<TipoPrenda> tiposPrenda) {
+        List<Long> idsTipoPrenda = tiposPrenda.stream().map(TipoPrenda::getId).toList();
+        List<PatronCorte> conflictos = patronCorteRepository
+            .findDistinctByNumeroInternoAndTiposPrenda_IdIn(numeroInterno, idsTipoPrenda);
+
+        if (!conflictos.isEmpty()) {
+            String tiposEnConflicto = conflictos.stream()
+                .flatMap(patron -> patron.getTiposPrenda().stream())
+                .filter(tipo -> idsTipoPrenda.contains(tipo.getId()))
+                .map(TipoPrenda::getNombre)
+                .distinct()
+                .collect(Collectors.joining(", "));
+            throw new BusinessRuleException(
+                "Ya existe una moldería con el número " + numeroInterno + " para: " + tiposEnConflicto);
+        }
+    }
+
     @Transactional(readOnly = true)
-    public List<PatronCorteResponse> listarActivos(Long idUsuarioActor) {
+    public List<PatronCorteResponse> listarActivos(Long idTipoPrenda, Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_LECTURA);
 
-        return patronCorteRepository.findByActivoTrueOrderByNombreAsc().stream()
+        List<PatronCorte> patrones = idTipoPrenda != null
+            ? patronCorteRepository.findByActivoTrueAndTiposPrenda_IdOrderByNombreAsc(idTipoPrenda)
+            : patronCorteRepository.findByActivoTrueOrderByNombreAsc();
+
+        return patrones.stream()
             .map(patronCorteMapper::toResponse)
             .toList();
     }

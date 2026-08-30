@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.weclover.backend.dto.patroncorte.PatronCorteColorResponse;
 import com.weclover.backend.entity.EstadoPedido;
-import com.weclover.backend.entity.TipoTela;
 
 public record ProductoResponse(
     Long id,
@@ -12,7 +11,7 @@ public record ProductoResponse(
     String tipoPrenda,
     Long idPatronCorte,
     List<PatronCorteColorResponse> patronCorteColores,
-    TipoTela tipoTela,
+    String tipoTela,
     Long idColorCierre,
     String nombreColorCierre,
     String hexColorCierre,
@@ -22,6 +21,7 @@ public record ProductoResponse(
     String observaciones,
     String imagenDisenoUrl,
     EstadoPedido estadoActual,
-    List<ProductoColorResponse> colores
+    List<ProductoColorResponse> colores,
+    List<ProductoInsumoSecundarioResponse> insumosSecundarios
 ) {
 }

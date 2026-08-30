@@ -2,6 +2,7 @@ import type { TipoTela } from '../../types/paletaColores';
 import type { ProductoResponse } from '../../types/pedido';
 
 export const TIPO_PRENDA_CAMPERA = 'Campera';
+export const TIPO_PRENDA_BUZO = 'Buzo';
 
 /** Mismo default que PedidoService.TIPO_TELA_POR_DEFECTO en el backend: se usa acá solo para
  * PRESELECCIONAR visualmente cuando el producto todavía no tiene tipoTela guardado (legacy). */

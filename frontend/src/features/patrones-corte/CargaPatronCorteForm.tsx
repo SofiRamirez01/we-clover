@@ -11,7 +11,7 @@ const TIPOS_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png'];
 interface FormErrors {
   numeroInterno?: string;
   nombre?: string;
-  idTipoPrenda?: string;
+  idsTipoPrenda?: string;
   imagen?: string;
   gramos?: Record<number, string>;
   general?: string;
@@ -24,7 +24,7 @@ interface CargaPatronCorteFormProps {
 export default function CargaPatronCorteForm({ onCreado }: CargaPatronCorteFormProps) {
   const [numeroInterno, setNumeroInterno] = useState('');
   const [nombre, setNombre] = useState('');
-  const [idTipoPrenda, setIdTipoPrenda] = useState('');
+  const [idsTipoPrenda, setIdsTipoPrenda] = useState<number[]>([]);
   const [tiposPrenda, setTiposPrenda] = useState<TipoPrendaOption[]>([]);
   const [imagenFile, setImagenFile] = useState<File | null>(null);
   const [imagenPreview, setImagenPreview] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export default function CargaPatronCorteForm({ onCreado }: CargaPatronCorteFormP
   function limpiarFormulario() {
     setNumeroInterno('');
     setNombre('');
-    setIdTipoPrenda('');
+    setIdsTipoPrenda([]);
     limpiarSeleccionImagen();
     setCantidadColores(1);
     setGramosPorColor(Array(MAX_COLORES).fill(''));
@@ -92,6 +92,11 @@ export default function CargaPatronCorteForm({ onCreado }: CargaPatronCorteFormP
     });
   }
 
+  function handleToggleTipoPrenda(id: number) {
+    setIdsTipoPrenda((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setErrors((prev) => ({ ...prev, idsTipoPrenda: undefined }));
+  }
+
   function handleGramosChange(index: number, value: string) {
     setGramosPorColor((prev) => {
       const next = [...prev];
@@ -118,8 +123,8 @@ export default function CargaPatronCorteForm({ onCreado }: CargaPatronCorteFormP
       nuevosErrores.nombre = 'El nombre del patrón es obligatorio';
     }
 
-    if (!idTipoPrenda) {
-      nuevosErrores.idTipoPrenda = 'Debe seleccionar el tipo de prenda';
+    if (idsTipoPrenda.length === 0) {
+      nuevosErrores.idsTipoPrenda = 'Debe seleccionar al menos un tipo de prenda';
     }
 
     if (!imagenFile) {
@@ -150,7 +155,7 @@ export default function CargaPatronCorteForm({ onCreado }: CargaPatronCorteFormP
     setEnviando(true);
     try {
       const gramos = gramosPorColor.slice(0, cantidadColores).map(Number);
-      await crearPatronCorte(Number(numeroInterno), nombre.trim(), Number(idTipoPrenda), imagenFile, gramos);
+      await crearPatronCorte(Number(numeroInterno), nombre.trim(), idsTipoPrenda, imagenFile, gramos);
       setMensajeExito('Patrón de corte cargado correctamente.');
       limpiarFormulario();
       onCreado?.();
@@ -231,28 +236,28 @@ export default function CargaPatronCorteForm({ onCreado }: CargaPatronCorteFormP
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="tipo-prenda-patron" className="text-sm font-semibold text-wc-text">
-          Tipo de prenda
-        </label>
-        <select
-          id="tipo-prenda-patron"
-          value={idTipoPrenda}
-          onChange={(e) => {
-            setIdTipoPrenda(e.target.value);
-            setErrors((prev) => ({ ...prev, idTipoPrenda: undefined }));
-          }}
-          className={`w-full rounded-lg border px-3 py-2 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20 ${
-            errors.idTipoPrenda ? 'border-red-400' : 'border-wc-border'
+        <span className="text-sm font-semibold text-wc-text">Tipos de prenda</span>
+        <p className="text-xs text-wc-text-muted">
+          Tildá todos los tipos de prenda que usan esta misma moldería (ej: Buzo y Campera comparten patrón).
+        </p>
+        <div
+          className={`flex flex-wrap gap-x-5 gap-y-2 rounded-lg border px-3 py-2.5 ${
+            errors.idsTipoPrenda ? 'border-red-400' : 'border-wc-border'
           }`}
         >
-          <option value="">Seleccioná un tipo de prenda</option>
           {tiposPrenda.map((tipo) => (
-            <option key={tipo.id} value={tipo.id}>
+            <label key={tipo.id} className="flex cursor-pointer items-center gap-2 text-sm text-wc-text">
+              <input
+                type="checkbox"
+                checked={idsTipoPrenda.includes(tipo.id)}
+                onChange={() => handleToggleTipoPrenda(tipo.id)}
+                className="h-4 w-4 rounded border-wc-border text-wc-green focus:ring-wc-green/40"
+              />
               {tipo.nombre}
-            </option>
+            </label>
           ))}
-        </select>
-        {errors.idTipoPrenda && <span className="text-xs font-medium text-red-600">{errors.idTipoPrenda}</span>}
+        </div>
+        {errors.idsTipoPrenda && <span className="text-xs font-medium text-red-600">{errors.idsTipoPrenda}</span>}
       </div>
 
       <div className="flex flex-col gap-1.5">

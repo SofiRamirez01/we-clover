@@ -3,7 +3,6 @@ import type { FormEvent } from 'react';
 import './NuevoPedidoView.css';
 import AppHeader from './AppHeader';
 import { actualizarPedido, crearPedido, listarTiposPrenda } from '../services/pedidoService';
-import { listarPatronesCorte } from '../services/patronCorteService';
 import { useAuth } from '../context/AuthContext';
 import { extraerMensajeError } from '../utils/errores';
 import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS } from '../types/pedido';
@@ -14,7 +13,6 @@ import type {
   PedidoUpdateRequest,
   TipoPrendaOption,
 } from '../types/pedido';
-import type { PatronCorteResponse } from '../types/patronCorte';
 
 const FORMATO_NUMERO_FICHA = /^\d{4}-\d{2}$/;
 
@@ -25,8 +23,9 @@ const ESTADOS_INICIALES: { value: EstadoPedido; label: string }[] = [
 
 interface PrendaRow {
   id: string;
+  /** Id real del Producto en el backend; null para una prenda nueva agregada en el formulario. */
+  idProducto: number | null;
   idTipoPrenda: string;
-  idPatronCorte: string;
   cantidad: string;
   precioUnitario: string;
 }
@@ -72,7 +71,7 @@ const infoGeneralInicial: InfoGeneralForm = {
 };
 
 function nuevaPrenda(): PrendaRow {
-  return { id: crypto.randomUUID(), idTipoPrenda: '', idPatronCorte: '', cantidad: '', precioUnitario: '' };
+  return { id: crypto.randomUUID(), idProducto: null, idTipoPrenda: '', cantidad: '', precioUnitario: '' };
 }
 
 function aNumero(valor: string): number {
@@ -111,8 +110,8 @@ function prendasDesdePedido(pedido: PedidoResponse): PrendaRow[] {
   if (pedido.productos.length === 0) return [nuevaPrenda()];
   return pedido.productos.map((p) => ({
     id: crypto.randomUUID(),
+    idProducto: p.id,
     idTipoPrenda: p.idTipoPrenda != null ? String(p.idTipoPrenda) : '',
-    idPatronCorte: p.idPatronCorte != null ? String(p.idPatronCorte) : '',
     cantidad: String(p.cantidadTotal),
     precioUnitario: String(p.costo),
   }));
@@ -146,9 +145,6 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
   const [tiposPrenda, setTiposPrenda] = useState<TipoPrendaOption[]>([]);
   const [tiposPrendaEstado, setTiposPrendaEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
 
-  const [patronesCorte, setPatronesCorte] = useState<PatronCorteResponse[]>([]);
-  const [patronesCorteEstado, setPatronesCorteEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
-
   useEffect(() => {
     let cancelado = false;
     listarTiposPrenda()
@@ -159,22 +155,6 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
       })
       .catch(() => {
         if (!cancelado) setTiposPrendaEstado('error');
-      });
-    return () => {
-      cancelado = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelado = false;
-    listarPatronesCorte()
-      .then((data) => {
-        if (cancelado) return;
-        setPatronesCorte(data);
-        setPatronesCorteEstado('listo');
-      })
-      .catch(() => {
-        if (!cancelado) setPatronesCorteEstado('error');
       });
     return () => {
       cancelado = true;
@@ -197,17 +177,7 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
   }
 
   function actualizarPrenda(id: string, campo: keyof Omit<PrendaRow, 'id'>, valor: string) {
-    setPrendas((prev) =>
-      prev.map((p) => {
-        if (p.id !== id) return p;
-        // Un Patrón de Corte tiene un tipo de prenda fijo: si cambia el tipo, el patrón
-        // elegido antes ya no aplica necesariamente, así que se resetea.
-        if (campo === 'idTipoPrenda') {
-          return { ...p, idTipoPrenda: valor, idPatronCorte: '' };
-        }
-        return { ...p, [campo]: valor };
-      }),
-    );
+    setPrendas((prev) => prev.map((p) => (p.id === id ? { ...p, [campo]: valor } : p)));
   }
 
   function agregarPrenda() {
@@ -258,15 +228,10 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
       setMensaje('Cargá al menos una prenda con artículo, cantidad y precio unitario.');
       return;
     }
-    if (productosValidos.some((p) => p.idPatronCorte === '')) {
-      setEstado('error');
-      setMensaje('Elegí el Patrón de Corte de cada prenda cargada.');
-      return;
-    }
 
     const productos = productosValidos.map((p) => ({
+      id: p.idProducto ?? undefined,
       idTipoPrenda: Number(p.idTipoPrenda),
-      idPatronCorte: Number(p.idPatronCorte),
       cantidadTotal: aNumero(p.cantidad),
       costo: aNumero(p.precioUnitario),
     }));
@@ -494,7 +459,6 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
               <thead>
                 <tr>
                   <th>Artículo</th>
-                  <th>Patrón de Corte</th>
                   <th>Cantidad Total</th>
                   <th>Precio Unitario ($)</th>
                   <th>Subtotal ($)</th>
@@ -502,11 +466,7 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
                 </tr>
               </thead>
               <tbody>
-                {prendas.map((prenda) => {
-                  const patronesDelTipo = patronesCorte.filter(
-                    (patron) => String(patron.idTipoPrenda) === prenda.idTipoPrenda,
-                  );
-                  return (
+                {prendas.map((prenda) => (
                   <tr key={prenda.id}>
                     <td>
                       {tiposPrendaEstado === 'error' ? (
@@ -525,34 +485,6 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
                           {tiposPrenda.map((tipo) => (
                             <option key={tipo.id} value={tipo.id}>
                               {tipo.nombre}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </td>
-                    <td>
-                      {patronesCorteEstado === 'error' ? (
-                        <select disabled>
-                          <option>No se pudieron cargar los patrones</option>
-                        </select>
-                      ) : (
-                        <select
-                          value={prenda.idPatronCorte}
-                          onChange={(e) => actualizarPrenda(prenda.id, 'idPatronCorte', e.target.value)}
-                          disabled={patronesCorteEstado === 'cargando' || prenda.idTipoPrenda === ''}
-                        >
-                          <option value="">
-                            {prenda.idTipoPrenda === ''
-                              ? 'Elegí primero el artículo'
-                              : patronesCorteEstado === 'cargando'
-                                ? 'Cargando…'
-                                : patronesDelTipo.length === 0
-                                  ? 'Sin patrones para este tipo'
-                                  : 'Seleccionar…'}
-                          </option>
-                          {patronesDelTipo.map((patron) => (
-                            <option key={patron.id} value={patron.id}>
-                              #{patron.numeroInterno} {patron.nombre}
                             </option>
                           ))}
                         </select>
@@ -590,8 +522,7 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
                       </button>
                     </td>
                   </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
             <button type="button" className="btn-secondary" onClick={agregarPrenda}>
@@ -633,7 +564,7 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
             <button
               type="submit"
               className="btn-guardar"
-              disabled={estado === 'enviando' || tiposPrendaEstado === 'cargando' || patronesCorteEstado === 'cargando'}
+              disabled={estado === 'enviando' || tiposPrendaEstado === 'cargando'}
             >
               {estado === 'enviando' ? 'Guardando…' : esEdicion ? '✓ Guardar Cambios' : '✓ Guardar Pedido'}
             </button>

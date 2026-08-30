@@ -7,14 +7,14 @@ export const urlImagenPatronCorte = urlArchivoSubido;
 export async function crearPatronCorte(
   numeroInterno: number,
   nombre: string,
-  idTipoPrenda: number,
+  idsTipoPrenda: number[],
   imagen: File,
   gramosPorColor: number[],
 ): Promise<PatronCorteResponse> {
   const formData = new FormData();
   formData.append('numeroInterno', String(numeroInterno));
   formData.append('nombre', nombre);
-  formData.append('idTipoPrenda', String(idTipoPrenda));
+  idsTipoPrenda.forEach((id) => formData.append('idsTipoPrenda', String(id)));
   formData.append('imagen', imagen);
   gramosPorColor.forEach((gramos) => formData.append('gramosPorColor', String(gramos)));
 

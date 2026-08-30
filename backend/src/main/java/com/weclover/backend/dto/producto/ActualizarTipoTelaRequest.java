@@ -1,12 +1,10 @@
 package com.weclover.backend.dto.producto;
 
-import com.weclover.backend.entity.TipoTela;
-
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
 public record ActualizarTipoTelaRequest(
 
-    @NotNull(message = "Debe indicar el tipo de tela")
-    TipoTela tipoTela
+    @NotBlank(message = "Debe indicar el tipo de tela")
+    String tipoTela
 ) {
 }

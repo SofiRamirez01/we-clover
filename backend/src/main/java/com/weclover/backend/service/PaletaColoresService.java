@@ -11,8 +11,10 @@ import com.weclover.backend.dto.paletacolores.PaletaColorResponse;
 import com.weclover.backend.entity.PaletaColores;
 import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.exception.BusinessRuleException;
+import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PaletaColorMapper;
 import com.weclover.backend.repository.PaletaColoresRepository;
+import com.weclover.backend.repository.TipoTelaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,18 +28,20 @@ public class PaletaColoresService {
     );
 
     private final PaletaColoresRepository paletaColoresRepository;
+    private final TipoTelaRepository tipoTelaRepository;
     private final PaletaColorMapper paletaColorMapper;
     private final AutorizacionService autorizacionService;
 
     /**
      * Lectura sin restricción de rol: es un catálogo de solo lectura y baja sensibilidad,
-     * igual criterio que GET /api/tipos-prenda. `tipoTela` es opcional: si se indica, solo
-     * devuelve los colores de esa tela (o de "cierre").
+     * igual criterio que GET /api/tipos-prenda. `codigoTipoTela` es opcional: si se indica,
+     * solo devuelve los colores de esa tela (o de "cierre"). Se recibe como código de texto
+     * (ej. "FRIZA") para no cambiar el contrato que ya usa el frontend.
      */
     @Transactional(readOnly = true)
-    public List<PaletaColorResponse> listarActivos(TipoTela tipoTela) {
-        List<PaletaColores> colores = tipoTela != null
-            ? paletaColoresRepository.findByActivoTrueAndTipoTelaOrderByNombreAsc(tipoTela)
+    public List<PaletaColorResponse> listarActivos(String codigoTipoTela) {
+        List<PaletaColores> colores = codigoTipoTela != null
+            ? paletaColoresRepository.findByActivoTrueAndTipoTela_CodigoOrderByNombreAsc(codigoTipoTela)
             : paletaColoresRepository.findByActivoTrueOrderByNombreAsc();
 
         return colores.stream()
@@ -49,15 +53,18 @@ public class PaletaColoresService {
     public PaletaColorResponse crearColor(PaletaColorCreateRequest request, Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_ALTA_COLOR);
 
-        if (paletaColoresRepository.existsByNombreIgnoreCaseAndTipoTela(request.nombre(), request.tipoTela())) {
+        TipoTela tipoTela = tipoTelaRepository.findByCodigo(request.tipoTela())
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el tipo de tela " + request.tipoTela()));
+
+        if (paletaColoresRepository.existsByNombreIgnoreCaseAndTipoTela(request.nombre(), tipoTela)) {
             throw new BusinessRuleException(
-                "Ya existe un color de " + request.tipoTela() + " en la paleta con el nombre " + request.nombre());
+                "Ya existe un color de " + tipoTela.getNombre() + " en la paleta con el nombre " + request.nombre());
         }
 
         PaletaColores paletaColor = PaletaColores.builder()
             .nombre(request.nombre())
             .hex(request.hex().toUpperCase())
-            .tipoTela(request.tipoTela())
+            .tipoTela(tipoTela)
             .activo(true)
             .build();
 

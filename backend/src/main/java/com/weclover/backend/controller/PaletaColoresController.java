@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.weclover.backend.dto.paletacolores.PaletaColorCreateRequest;
 import com.weclover.backend.dto.paletacolores.PaletaColorResponse;
-import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.service.PaletaColoresService;
 
 import jakarta.validation.Valid;
@@ -28,7 +27,7 @@ public class PaletaColoresController {
     private final PaletaColoresService paletaColoresService;
 
     @GetMapping
-    public List<PaletaColorResponse> listar(@RequestParam(required = false) TipoTela tipoTela) {
+    public List<PaletaColorResponse> listar(@RequestParam(required = false) String tipoTela) {
         return paletaColoresService.listarActivos(tipoTela);
     }
 

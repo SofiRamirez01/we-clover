@@ -12,7 +12,7 @@ public interface PaletaColoresRepository extends JpaRepository<PaletaColores, Lo
 
     List<PaletaColores> findByActivoTrueOrderByNombreAsc();
 
-    List<PaletaColores> findByActivoTrueAndTipoTelaOrderByNombreAsc(TipoTela tipoTela);
+    List<PaletaColores> findByActivoTrueAndTipoTela_CodigoOrderByNombreAsc(String codigoTipoTela);
 
     boolean existsByNombreIgnoreCaseAndTipoTela(String nombre, TipoTela tipoTela);
 

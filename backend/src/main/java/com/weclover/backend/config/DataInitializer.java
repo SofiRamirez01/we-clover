@@ -22,6 +22,7 @@ import com.weclover.backend.repository.PaletaColoresRepository;
 import com.weclover.backend.repository.PermisoRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
+import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final ColegioRepository colegioRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
+    private final TipoTelaRepository tipoTelaRepository;
     private final PaletaColoresRepository paletaColoresRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -104,10 +106,40 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
         }
 
-        // Catálogo base x cada tela (y "cierre"): mismos 10 nombres/hex para las 4 categorías
-        // de TipoTela, insertados de forma idempotente por combinación (nombre, tipoTela) en
-        // vez de por count()==0, porque esta tabla ya traía datos reales de antes de agregar
-        // la columna tipo_tela (ver doc/pantallas-pendientes.md, migración manual de esa fecha).
+        // Catálogo de tipos de tela/insumo (antes era el enum TipoTela): sembrado idempotente
+        // por código, para que agregar uno nuevo (ej. Corderito) alguna vez sea solo una fila
+        // más acá, no un deploy. "codigo" es la clave estable del contrato de la API (ver
+        // TipoTela.java); "nombre" es el humano-legible, todavía sin usar en el front.
+        record DefinicionTipoTela(String codigo, String nombre, boolean esPorPeso, boolean telaCuerpo, Integer gramosSugerido) {
+        }
+
+        List<DefinicionTipoTela> definicionesTipoTela = List.of(
+            new DefinicionTipoTela("FRIZA", "Friza", true, true, null),
+            new DefinicionTipoTela("JERSEY", "Jersey", true, true, 70),
+            new DefinicionTipoTela("PIQUE", "Piqué", true, true, null),
+            new DefinicionTipoTela("SPUM", "Spum", true, true, null),
+            new DefinicionTipoTela("RIBB", "Ribb", true, false, 60),
+            new DefinicionTipoTela("CIERRE", "Cierre", false, false, null)
+        );
+
+        definicionesTipoTela.forEach(def -> {
+            if (!tipoTelaRepository.existsByCodigo(def.codigo())) {
+                tipoTelaRepository.save(TipoTela.builder()
+                    .codigo(def.codigo())
+                    .nombre(def.nombre())
+                    .esPorPeso(def.esPorPeso())
+                    .telaCuerpo(def.telaCuerpo())
+                    .gramosSugerido(def.gramosSugerido())
+                    .activo(true)
+                    .build());
+            }
+        });
+
+        // Catálogo base de colores x cada tipo de tela (y "cierre"): mismos 10 nombres/hex
+        // para cada fila de tipos_tela, insertados de forma idempotente por combinación
+        // (nombre, tipoTela) en vez de por count()==0, porque esta tabla ya traía datos
+        // reales de antes de agregar esta segmentación (ver doc/tareas-realizadas.md,
+        // migraciones manuales de esas fechas).
         Map<String, String> paletaBase = new LinkedHashMap<>();
         paletaBase.put("Marino", "#14213D");
         paletaBase.put("Blanco", "#FFFFFF");
@@ -120,7 +152,7 @@ public class DataInitializer implements CommandLineRunner {
         paletaBase.put("Amarillo", "#FFD500");
         paletaBase.put("Rojo", "#C8102E");
 
-        for (TipoTela tipoTela : TipoTela.values()) {
+        for (TipoTela tipoTela : tipoTelaRepository.findAll()) {
             paletaBase.forEach((nombre, hex) -> {
                 if (!paletaColoresRepository.existsByNombreIgnoreCaseAndTipoTela(nombre, tipoTela)) {
                     paletaColoresRepository.save(PaletaColores.builder()

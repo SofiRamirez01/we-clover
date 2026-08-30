@@ -7,10 +7,24 @@ import jakarta.validation.constraints.Size;
 
 public record ProductoCreateRequest(
 
+    /**
+     * Null para una prenda nueva. Al editar un pedido (PedidoService.actualizarPedido), si se
+     * manda, identifica qué Producto existente actualizar in-place en vez de recrearlo —
+     * necesario para no perder la moldería/tela/imagen/colores ya cargados desde Ficha
+     * Técnica. Se ignora en el alta de pedido (crearPedido), donde todos los productos son
+     * nuevos.
+     */
+    Long id,
+
     @NotNull(message = "Debe seleccionar el tipo de prenda")
     Long idTipoPrenda,
 
-    @NotNull(message = "Debe seleccionar el patrón de corte")
+    /**
+     * Ya no es obligatorio en el alta del pedido: la moldería (nombre de negocio para
+     * PatronCorte) se elige después, desde Ficha Técnica (ver
+     * ProductoService.actualizarPatronCorte). Se mantiene el campo/endpoint sin cambios de
+     * forma para no romper al frontend que ya existe.
+     */
     Long idPatronCorte,
 
     @Positive(message = "La cantidad debe ser mayor a cero")

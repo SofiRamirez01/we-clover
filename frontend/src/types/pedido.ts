@@ -1,4 +1,4 @@
-import type { TipoTela } from './paletaColores';
+import type { ProductoInsumoSecundarioResponse, TipoTela } from './paletaColores';
 
 export interface TipoPrendaOption {
   id: number;
@@ -6,8 +6,13 @@ export interface TipoPrendaOption {
 }
 
 export interface ProductoCreateRequest {
+  /** Solo se usa al editar un pedido existente: identifica el Producto a actualizar in-place
+   *  en vez de recrearlo, para no perder moldería/tela/imagen/colores. Ausente para una prenda
+   *  nueva o en el alta de un pedido. */
+  id?: number;
   idTipoPrenda: number;
-  idPatronCorte: number;
+  /** Ya no se elige en el alta del pedido — se completa después desde Ficha Técnica ("Moldería"). */
+  idPatronCorte?: number;
   cantidadTotal: number;
   costo: number;
   observaciones?: string;
@@ -52,6 +57,7 @@ export interface ProductoResponse {
   imagenDisenoUrl: string | null;
   estadoActual: EstadoPedido;
   colores: ProductoColorResponse[];
+  insumosSecundarios: ProductoInsumoSecundarioResponse[];
 }
 
 export type EstadoPedido =

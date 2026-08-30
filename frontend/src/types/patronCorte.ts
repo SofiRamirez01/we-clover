@@ -1,3 +1,5 @@
+import type { TipoPrendaOption } from './pedido';
+
 export interface PatronCorteColorResponse {
   id: number;
   orden: number;
@@ -8,8 +10,7 @@ export interface PatronCorteResponse {
   id: number;
   numeroInterno: number;
   nombre: string;
-  idTipoPrenda: number;
-  tipoPrenda: string;
+  tiposPrenda: TipoPrendaOption[];
   imagenUrl: string;
   cantidadColores: number;
   activo: boolean;

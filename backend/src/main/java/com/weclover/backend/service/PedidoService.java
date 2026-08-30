@@ -4,7 +4,10 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
+import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -46,16 +50,18 @@ public class PedidoService {
     private static final String ROL_CLIENTE = "ROLE_CLIENTE";
 
     /**
-     * Tela por defecto según el nombre del tipo de prenda, precargada al crear el producto
-     * pero editable después desde el selector de tela dentro del modal de gotero (ver
-     * ModalColoresGotero.tsx / ProductoService.actualizarTipoTela).
+     * Código de tela por defecto según el nombre del tipo de prenda (ver TipoTela.codigo),
+     * precargada al crear el producto pero editable después desde el selector de tela
+     * dentro del modal de gotero (ver ModalColoresGotero.tsx / ProductoService.actualizarTipoTela).
+     * TipoTela pasó de enum a entidad, así que acá solo guardamos el código estable y se
+     * resuelve contra la base en cada alta (resolverTipoTelaPorDefecto).
      */
-    private static final Map<String, TipoTela> TIPO_TELA_POR_DEFECTO = Map.of(
-        "Buzo", TipoTela.FRIZA,
-        "Remera", TipoTela.JERSEY,
-        "Chomba", TipoTela.PIQUE,
-        "Campera", TipoTela.FRIZA,
-        "Bandera", TipoTela.SPUM
+    private static final Map<String, String> CODIGO_TIPO_TELA_POR_DEFECTO = Map.of(
+        "Buzo", "FRIZA",
+        "Remera", "JERSEY",
+        "Chomba", "PIQUE",
+        "Campera", "FRIZA",
+        "Bandera", "SPUM"
     );
 
     private final PedidoRepository pedidoRepository;
@@ -64,9 +70,11 @@ public class PedidoService {
     private final RolRepository rolRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
     private final PatronCorteRepository patronCorteRepository;
+    private final TipoTelaRepository tipoTelaRepository;
     private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
+    private final ProductoService productoService;
 
     @Transactional
     public PedidoResponse crearPedido(PedidoCreateRequest request) {
@@ -131,15 +139,13 @@ public class PedidoService {
             TipoPrenda tipoPrenda = tipoPrendaRepository.findById(productoRequest.idTipoPrenda())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "No existe el tipo de prenda con id " + productoRequest.idTipoPrenda()));
-            PatronCorte patronCorte = patronCorteRepository.findById(productoRequest.idPatronCorte())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    "No existe el patrón de corte con id " + productoRequest.idPatronCorte()));
+            PatronCorte patronCorte = resolverPatronCorte(productoRequest.idPatronCorte());
 
             Producto producto = Producto.builder()
                 .pedido(pedido)
                 .tipoPrenda(tipoPrenda)
                 .patronCorte(patronCorte)
-                .tipoTela(TIPO_TELA_POR_DEFECTO.get(tipoPrenda.getNombre()))
+                .tipoTela(resolverTipoTelaPorDefecto(tipoPrenda))
                 .cantidadTotal(productoRequest.cantidadTotal())
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())
@@ -274,27 +280,52 @@ public class PedidoService {
             pedido.setEstadoActual(request.estado());
         }
 
-        pedido.getProductos().clear();
+        // Se matchea por id en vez de recrear todo (clear()+alta de cero), que borraba en cada
+        // edición del pedido la moldería/tela/imagen/estado/colores cargados aparte desde Ficha
+        // Técnica (ver doc/pantallas-pendientes.md). Un producto solo se borra si el usuario lo
+        // quita explícitamente del formulario (no viaja su id en el payload).
+        Set<Long> idsEnPayload = request.productos().stream()
+            .map(ProductoCreateRequest::id)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        pedido.getProductos().removeIf(producto -> !idsEnPayload.contains(producto.getId()));
+
+        Map<Long, Producto> productosExistentesPorId = pedido.getProductos().stream()
+            .collect(Collectors.toMap(Producto::getId, producto -> producto));
+
         for (ProductoCreateRequest productoRequest : request.productos()) {
             TipoPrenda tipoPrenda = tipoPrendaRepository.findById(productoRequest.idTipoPrenda())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "No existe el tipo de prenda con id " + productoRequest.idTipoPrenda()));
-            PatronCorte patronCorte = patronCorteRepository.findById(productoRequest.idPatronCorte())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    "No existe el patrón de corte con id " + productoRequest.idPatronCorte()));
 
-            Producto producto = Producto.builder()
-                .pedido(pedido)
-                .tipoPrenda(tipoPrenda)
-                .patronCorte(patronCorte)
-                .tipoTela(TIPO_TELA_POR_DEFECTO.get(tipoPrenda.getNombre()))
-                .cantidadTotal(productoRequest.cantidadTotal())
-                .costo(productoRequest.costo())
-                .observaciones(productoRequest.observaciones())
-                .imagenDisenoUrl(productoRequest.imagenDisenoUrl())
-                .estadoActual(request.estado())
-                .build();
-            pedido.getProductos().add(producto);
+            if (productoRequest.id() != null) {
+                Producto existente = productosExistentesPorId.get(productoRequest.id());
+                if (existente == null) {
+                    throw new ResourceNotFoundException(
+                        "El producto con id " + productoRequest.id() + " no pertenece a este pedido");
+                }
+                // Solo los campos editables desde este formulario. La moldería, tela, imagen,
+                // estado de producción y colores se gestionan aparte desde Ficha Técnica y no
+                // deben tocarse acá.
+                existente.setTipoPrenda(tipoPrenda);
+                existente.setCantidadTotal(productoRequest.cantidadTotal());
+                existente.setCosto(productoRequest.costo());
+                existente.setObservaciones(productoRequest.observaciones());
+            } else {
+                PatronCorte patronCorte = resolverPatronCorte(productoRequest.idPatronCorte());
+                Producto nuevo = Producto.builder()
+                    .pedido(pedido)
+                    .tipoPrenda(tipoPrenda)
+                    .patronCorte(patronCorte)
+                    .tipoTela(resolverTipoTelaPorDefecto(tipoPrenda))
+                    .cantidadTotal(productoRequest.cantidadTotal())
+                    .costo(productoRequest.costo())
+                    .observaciones(productoRequest.observaciones())
+                    .imagenDisenoUrl(productoRequest.imagenDisenoUrl())
+                    .estadoActual(request.estado())
+                    .build();
+                pedido.getProductos().add(nuevo);
+            }
         }
 
         Pedido actualizado = pedidoRepository.save(pedido);
@@ -332,9 +363,37 @@ public class PedidoService {
         return total;
     }
 
+    /**
+     * La moldería (PatronCorte) ya no es obligatoria en el alta del pedido — se elige después
+     * desde Ficha Técnica (ver ProductoService.actualizarPatronCorte). null si no se mandó id.
+     */
+    private PatronCorte resolverPatronCorte(Long idPatronCorte) {
+        if (idPatronCorte == null) {
+            return null;
+        }
+        return patronCorteRepository.findById(idPatronCorte)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el patrón de corte con id " + idPatronCorte));
+    }
+
+    /** null si tipoPrenda no tiene default (ver CODIGO_TIPO_TELA_POR_DEFECTO) o si esa fila no está en el catálogo. */
+    private TipoTela resolverTipoTelaPorDefecto(TipoPrenda tipoPrenda) {
+        String codigo = CODIGO_TIPO_TELA_POR_DEFECTO.get(tipoPrenda.getNombre());
+        return codigo != null ? tipoTelaRepository.findByCodigo(codigo).orElse(null) : null;
+    }
+
     private PedidoResponse construirRespuesta(Pedido pedido) {
         PedidoResponse base = pedidoMapper.toResponse(pedido);
-        float precioTotal = base.productos().stream()
+
+        // PedidoMapper arma base.productos() vía ProductoMapper directo (MapStruct), que no
+        // sabe completar idColorCierre/nombreColorCierre/hexColorCierre (ya no son un campo
+        // directo de Producto — ver ProductoService.construirRespuesta). Se reconstruye la
+        // lista acá para que el contrato de ProductoResponse sea el mismo se llegue por
+        // GET /api/pedidos o por los endpoints propios de /api/productos.
+        List<ProductoResponse> productos = pedido.getProductos().stream()
+            .map(productoService::construirRespuesta)
+            .toList();
+
+        float precioTotal = productos.stream()
             .map(ProductoResponse::subtotal)
             .reduce(0f, Float::sum);
         float saldo = precioTotal - base.pagoInicial();
@@ -362,7 +421,7 @@ public class PedidoService {
             base.idVendedor(),
             base.nombreVendedor(),
             base.emailVendedor(),
-            base.productos(),
+            productos,
             precioTotal,
             base.pagoInicial(),
             saldo,

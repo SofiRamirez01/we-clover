@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -19,8 +20,8 @@ public record PatronCorteCreateRequest(
     @Size(max = 150, message = "El nombre no puede superar los 150 caracteres")
     String nombre,
 
-    @NotNull(message = "Debe seleccionar el tipo de prenda")
-    Long idTipoPrenda,
+    @NotEmpty(message = "Debe seleccionar al menos un tipo de prenda")
+    List<@NotNull Long> idsTipoPrenda,
 
     @NotNull(message = "Debe adjuntar la imagen del patrón")
     MultipartFile imagen,
