@@ -10,6 +10,104 @@ ahí se termine, se migra el detalle acá y se borra de pantallas-pendientes.
 
 Orden: más reciente primero. Última actualización: 2026-08-30.
 
+## Selector de color con buscador (`ComboboxColor`) (2026-08-30)
+
+Componente nuevo `frontend/src/components/ComboboxColor.tsx`: reemplaza cualquier `<select>`
+nativo que liste `PaletaColores` por un combobox con buscador por nombre (input + lista
+filtrada + navegación por teclado — flechas, Enter, Escape), sin agregar ninguna dependencia
+nueva (la app no traía ninguna librería de combobox, así que es una implementación propia
+liviana). Se hizo genérico a propósito para no repetir la lógica de filtrado en cada pantalla:
+recibe `colores: PaletaColorResponse[]`, `value: number | ''`, `onChange`, y un flag
+`compacto` para filas apretadas (ej. una planilla). Reemplazado en **todos** los lugares del
+front que tenían un `<select>` de colores (se revisó todo el código buscando `idPaletaColor`,
+no solo los mencionados a mano):
+- `ModalColoresGotero.tsx` (Ficha Técnica): el selector de color al confirmar una posición del
+  gotero, el selector de "Color de cierre", y el selector de color de `FilaInsumoEditor`
+  (compartido por Capucha, Puños y cintura, e insumos libres).
+- `features/stock/FilaStockNuevaRow.tsx` y `FilaStockGuardadaRow.tsx` (ver Registro de Stock
+  más abajo).
+
+`ModalDetalleColor.tsx` (Carta de colores) y `ModalNuevoColor.tsx` no tenían selector de color
+(son la propia carta / el alta de un color nuevo, no una elección entre varios) — no se tocaron.
+
+## Registro de Stock — Fase 1 (2026-08-30)
+
+Pestaña nueva "Stock": auditoría física de telas por color y proveedor. No es un historial de
+movimientos — es un "valor actual" por artículo que se pisa en cada carga, igual que
+`ArticuloProveedor` (catálogo, no ledger). Ver [[project-planificador-compras-fase3]] para el
+contexto de por qué existe la Fase 2 (todavía no implementada, ver pantallas-pendientes.md).
+
+- Entidad nueva `ArticuloStock`: envoltorio 1 a 1 sobre `PaletaColores` (FK única) a propósito
+  — el día que se sume stock de insumos indirectos (hilos, friselina, cintas), esta FK pasa a
+  nullable y se agrega una segunda FK nullable hacia esa futura entidad, sin migrar `stock`.
+- Entidad nueva `Stock`: `articulo` + `proveedor` + `cantidad` + `fechaUltimaActualizacion` +
+  `actualizadoPor`, con unique constraint `(id_articulo_stock, id_proveedor)`. **Decisión
+  tomada con el usuario** (ver [[feedback-ask-before-schema-decisions]]): `proveedor` es
+  **nullable** — permite auditar "hay tanta cantidad de esta tela" sin saber con certeza de
+  qué proveedor es (telas viejas en depósito sin trazabilidad). La unique constraint no cubre
+  ese caso (MySQL no considera dos `NULL` iguales), así que "a lo sumo una fila sin proveedor
+  por artículo" se hace cumplir a mano en `StockService.guardarUnItem` (busca-o-crea antes de
+  insertar, mismo mecanismo que para un proveedor puntual).
+- `unidadMedida` no se persiste: se deriva en `StockMapper` desde
+  `articulo.paletaColor.tipoTela.esPorPeso` (mismo enum `UnidadMedida` que `ArticuloProveedor`).
+- Servicio: `listar()` (join fetch de articulo→paletaColor→tipoTela, proveedor y
+  actualizadoPor en una sola query, para no pagar N+1 en la grilla) y `guardarCambios` (todo o
+  nada, `@Transactional`, upsert por item: resuelve o crea el `ArticuloStock` del color, busca
+  la fila de `(articulo, proveedor)` — o la "sin proveedor" — y la actualiza, o crea una
+  nueva). Mismo criterio de roles que Proveedores/Planificador: solo `ROLE_ADMINISTRATIVO`,
+  tanto lectura como escritura (ver el punto ya abierto sobre esto en pantallas-pendientes.md).
+- `DELETE /api/stock/{id}` sin restricciones de estado — se puede borrar una fila en cualquier
+  momento (no hay concepto de "movimiento" que proteger).
+- Endpoints: `GET /api/stock`, `POST /api/stock/guardar-cambios` (batch), `DELETE /api/stock/{id}`.
+
+Frontend `StockView` — **rediseñado tras probar la primera versión** (el usuario la corrió a
+mano y volvió con feedback concreto, ver más abajo): pestañas por tipo de tela, igual patrón
+que `CartaColoresView` (misma lista `ORDEN_PESTANAS_PRIORITARIO`), en vez de una sola planilla
+larga agrupada con `<h3>`. Cada pestaña filtra tanto las filas de stock como el selector de
+colores de "+ Agregar fila" a la tela activa.
+
+Guardado **por fila, no en batch**: se sacó por completo el botón global "Guardar cambios" y
+el modal de resumen previo — cada fila tiene su propio tilde (✓) que guarda solo esa fila
+llamando a `guardarCambios` con un array de un elemento (el backend no cambió, ya soportaba
+esto). Una fila ya persistida (`FilaStockGuardadaRow`) muestra color/proveedor/cantidad de solo
+lectura con un lápiz al lado; recién al tocar el lápiz se desbloquea **la fila completa**
+(color, proveedor y cantidad, los tres editables — no solo la cantidad, por si al auditar se
+dieron cuenta de que cargaron mal el proveedor y lo quieren corregir ahí mismo en vez de borrar
+y recrear la fila) — así "última actualización"/"actualizado por" quedan atadas a una acción
+explícita del usuario, no a cada tecla tipeada. El tilde dispara un `ModalConfirmacion` puntual
+de esa fila mostrando "antes → después" (color · proveedor · cantidad) antes de guardar (mismo
+aviso de sobreescritura que pedía el negocio, ahora por fila en vez de en un resumen agrupado);
+si no cambió nada, no llama a la API.
+
+Cambiar color y/o proveedor de una fila existente es más delicado de lo que parece: `Stock` se
+identifica en el backend por `(articulo, proveedor)`, no tiene "renombrar" una fila — así que
+`StockView.handleGuardarFilaExistente` primero crea la fila con la identidad nueva
+(`guardarCambios`) y **recién después** borra la vieja (`DELETE`), en ese orden, para no perder
+el dato si la creación llegara a fallar. Antes de eso, si la combinación nueva de color+
+proveedor ya la usa otra fila de la grilla, se bloquea con un error inline en vez de dejar
+guardar (mismo criterio de "no duplicar" que en altas nuevas). El color solo se puede cambiar
+dentro de la misma pestaña/tela — para mover una fila a otra tela hay que borrarla y crearla de
+nuevo ahí.
+
+"+ Agregar fila" ya no es un popup: agrega una fila nueva (`FilaStockNuevaRow`) al final de la
+tabla de la pestaña activa, con selects de color (solo los de esa tela) + proveedor + input de
+cantidad + su propio tilde/cruz — cancelar una fila nueva sin guardar solo la saca del estado
+local, no llama al backend. El tachito de basura de una fila ya persistida sigue pidiendo
+confirmación (`DELETE` + `ModalConfirmacion`, por ser destructivo).
+
+Probado con `curl` sobre datos reales (proveedores/color de prueba, borrados después):
+mismo color con 2 proveedores distintos + una fila "sin proveedor" → 3 filas independientes;
+pisar la cantidad de un proveedor no afecta a los otros dos; guardado de una fila individual
+(alta y sobrescritura) con el mismo payload de 1 elemento que ahora manda el tilde por fila;
+`DELETE` de una fila puntual; rechazo con 403 al guardar sin rol `ROLE_ADMINISTRATIVO`; rechazo
+con 400 ante cantidad negativa (`@PositiveOrZero` en el DTO, mismo criterio que
+`ArticuloProveedor.precioEstimado`). Verificado el DDL generado por `ddl-auto=update`:
+`stock.id_proveedor` sin `not null`, `articulos_stock.id_paleta_color` con la unique
+constraint. Frontend type-checkea limpio (`tsc --noEmit`) y Vite transforma los componentes
+nuevos sin error, pero de nuevo **no se pudo hacer un click-through real en un navegador** en
+esta sesión (sin herramienta de automatización de browser disponible) — el primer redondeo de
+feedback del usuario vino de que él sí la probó a mano.
+
 ## Borradores de Planificación de Compra en base de datos (2026-08-30)
 
 Reemplaza el borrador en `localStorage` de la entrada anterior por borradores reales en la

@@ -9,6 +9,7 @@ import PatronesCorteView from './features/patrones-corte/PatronesCorteView';
 import FichasTecnicasView from './features/fichas-tecnicas/FichasTecnicasView';
 import CartaColoresView from './features/carta-colores/CartaColoresView';
 import PlanificadorComprasView from './features/planificador-compras/PlanificadorComprasView';
+import StockView from './features/stock/StockView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { PedidoResponse } from './types/pedido';
 import './App.css';
@@ -68,6 +69,8 @@ function AppShell() {
     contenido = <CartaColoresView />;
   } else if (view === 'planificador-compras') {
     contenido = <PlanificadorComprasView />;
+  } else if (view === 'stock') {
+    contenido = <StockView />;
   } else {
     contenido = <FichasTecnicasView />;
   }

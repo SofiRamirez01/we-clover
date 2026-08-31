@@ -98,6 +98,14 @@ const CartaColoresIcon = (props: IconProps) => (
   </svg>
 );
 
+const StockIcon = (props: IconProps) => (
+  <svg {...baseIconProps(props)}>
+    <path d="M3.5 8 12 3.5 20.5 8 12 12.5 3.5 8Z" />
+    <path d="M3.5 8v8L12 20.5 20.5 16V8" />
+    <path d="M12 12.5v8" />
+  </svg>
+);
+
 const ConfigIcon = (props: IconProps) => (
   <svg {...baseIconProps(props)}>
     <circle cx="12" cy="12" r="3" />
@@ -125,7 +133,8 @@ export type AppView =
   | 'patrones-corte'
   | 'fichas-tecnicas'
   | 'carta-colores'
-  | 'planificador-compras';
+  | 'planificador-compras'
+  | 'stock';
 
 interface NavItem {
   label: string;
@@ -141,6 +150,7 @@ const NAV_ITEMS_RAIZ: NavItem[] = [
   { label: 'Ficha Técnica', icon: FichaTecnicaIcon, view: 'fichas-tecnicas' },
   { label: 'Producción', icon: ProduccionIcon },
   { label: 'Planificador Compras', icon: ComprasIcon, view: 'planificador-compras', soloAdministrativo: true },
+  { label: 'Stock', icon: StockIcon, view: 'stock', soloAdministrativo: true },
   { label: 'Motor Tizada', icon: TizadaIcon },
   { label: 'Reportes', icon: ReportesIcon },
 ];

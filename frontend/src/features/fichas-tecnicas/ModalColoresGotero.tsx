@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, Dispatch, MouseEvent, SetStateAction } from 'react';
+import ComboboxColor from '../../components/ComboboxColor';
 import { crearColorPaleta, listarPaletaColores } from '../../services/paletaColoresService';
 import { listarPatronesCorte } from '../../services/patronCorteService';
 import { listarTiposTela } from '../../services/tipoTelaService';
@@ -133,7 +134,7 @@ function FilaInsumoEditor({
    *  Capucha/Puños, esa etiqueta ya es fija y se ve en el título de la sección, así que se omite). */
   descripcion?: { valor: string; onCambiar: (valor: string) => void };
   onCambiarTipo: (valor: string) => void;
-  onCambiarColor: (valor: string) => void;
+  onCambiarColor: (idPaletaColor: number | '') => void;
   onCambiarCantidad: (valor: string) => void;
   onEliminar: () => void;
 }) {
@@ -157,19 +158,15 @@ function FilaInsumoEditor({
           </option>
         ))}
       </select>
-      <select
+      <ComboboxColor
+        colores={colores}
         value={fila.idPaletaColor}
-        onChange={(e) => onCambiarColor(e.target.value)}
+        onChange={onCambiarColor}
+        placeholder="Color…"
         disabled={fila.idTipoTela === ''}
-        className={`${inputSelectClase} flex-1 min-w-[7rem]`}
-      >
-        <option value="">Color…</option>
-        {colores.map((color) => (
-          <option key={color.id} value={color.id}>
-            {color.nombre}
-          </option>
-        ))}
-      </select>
+        compacto
+        className="flex-1 min-w-[7rem]"
+      />
       <input
         type="number"
         min={0}
@@ -788,28 +785,12 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
             {esCampera && (
               <div className="flex flex-col gap-1.5 rounded-lg border border-wc-border p-3">
                 <span className="text-xs font-semibold text-wc-text">Color de cierre</span>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={cierreDraft ?? ''}
-                    onChange={(e) => setCierreDraft(Number(e.target.value))}
-                    className="flex-1 rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text outline-none"
-                  >
-                    <option value="" disabled>
-                      Se completa con el Color 1
-                    </option>
-                    {coloresCierre.map((color) => (
-                      <option key={color.id} value={color.id}>
-                        {color.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  {cierreDraft != null && (
-                    <span
-                      className="h-5 w-5 shrink-0 rounded-full border border-wc-border"
-                      style={{ backgroundColor: coloresCierre.find((c) => c.id === cierreDraft)?.hex }}
-                    />
-                  )}
-                </div>
+                <ComboboxColor
+                  colores={coloresCierre}
+                  value={cierreDraft ?? ''}
+                  onChange={(id) => setCierreDraft(id === '' ? null : id)}
+                  placeholder="Se completa con el Color 1"
+                />
               </div>
             )}
 
@@ -894,17 +875,12 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
 
                       {!creandoColor ? (
                         <div className="flex flex-wrap items-center gap-2">
-                          <select
+                          <ComboboxColor
+                            colores={paleta}
                             value={pendiente.idPaletaColor}
-                            onChange={(e) => setPendiente({ ...pendiente, idPaletaColor: Number(e.target.value) })}
-                            className="rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
-                          >
-                            {paleta.map((color) => (
-                              <option key={color.id} value={color.id}>
-                                {color.nombre}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={(id) => id !== '' && setPendiente({ ...pendiente, idPaletaColor: id })}
+                            className="min-w-[9rem]"
+                          />
                           <button
                             type="button"
                             onClick={() => {
@@ -1039,7 +1015,7 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
                         tiposTela={tiposTela}
                         colores={coloresParaTipoTela(fila.idTipoTela)}
                         onCambiarTipo={(valor) => actualizarFila(setCapuchaFilas, fila.id, filaConTipoTela(valor, tiposTela))}
-                        onCambiarColor={(valor) => actualizarFila(setCapuchaFilas, fila.id, { idPaletaColor: valor === '' ? '' : Number(valor) })}
+                        onCambiarColor={(idPaletaColor) => actualizarFila(setCapuchaFilas, fila.id, { idPaletaColor })}
                         onCambiarCantidad={(valor) => actualizarFila(setCapuchaFilas, fila.id, { cantidad: valor })}
                         onEliminar={() => eliminarFila(setCapuchaFilas, fila.id)}
                       />
@@ -1064,7 +1040,7 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
                         tiposTela={tiposTela}
                         colores={coloresParaTipoTela(fila.idTipoTela)}
                         onCambiarTipo={(valor) => actualizarFila(setPunosFilas, fila.id, filaConTipoTela(valor, tiposTela))}
-                        onCambiarColor={(valor) => actualizarFila(setPunosFilas, fila.id, { idPaletaColor: valor === '' ? '' : Number(valor) })}
+                        onCambiarColor={(idPaletaColor) => actualizarFila(setPunosFilas, fila.id, { idPaletaColor })}
                         onCambiarCantidad={(valor) => actualizarFila(setPunosFilas, fila.id, { cantidad: valor })}
                         onEliminar={() => eliminarFila(setPunosFilas, fila.id)}
                       />
@@ -1090,7 +1066,7 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
                         colores={coloresParaTipoTela(fila.idTipoTela)}
                         descripcion={{ valor: fila.descripcion, onCambiar: (valor) => actualizarFila(setFilasLibres, fila.id, { descripcion: valor }) }}
                         onCambiarTipo={(valor) => actualizarFila(setFilasLibres, fila.id, filaConTipoTela(valor, tiposTela))}
-                        onCambiarColor={(valor) => actualizarFila(setFilasLibres, fila.id, { idPaletaColor: valor === '' ? '' : Number(valor) })}
+                        onCambiarColor={(idPaletaColor) => actualizarFila(setFilasLibres, fila.id, { idPaletaColor })}
                         onCambiarCantidad={(valor) => actualizarFila(setFilasLibres, fila.id, { cantidad: valor })}
                         onEliminar={() => eliminarFila(setFilasLibres, fila.id)}
                       />

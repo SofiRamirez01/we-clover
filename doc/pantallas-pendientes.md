@@ -8,6 +8,26 @@ detalle a ese archivo y borrarlo de este.
 
 Última actualización: 2026-08-30.
 
+## Registro de Stock — Fase 2 (descuento en el Planificador de Compras)
+
+Fase 1 (ver tareas-realizadas.md) solo deja cargado el "valor actual" de stock por artículo y
+proveedor. Fase 2, todavía sin implementar, es la que le da uso real a ese dato: cuando el
+Planificador de Compras (M3) calcula cuánto hay que comprar de cada color, debería **descontar
+el stock ya disponible** de la cantidad sugerida (sumando `StockRepository.findByArticulo` de
+todos los proveedores de ese color) en vez de sugerir comprar el consumo bruto del pedido.
+Sin decidir todavía:
+- ¿El descuento es informativo (se muestra "tenés X en stock, comprá Y") o directamente resta
+  de la cantidad final que arma `PlanificacionCompraDetalle`?
+- ¿Se descuenta contra el total sumado de todos los proveedores, o hay que elegir de qué
+  proveedor puntual se descuenta (relevante si después hay que reservar/consumir ese stock)?
+- Si se llega a "consumir" stock al confirmar una planificación, hace falta definir si eso
+  resta la cantidad de `Stock` en ese momento o si sigue siendo un valor de auditoría aparte
+  (la Fase 1 dejó explícitamente afuera cualquier concepto de "salida" — habría que revisar
+  esa decisión si Fase 2 termina necesitando restar).
+
+También sin confirmar con el negocio, mismo tipo de decisión que en Proveedores y
+Planificador: se restringió lectura y escritura de `/api/stock` a `ROLE_ADMINISTRATIVO`.
+
 ## Planificador de Compras: sin M4/nesting, sin baja/edición, sin dato de talles
 
 Cosas que quedaron explícitamente afuera de la Fase 3 (ver tareas-realizadas.md):
