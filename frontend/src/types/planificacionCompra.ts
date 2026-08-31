@@ -59,7 +59,13 @@ export interface PlanificacionCompraResponse {
 
 /** Resumen unificado (CAMBIO 5): cantidad total por (tipoTela, color) a lo largo de toda la
  *  planificación, con el estimado en pesos según el proveedor preferido de ese color, si hay
- *  uno cargado (ver ArticuloProveedor.preferido). */
+ *  uno cargado (ver ArticuloProveedor.preferido).
+ *
+ *  Fase 2 (integración con Stock): `stockDisponible` es lo que ya hay auditado para ese color
+ *  (todos los proveedores sumados) y `cantidadAComprar` es `max(0, cantidadNecesaria -
+ *  stockDisponible)` — puramente informativo, no descuenta el Stock real. `estimadoTotal` (y su
+ *  precio unitario) ya vienen calculados por el backend sobre `cantidadAComprar`, no sobre
+ *  `cantidadNecesaria`. */
 export interface ArticuloResumenResponse {
   idTipoTela: number;
   tipoTela: string;
@@ -67,7 +73,9 @@ export interface ArticuloResumenResponse {
   idPaletaColor: number;
   nombreColor: string;
   hexColor: string;
-  cantidad: number;
+  cantidadNecesaria: number;
+  stockDisponible: number;
+  cantidadAComprar: number;
   unidadMedida: UnidadMedida;
   nombreProveedorPreferido: string | null;
   precioUnitarioEstimado: number | null;

@@ -19,6 +19,17 @@ export interface ConsumoArticulo {
   cantidad: number;
 }
 
+const GRAMOS_POR_KILOGRAMO = 1000;
+
+/** `patronCorteColores[].gramos` y `insumosSecundarios[].cantidad` son gramos por prenda (la
+ *  receta de la moldería) — eso no cambia. Al agregar el consumo de un lote de prendas, el
+ *  resultado se expresa en la unidad en la que efectivamente se compra la tela (kilogramos),
+ *  no en gramos — espeja PlanificacionCompraService.convertirAUnidadDeCompra del backend. Los
+ *  insumos que se compran por unidad (ej. Cierre) no se convierten. */
+function convertirAUnidadDeCompra(cantidadEnGramos: number, esPorPeso: boolean): number {
+  return esPorPeso ? cantidadEnGramos / GRAMOS_POR_KILOGRAMO : cantidadEnGramos;
+}
+
 export function calcularConsumoProducto(producto: ProductoResponse, tiposTela: TipoTelaCatalogo[]): ConsumoArticulo[] {
   const acumulado = new Map<string, ConsumoArticulo>();
 
@@ -45,12 +56,14 @@ export function calcularConsumoProducto(producto: ProductoResponse, tiposTela: T
     const gramosPorOrden = new Map(producto.patronCorteColores.map((p) => [p.orden, p.gramos]));
     for (const color of producto.colores) {
       const gramos = gramosPorOrden.get(color.ordenPatronCorteColor) ?? 0;
-      sumar(tipoCuerpo.codigo, tipoCuerpo.nombre, tipoCuerpo.esPorPeso, color.idPaletaColor, color.nombreColor, color.hexColor, gramos * producto.cantidadTotal);
+      const cantidad = convertirAUnidadDeCompra(gramos * producto.cantidadTotal, tipoCuerpo.esPorPeso);
+      sumar(tipoCuerpo.codigo, tipoCuerpo.nombre, tipoCuerpo.esPorPeso, color.idPaletaColor, color.nombreColor, color.hexColor, cantidad);
     }
   }
 
   for (const insumo of producto.insumosSecundarios) {
-    sumar(insumo.tipoTela, insumo.nombreTipoTela, insumo.esPorPeso, insumo.idPaletaColor, insumo.nombreColor, insumo.hexColor, insumo.cantidad * producto.cantidadTotal);
+    const cantidad = convertirAUnidadDeCompra(insumo.cantidad * producto.cantidadTotal, insumo.esPorPeso);
+    sumar(insumo.tipoTela, insumo.nombreTipoTela, insumo.esPorPeso, insumo.idPaletaColor, insumo.nombreColor, insumo.hexColor, cantidad);
   }
 
   return Array.from(acumulado.values());

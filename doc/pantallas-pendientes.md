@@ -8,22 +8,31 @@ detalle a ese archivo y borrarlo de este.
 
 Última actualización: 2026-08-30.
 
-## Registro de Stock — Fase 2 (descuento en el Planificador de Compras)
+## generales
+Componentes de añadir, de filtros, algunos son grises o tienen distinta estetica, unificar, elegir libreria de componentes o ver cual usa para dar mejores indicaciones.
+Botones de editar, borrar unificar iconos y colores.
 
-Fase 1 (ver tareas-realizadas.md) solo deja cargado el "valor actual" de stock por artículo y
-proveedor. Fase 2, todavía sin implementar, es la que le da uso real a ese dato: cuando el
-Planificador de Compras (M3) calcula cuánto hay que comprar de cada color, debería **descontar
-el stock ya disponible** de la cantidad sugerida (sumando `StockRepository.findByArticulo` de
-todos los proveedores de ese color) en vez de sugerir comprar el consumo bruto del pedido.
-Sin decidir todavía:
-- ¿El descuento es informativo (se muestra "tenés X en stock, comprá Y") o directamente resta
-  de la cantidad final que arma `PlanificacionCompraDetalle`?
-- ¿Se descuenta contra el total sumado de todos los proveedores, o hay que elegir de qué
-  proveedor puntual se descuenta (relevante si después hay que reservar/consumir ese stock)?
-- Si se llega a "consumir" stock al confirmar una planificación, hace falta definir si eso
-  resta la cantidad de `Stock` en ese momento o si sigue siendo un valor de auditoría aparte
-  (la Fase 1 dejó explícitamente afuera cualquier concepto de "salida" — habría que revisar
-  esa decisión si Fase 2 termina necesitando restar).
+## Registro de Stock — insumos indirectos y descuento real por corte
+
+Fases 1 y 2 (ver tareas-realizadas.md) ya cubren el registro de stock por color/proveedor y su
+cruce puramente informativo con el Planificador de Compras (`cantidadNecesaria` /
+`stockDisponible` / `cantidadAComprar`, sin tocar el `Stock` real). Quedan dos frentes
+explícitamente afuera de esa entrega:
+
+- **Stock de insumos indirectos** (hilos, friselina, cintas, etc.) que no son colores de la
+  carta de colores. El modelo ya deja lugar para esto (`ArticuloStock` como envoltorio
+  genérico sobre el artículo auditado, ver `ArticuloStock.paletaColor`), pero falta definir:
+  cómo se catalogan estos insumos (¿tienen color? ¿unidad de medida propia, ej. metros de
+  cinta, madejas de hilo?), si tienen proveedor/precio como `ArticuloProveedor`, y si su
+  consumo se calcula con un mecanismo parecido al de Planificación de Compra o necesita uno
+  propio.
+- **Cómo se descuenta el stock real cuando efectivamente se corta un producto.** No está
+  resuelto todavía — probablemente hay que engancharlo a algún cambio de estado de
+  `Producto`/`Pedido` (ej. al pasar a un estado de "cortado"), pero eso queda para una fase
+  futura. Mientras tanto, confirmar una `PlanificacionCompra` sigue sin modificar `Stock` (fue
+  una decisión explícita, no un olvido).
+
+  Actualmente si actualizo el stock, me actualiza todas las planificaciones que contengan ese stock, esta en tiempo real, ver si eso no afecta, si la planificacion es un snapshoot del stock en tal momento. 
 
 También sin confirmar con el negocio, mismo tipo de decisión que en Proveedores y
 Planificador: se restringió lectura y escritura de `/api/stock` a `ROLE_ADMINISTRATIVO`.

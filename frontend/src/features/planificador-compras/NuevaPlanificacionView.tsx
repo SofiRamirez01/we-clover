@@ -65,7 +65,9 @@ export default function NuevaPlanificacionView({
   // Al revés de como se lee: por defecto NO se muestran los ya planificados (hay que tildar
   // para verlos) — antes era al revés (se mostraban salvo que tildaras "excluir").
   const [mostrarYaPlanificados, setMostrarYaPlanificados] = useState(false);
-  const [excluirIncompletos, setExcluirIncompletos] = useState(false);
+  // Por defecto NO se muestran los incompletos (hay que tildar para verlos) — mismo criterio
+  // que "Mostrar ya planificados" arriba.
+  const [incluirIncompletos, setIncluirIncompletos] = useState(false);
   const [pagoDesde, setPagoDesde] = useState('');
   const [pagoHasta, setPagoHasta] = useState('');
 
@@ -80,6 +82,14 @@ export default function NuevaPlanificacionView({
 
   const timeoutAutoguardadoRef = useRef<number | null>(null);
   const idBorradorLocalRef = useRef<number | null>(idBorrador);
+  /** Guarda-en-vuelo: evita que el autoguardado (disparado por el timer) y un guardado
+   *  explícito (ej. "Confirmar planificación", que primero cancela el timer y llama de
+   *  nuevo) corran en paralelo. Sin esto, si el segundo arranca antes de que el primero
+   *  resuelva, `idBorradorLocalRef.current` todavía es null para los dos — ambos toman la
+   *  rama de "crear" y terminan creando DOS borradores distintos en la base (uno con el
+   *  estado incompleto que tenía en ese momento, ej. sin nombre todavía, que queda huérfano
+   *  sin nombre y hace fallar "Confirmar" más tarde contra ese id perdido). */
+  const guardadoEnVueloRef = useRef<Promise<number | null> | null>(null);
 
   useEffect(() => {
     listarTiposTela()
@@ -88,6 +98,14 @@ export default function NuevaPlanificacionView({
   }, []);
 
   // Si se abrió "continuando" un borrador existente, trae nombre/fechas/selección guardados.
+  // OJO: deps `[]` a propósito, no `[idBorrador]` — este efecto debe correr una sola vez, con
+  // el id que trajo el montaje inicial ("continuar editando" desde el listado siempre monta
+  // esta pantalla de cero con el id ya puesto). Si dependiera de `idBorrador`, volvería a
+  // dispararse cuando ESTE MISMO componente crea el borrador por primera vez con el
+  // autoguardado (ver guardarBorradorAhora → onIdBorradorCreado, que le informa el id nuevo al
+  // padre y el padre se lo devuelve como prop) — y esa segunda pasada pisaría con un GET lo que
+  // el usuario ya tipeó localmente después de esa primera creación (típicamente todavía sin
+  // nombre, porque el autoguardado se dispara apenas hay fechas puestas, antes de escribirlo).
   useEffect(() => {
     if (idBorrador == null) return;
     let cancelado = false;
@@ -109,7 +127,7 @@ export default function NuevaPlanificacionView({
       cancelado = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idBorrador]);
+  }, []);
 
   // Dispara la búsqueda sola apenas hay un rango de fechas válido — no hay botón "Buscar":
   // funciona como el resto de los filtros, que reaccionan solos al cambiar. Preserva la
@@ -157,31 +175,44 @@ export default function NuevaPlanificacionView({
   }, [nombre, fechaDesde, fechaHasta, seleccionados, cargandoBorrador]);
 
   /** Guarda ya mismo (sin esperar la demora del autoguardado) — usado tanto por el timer como
-   *  por "Confirmar planificación", que necesita el borrador al día antes de confirmarlo. */
-  async function guardarBorradorAhora(): Promise<number | null> {
-    setEstadoGuardado('guardando');
-    const payload: PlanificacionCompraBorradorRequest = {
-      nombre: nombre.trim() || undefined,
-      fechaDesde: fechaDesde || undefined,
-      fechaHasta: fechaHasta || undefined,
-      idsProductos: Array.from(seleccionados),
-    };
-    try {
-      const guardado = idBorradorLocalRef.current != null
-        ? await actualizarBorradorPlanificacion(idBorradorLocalRef.current, payload)
-        : await crearBorradorPlanificacion(payload);
-
-      if (idBorradorLocalRef.current == null) {
-        idBorradorLocalRef.current = guardado.id;
-        setIdBorradorLocal(guardado.id);
-        onIdBorradorCreado(guardado.id);
-      }
-      setEstadoGuardado('guardado');
-      return guardado.id;
-    } catch {
-      setEstadoGuardado('error');
-      return idBorradorLocalRef.current;
+   *  por "Confirmar planificación", que necesita el borrador al día antes de confirmarlo. Si ya
+   *  hay un guardado en vuelo, se engancha a ese mismo en vez de disparar uno nuevo en paralelo
+   *  (ver comentario de guardadoEnVueloRef). */
+  function guardarBorradorAhora(): Promise<number | null> {
+    if (guardadoEnVueloRef.current) {
+      return guardadoEnVueloRef.current;
     }
+
+    const promesa = (async () => {
+      setEstadoGuardado('guardando');
+      const payload: PlanificacionCompraBorradorRequest = {
+        nombre: nombre.trim() || undefined,
+        fechaDesde: fechaDesde || undefined,
+        fechaHasta: fechaHasta || undefined,
+        idsProductos: Array.from(seleccionados),
+      };
+      try {
+        const guardado = idBorradorLocalRef.current != null
+          ? await actualizarBorradorPlanificacion(idBorradorLocalRef.current, payload)
+          : await crearBorradorPlanificacion(payload);
+
+        if (idBorradorLocalRef.current == null) {
+          idBorradorLocalRef.current = guardado.id;
+          setIdBorradorLocal(guardado.id);
+          onIdBorradorCreado(guardado.id);
+        }
+        setEstadoGuardado('guardado');
+        return guardado.id;
+      } catch {
+        setEstadoGuardado('error');
+        return idBorradorLocalRef.current;
+      } finally {
+        guardadoEnVueloRef.current = null;
+      }
+    })();
+
+    guardadoEnVueloRef.current = promesa;
+    return promesa;
   }
 
   async function buscar(preservarSeleccion: boolean) {
@@ -215,12 +246,12 @@ export default function NuevaPlanificacionView({
       }
       if (filtroEstado && e.producto.estadoActual !== filtroEstado) return false;
       if (!mostrarYaPlanificados && e.planificacionesQueLoIncluyen.length > 0) return false;
-      if (excluirIncompletos && !e.disenoCompleto) return false;
+      if (!incluirIncompletos && !e.disenoCompleto) return false;
       if (minimo != null && !Number.isNaN(minimo) && e.porcentajePagadoPedido < minimo) return false;
       if (maximo != null && !Number.isNaN(maximo) && e.porcentajePagadoPedido > maximo) return false;
       return true;
     });
-  }, [elegibles, tiposPrendaSeleccionados, filtroEstado, mostrarYaPlanificados, excluirIncompletos, pagoDesde, pagoHasta]);
+  }, [elegibles, tiposPrendaSeleccionados, filtroEstado, mostrarYaPlanificados, incluirIncompletos, pagoDesde, pagoHasta]);
 
   function toggleProducto(idProducto: number, disenoCompleto: boolean) {
     if (!disenoCompleto) return;
@@ -392,11 +423,11 @@ export default function NuevaPlanificacionView({
               <div className="flex flex-nowrap items-center gap-1.5 pb-1.5 text-sm text-wc-text">
                 <input
                   type="checkbox"
-                  checked={excluirIncompletos}
-                  onChange={(e) => setExcluirIncompletos(e.target.checked)}
+                  checked={incluirIncompletos}
+                  onChange={(e) => setIncluirIncompletos(e.target.checked)}
                   className="h-4 w-4 shrink-0 accent-wc-green"
                 />
-                <label className="whitespace-nowrap">Excluir incompletos</label>
+                <label className="whitespace-nowrap">Incluir incompletos</label>
               </div>
             )}
           </div>
@@ -449,7 +480,7 @@ export default function NuevaPlanificacionView({
                           {item.nombreTipoTela} · {item.nombreColor}
                         </span>
                         <span className="font-semibold text-wc-text">
-                          {item.cantidad.toLocaleString('es-AR', { maximumFractionDigits: 1 })} {item.esPorPeso ? 'g' : 'u.'}
+                          {item.cantidad.toLocaleString('es-AR', { maximumFractionDigits: 1 })} {item.esPorPeso ? 'kg' : 'u.'}
                         </span>
                       </div>
                     ))}

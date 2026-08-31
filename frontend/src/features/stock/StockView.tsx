@@ -15,6 +15,13 @@ import type { ProveedorResponse } from '../../types/proveedor';
 import type { StockResponse } from '../../types/stock';
 import type { TipoTelaCatalogo } from '../../types/tipoTela';
 
+const SearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
 /** Mismo orden pedido por el negocio que usa Carta de colores para las pestañas más usadas. */
 const ORDEN_PESTANAS_PRIORITARIO = ['FRIZA', 'JERSEY', 'PIQUE', 'CIERRE'];
 
@@ -59,6 +66,9 @@ export default function StockView() {
   const [filas, setFilas] = useState<FilaStockGuardada[]>([]);
   const [tabActiva, setTabActiva] = useState<string | null>(null);
   const [estadoCarga, setEstadoCarga] = useState<'cargando' | 'listo' | 'error'>('cargando');
+  /** Filtra por nombre de color o de proveedor — se resetea al cambiar de pestaña, igual que
+   *  las filas nuevas sin guardar (ver handleCambiarTab). */
+  const [busqueda, setBusqueda] = useState('');
 
   /** Claves temporales (`nueva-N`) de filas todavía sin guardar, por pestaña de tipo de tela. */
   const [clavesFilasNuevas, setClavesFilasNuevas] = useState<string[]>([]);
@@ -93,9 +103,18 @@ export default function StockView() {
   const coloresDeLaTab = useMemo(() => coloresActivos.filter((c) => c.tipoTela === tabActiva), [coloresActivos, tabActiva]);
   const clavesExistentes = useMemo(() => new Set(filas.map((f) => f.clave)), [filas]);
 
+  const filasFiltradas = useMemo(() => {
+    const termino = busqueda.trim().toLowerCase();
+    if (!termino) return filasDeLaTab;
+    return filasDeLaTab.filter(
+      (f) => f.nombreColor.toLowerCase().includes(termino) || (f.nombreProveedor?.toLowerCase().includes(termino) ?? false),
+    );
+  }, [filasDeLaTab, busqueda]);
+
   function handleCambiarTab(codigo: string) {
     setTabActiva(codigo);
     setClavesFilasNuevas([]);
+    setBusqueda('');
   }
 
   function agregarFilaNueva() {
@@ -184,11 +203,24 @@ export default function StockView() {
 
           {tipoTelaActivo && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-wc-text-muted">
-                  {filasDeLaTab.length} fila{filasDeLaTab.length === 1 ? '' : 's'} de stock · se compra por{' '}
-                  {tipoTelaActivo.esPorPeso ? 'kilogramo' : 'unidad'}
+                  {busqueda.trim()
+                    ? `${filasFiltradas.length} de ${filasDeLaTab.length} filas`
+                    : `${filasDeLaTab.length} fila${filasDeLaTab.length === 1 ? '' : 's'} de stock`}{' '}
+                  · se compra por {tipoTelaActivo.esPorPeso ? 'kilogramo' : 'unidad'}
                 </p>
+                <div className="relative w-full max-w-xs">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-wc-text-muted">
+                    <SearchIcon />
+                  </span>
+                  <input
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar por color o proveedor…"
+                    className="w-full rounded-lg border border-wc-border bg-white py-1.5 pl-9 pr-3 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20"
+                  />
+                </div>
               </div>
 
               {errorEliminar && <p className="text-xs font-medium text-red-600">{errorEliminar}</p>}
@@ -213,7 +245,14 @@ export default function StockView() {
                         </td>
                       </tr>
                     )}
-                    {filasDeLaTab.map((fila) => (
+                    {filasDeLaTab.length > 0 && filasFiltradas.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-3 py-4 text-center text-sm text-wc-text-muted">
+                          Ningún color ni proveedor coincide con "{busqueda.trim()}".
+                        </td>
+                      </tr>
+                    )}
+                    {filasFiltradas.map((fila) => (
                       <FilaStockGuardadaRow
                         key={fila.clave}
                         fila={fila}

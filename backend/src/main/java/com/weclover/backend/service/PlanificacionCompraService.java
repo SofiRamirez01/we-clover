@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import com.weclover.backend.dto.planificacioncompra.PlanificacionCompraResponse;
 import com.weclover.backend.dto.planificacioncompra.PlanificacionResumenResponse;
 import com.weclover.backend.dto.planificacioncompra.ProductoElegibleResponse;
 import com.weclover.backend.entity.ArticuloProveedor;
+import com.weclover.backend.entity.ArticuloStock;
 import com.weclover.backend.entity.EstadoPlanificacionCompra;
 import com.weclover.backend.entity.PaletaColores;
 import com.weclover.backend.entity.Pedido;
@@ -32,15 +34,18 @@ import com.weclover.backend.entity.PlanificacionCompraProductoBorrador;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.ProductoColor;
 import com.weclover.backend.entity.ProductoInsumoSecundario;
+import com.weclover.backend.entity.Stock;
 import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.entity.UnidadMedida;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.repository.ArticuloProveedorRepository;
+import com.weclover.backend.repository.ArticuloStockRepository;
 import com.weclover.backend.repository.PlanificacionCompraDetalleRepository;
 import com.weclover.backend.repository.PlanificacionCompraRepository;
 import com.weclover.backend.repository.ProductoRepository;
+import com.weclover.backend.repository.StockRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -63,6 +68,8 @@ public class PlanificacionCompraService {
     private final ProductoRepository productoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ArticuloProveedorRepository articuloProveedorRepository;
+    private final ArticuloStockRepository articuloStockRepository;
+    private final StockRepository stockRepository;
     private final ProductoService productoService;
     private final AutorizacionService autorizacionService;
 
@@ -173,8 +180,25 @@ public class PlanificacionCompraService {
             throw new ResourceNotFoundException("Alguno de los productos seleccionados no existe");
         }
 
-        planificacion.getProductosBorrador().clear();
+        /*
+         * Reconcilia la selección en vez de `clear()` + volver a agregar todo: sobre una
+         * colección `orphanRemoval = true`, un `clear()` seguido de altas que repiten la misma
+         * clave (id_planificacion_compra, id_producto) tira `DataIntegrityViolationException`
+         * — Hibernate ordena los INSERT antes que los DELETE dentro del mismo flush, así que el
+         * alta "nueva" de un producto que ya estaba choca contra la baja vieja, todavía no
+         * ejecutada, de esa misma fila (se reprodujo con el autoguardado: primer guardado con
+         * un producto tildado ok, segundo guardado con el mismo producto tildado —
+         * "Duplicate entry ... uk_planificacion_borrador_producto"). Solo se tocan las filas que
+         * realmente cambian: se borran las que dejaron de estar tildadas y se agregan las
+         * nuevas — las que siguen tildadas ni se rozan.
+         */
+        Set<Long> idsNuevos = new HashSet<>(idsUnicos);
+        planificacion.getProductosBorrador().removeIf(pb -> !idsNuevos.contains(pb.getProducto().getId()));
+        Set<Long> idsYaPresentes = planificacion.getProductosBorrador().stream()
+            .map(pb -> pb.getProducto().getId())
+            .collect(Collectors.toSet());
         for (Producto producto : productos) {
+            if (idsYaPresentes.contains(producto.getId())) continue;
             planificacion.getProductosBorrador().add(PlanificacionCompraProductoBorrador.builder()
                 .planificacionCompra(planificacion)
                 .producto(producto)
@@ -302,14 +326,24 @@ public class PlanificacionCompraService {
             PaletaColores color = entrada.getKey().paletaColor();
             List<PlanificacionCompraDetalle> filas = entrada.getValue();
 
-            float cantidad = 0f;
+            float cantidadNecesaria = 0f;
             for (PlanificacionCompraDetalle fila : filas) {
-                cantidad += fila.getCantidad();
+                cantidadNecesaria += fila.getCantidad();
             }
             // La unidad de medida es una "foto" (ver PlanificacionCompraDetalle) — se toma la
             // ya guardada en cualquiera de las filas del grupo, no se recalcula desde el
             // TipoTela actual (podría haber cambiado esPorPeso después de crear la planificación).
             UnidadMedida unidadMedida = filas.get(0).getUnidadMedida();
+
+            // Fase 2: puramente informativo, no descuenta ni modifica Stock (ver clase de
+            // ArticuloResumenResponse) — mismo mecanismo para todos los insumos, cierres
+            // incluidos, sin caso especial.
+            float stockDisponible = articuloStockRepository.findByPaletaColor(color)
+                .map(articulo -> stockRepository.findByArticulo(articulo).stream()
+                    .map(Stock::getCantidad)
+                    .reduce(0f, Float::sum))
+                .orElse(0f);
+            float cantidadAComprar = Math.max(0f, cantidadNecesaria - stockDisponible);
 
             Optional<ArticuloProveedor> preferido = articuloProveedorRepository
                 .findByPaletaColorAndPreferidoTrue(color)
@@ -318,12 +352,14 @@ public class PlanificacionCompraService {
 
             Float precioUnitario = preferido.map(ArticuloProveedor::getPrecioEstimado).orElse(null);
             String nombreProveedorPreferido = preferido.map(a -> a.getProveedor().getNombre()).orElse(null);
-            Float estimadoTotal = precioUnitario != null ? precioUnitario * cantidad : null;
+            // Sobre cantidadAComprar, no cantidadNecesaria — decisión tomada con el usuario: el
+            // estimado en pesos debe reflejar lo que realmente hace falta gastar.
+            Float estimadoTotal = precioUnitario != null ? precioUnitario * cantidadAComprar : null;
 
             resumen.add(new ArticuloResumenResponse(
                 tipoTela.getId(), tipoTela.getCodigo(), tipoTela.getNombre(),
                 color.getId(), color.getNombre(), color.getHex(),
-                cantidad, unidadMedida,
+                cantidadNecesaria, stockDisponible, cantidadAComprar, unidadMedida,
                 nombreProveedorPreferido, precioUnitario, estimadoTotal
             ));
         }
@@ -389,12 +425,28 @@ public class PlanificacionCompraService {
         );
     }
 
+    private static final float GRAMOS_POR_KILOGRAMO = 1000f;
+
+    /**
+     * `PatronCorteColor.gramos` y `ProductoInsumoSecundario.cantidad` son gramos por prenda (la
+     * receta de la moldería/ficha técnica) — eso no cambia. Pero al agregar el consumo de un
+     * lote de prendas para el Planificador de Compras, el resultado tiene que quedar expresado
+     * en la unidad en la que efectivamente se compra la tela: kilogramos, no gramos (decisión
+     * de negocio confirmada con el usuario — "cuando se muestra la cantidad de material
+     * estimado, se muestra en KG"; lo único que queda en gramos es la receta por color dentro
+     * de la moldería). Los insumos que se compran por unidad (ej. Cierre) no se convierten.
+     */
+    private static float convertirAUnidadDeCompra(float cantidadEnGramos, TipoTela tipoTela) {
+        return tipoTela.isEsPorPeso() ? cantidadEnGramos / GRAMOS_POR_KILOGRAMO : cantidadEnGramos;
+    }
+
     /**
      * CAMBIO 2: una fila de detalle por cada (tipoTela, color) que este producto consume —
      * tela de cuerpo (gramos de cada posición ya marcada del patrón, según su
      * PatronCorteColor.gramos) más insumos secundarios ya cargados (tal cual están hoy, sin
-     * recalcular desde ningún default), todo multiplicado por producto.cantidadTotal y
-     * fusionado si dos fuentes distintas caen en el mismo (tipoTela, color).
+     * recalcular desde ningún default), todo multiplicado por producto.cantidadTotal, convertido
+     * a la unidad de compra (ver convertirAUnidadDeCompra) y fusionado si dos fuentes distintas
+     * caen en el mismo (tipoTela, color).
      */
     private List<PlanificacionCompraDetalle> calcularDetalles(PlanificacionCompra planificacion, Producto producto) {
         Map<ClaveArticulo, Float> acumulado = new LinkedHashMap<>();
@@ -403,13 +455,13 @@ public class PlanificacionCompraService {
         for (ProductoColor color : producto.getColores()) {
             ClaveArticulo clave = new ClaveArticulo(telaCuerpo, color.getPaletaColor());
             float gramos = color.getPatronCorteColor().getGramos() * (float) producto.getCantidadTotal();
-            acumulado.merge(clave, gramos, Float::sum);
+            acumulado.merge(clave, convertirAUnidadDeCompra(gramos, telaCuerpo), Float::sum);
         }
 
         for (ProductoInsumoSecundario insumo : producto.getInsumosSecundarios()) {
             ClaveArticulo clave = new ClaveArticulo(insumo.getTipoTela(), insumo.getColor());
-            float cantidad = insumo.getCantidad() * producto.getCantidadTotal();
-            acumulado.merge(clave, cantidad, Float::sum);
+            float gramos = insumo.getCantidad() * producto.getCantidadTotal();
+            acumulado.merge(clave, convertirAUnidadDeCompra(gramos, insumo.getTipoTela()), Float::sum);
         }
 
         List<PlanificacionCompraDetalle> detalles = new ArrayList<>();

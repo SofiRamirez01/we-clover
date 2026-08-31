@@ -8,7 +8,49 @@ Lo que falta hacer vive aparte, en [pantallas-pendientes.md](pantallas-pendiente
 archivo se mantiene corto a propósito, listando solo trabajo pendiente real. Cuando algo de
 ahí se termine, se migra el detalle acá y se borra de pantallas-pendientes.
 
-Orden: más reciente primero. Última actualización: 2026-08-30.
+Orden: más reciente primero. Última actualización: 2026-08-31.
+
+## Registro de Stock: buscador por color/proveedor (2026-08-31)
+
+`StockView.tsx` — buscador de texto libre por pestaña (mismo look que el de Ficha Técnica:
+ícono + input), filtra las filas ya guardadas por nombre de color **o** de proveedor
+("contiene", case-insensitive — mismo criterio ya confirmado para `ComboboxColor`). Se resetea
+al cambiar de pestaña, igual que las filas nuevas sin guardar. No afecta las filas todavía sin
+guardar (`FilaStockNuevaRow`) ni el trigger "+ Agregar fila": completar una fila en curso no
+debería desaparecer de la vista por no matchear un texto de búsqueda que no tiene que ver con
+lo que se está cargando. Distingue "todavía no hay stock cargado para esta tela" (tabla
+realmente vacía) de "ningún color ni proveedor coincide con la búsqueda" (hay datos, pero el
+filtro no encontró nada).
+
+## Registro de Stock — Fase 2: integración con el Planificador de Compras (2026-08-31)
+
+Cruce puramente informativo entre `Stock` y el resumen unificado del Planificador de Compras
+(`PlanificacionCompraService.obtenerResumen`) — mismo mecanismo para todos los insumos, cierres
+incluidos, sin caso especial. Confirmar una planificación sigue sin tocar el registro de
+`Stock` (eso quedó así desde la Fase 1); el descuento real por corte de producción queda
+pendiente (ver pantallas-pendientes.md).
+
+Por cada `(TipoTela, PaletaColores)` del resumen, además de la `cantidadNecesaria` que ya se
+calculaba:
+- `stockDisponible`: suma de **todas** las filas de `Stock` de ese color, de todos los
+  proveedores juntos (`ArticuloStockRepository.findByPaletaColor` + `StockRepository.
+  findByArticulo`) — 0 si el color nunca se auditó, no hay que distinguir "auditado en 0" de
+  "nunca auditado" para este cálculo.
+- `cantidadAComprar`: `max(0, cantidadNecesaria - stockDisponible)`.
+
+**Decisión tomada con el usuario:** el estimado en pesos (`precioUnitarioEstimado` ×
+`estimadoTotal`, tanto por fila como el total de la planificación) pasa a calcularse sobre
+`cantidadAComprar`, no sobre `cantidadNecesaria` — si no, el número en pesos seguiría
+sobrestimando el gasto real aunque la cantidad ya avisara que sobra stock. El campo del DTO se
+renombró de `cantidad` a `cantidadNecesaria` para que los tres números convivan sin ambigüedad
+(`ArticuloResumenResponse`, back y front).
+
+Frontend (`PlanificacionDetalleView.tsx`, pestaña "Resumen unificado"): agregadas las columnas
+"Stock disponible" y "A comprar". Cuando el stock cubre toda la cantidad necesaria
+(`cantidadAComprar === 0 && stockDisponible > 0`), la fila se resalta (`bg-wc-green/5`) y la
+celda de "A comprar" muestra un badge "Cubierto con stock" en vez del número; si el stock cubre
+solo una parte, el número de "A comprar" queda resaltado en verde para que se note, sin llegar
+al badge completo.
 
 ## Selector de color con buscador (`ComboboxColor`) (2026-08-30)
 
