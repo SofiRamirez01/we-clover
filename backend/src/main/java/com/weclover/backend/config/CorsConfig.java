@@ -13,8 +13,12 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
+                // allowedOriginPatterns (no allowedOrigins) para poder cubrir cualquier IP de
+                // la LAN 192.168.0.x, no solo localhost — necesario para probar desde otro
+                // dispositivo en la misma red (ver doc/pantallas-pendientes.md: esto es un
+                // acceso de desarrollo temporal, no una config pensada para producción).
                 registry.addMapping("/api/**")
-                    .allowedOrigins("http://localhost:5173")
+                    .allowedOriginPatterns("http://localhost:5173", "http://192.168.0.*:5173")
                     .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                     .allowedHeaders("*");
 
@@ -23,7 +27,7 @@ public class CorsConfig {
                 // queda "tainted" al dibujar una imagen cross-origin y el navegador bloquea
                 // cualquier lectura de píxeles con SecurityError.
                 registry.addMapping("/uploads/**")
-                    .allowedOrigins("http://localhost:5173")
+                    .allowedOriginPatterns("http://localhost:5173", "http://192.168.0.*:5173")
                     .allowedMethods("GET");
             }
         };

@@ -375,6 +375,48 @@ public class ProductoService {
         return construirRespuesta(productoRepository.save(producto));
     }
 
+    /**
+     * Elegibilidad de un producto para el Planificador de Compras (Fase 3): vacío si el
+     * "diseño" está completo, o el motivo (primero que falle, no la lista completa) si falta
+     * algo. Reusa CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA como la lista de insumos "esperados"
+     * por tipo de prenda — hoy esa constante solo se usaba para sugerir un default al
+     * confirmar colores (ver asignarColores/sugerirInsumoSecundario), pero es exactamente la
+     * misma información que hace falta acá, así que no se duplica en una entidad nueva.
+     * Público porque PlanificacionCompraService lo usa tanto para filtrar la lista de
+     * elegibles como para revalidar al confirmar (por si el frontend quedó desactualizado
+     * entre que se abrió la pantalla y se confirmó la selección).
+     */
+    public Optional<String> motivoDisenoIncompleto(Producto producto) {
+        if (producto.getTipoTela() == null) {
+            return Optional.of("Falta asignar la tela de esta prenda");
+        }
+        if (producto.getPatronCorte() == null) {
+            return Optional.of("Falta asignar la moldería (patrón de corte)");
+        }
+
+        int posiciones = producto.getPatronCorte().getColores().size();
+        if (producto.getColores().size() != posiciones) {
+            return Optional.of(
+                "Faltan colores por marcar (" + producto.getColores().size() + " de " + posiciones + " posiciones)");
+        }
+
+        if (producto.getTipoPrenda() != null) {
+            List<String> faltantes = CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA
+                .getOrDefault(producto.getTipoPrenda().getNombre(), List.of())
+                .stream()
+                .map(InsumoSugerido::descripcion)
+                .filter(descripcion -> producto.getInsumosSecundarios().stream()
+                    .noneMatch(insumo -> descripcion.equals(insumo.getDescripcion())))
+                .toList();
+
+            if (!faltantes.isEmpty()) {
+                return Optional.of("Faltan insumos secundarios: " + String.join(", ", faltantes));
+            }
+        }
+
+        return Optional.empty();
+    }
+
     private boolean esCampera(Producto producto) {
         return producto.getTipoPrenda() != null
             && TIPO_PRENDA_CAMPERA.equalsIgnoreCase(producto.getTipoPrenda().getNombre());

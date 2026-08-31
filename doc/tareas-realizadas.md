@@ -10,6 +10,271 @@ ahí se termine, se migra el detalle acá y se borra de pantallas-pendientes.
 
 Orden: más reciente primero. Última actualización: 2026-08-30.
 
+## Borradores de Planificación de Compra en base de datos (2026-08-30)
+
+Reemplaza el borrador en `localStorage` de la entrada anterior por borradores reales en la
+base — decisión tomada con el usuario (ver [[feedback-ask-before-schema-decisions]]): permite
+varios borradores en simultáneo (antes solo uno por navegador), visibles desde cualquier
+dispositivo, y que aparezcan en el listado de planificaciones para poder retomarlos.
+
+- `PlanificacionCompra` suma un campo `estado` (`BORRADOR`/`CONFIRMADA`, nuevo enum
+  `EstadoPlanificacionCompra`). `nombre`/`fechaDesde`/`fechaHasta` pasaron a nullable — un
+  borrador recién creado puede no tener nada todavía; se exigen recién al confirmar. **Nota de
+  migración**: como ya pasó antes con este mismo tipo de cambio (ver
+  [[project-frontend-pedido-gap]]), `ddl-auto=update` agrega columnas nuevas pero no relaja un
+  `NOT NULL` existente — hubo que correr `ALTER TABLE ... MODIFY COLUMN ... NULL` a mano sobre
+  esas tres columnas en la base dev.
+- Entidad nueva `PlanificacionCompraProductoBorrador` (planificación + producto, sin más
+  campos): a propósito **no** reusa `PlanificacionCompraDetalle` para la selección en curso,
+  porque calcular cantidad/tipoTela/color (`calcularDetalles`) requiere que el producto tenga
+  diseño completo — y un borrador puede tener productos tildados que todavía no lo tienen
+  (esa es la idea: el usuario sigue decidiendo). El cálculo real recién ocurre al confirmar,
+  momento en el que estas filas se vacían y se reemplazan por `PlanificacionCompraDetalle`.
+- Servicio: `guardarBorrador` (crear o actualizar, sin validar nada — se llama seguido, es el
+  autoguardado) / `obtenerBorrador` (para "continuar editando") / `confirmar` (ahí sí se
+  revalida todo: nombre, fechas, al menos un producto, todos con diseño completo) /
+  `eliminarBorrador` (solo mientras `estado=BORRADOR`; una vez confirmada no se puede borrar
+  ni editar, sigue igual que antes). El viejo `crear(PlanificacionCompraRequest)` de un solo
+  paso se eliminó — ahora todo pasa por guardar-borrador-y-después-confirmar.
+- Endpoints: `POST/PUT /api/planificaciones-compra/borradores[/{id}]`,
+  `GET /api/planificaciones-compra/{id}/borrador`, `POST .../{id}/confirmar`,
+  `DELETE .../{id}` (solo BORRADOR). Mismo criterio de roles que el resto del módulo
+  (`ROLE_ADMINISTRATIVO`, sin distinción de dueño — cualquier administrativo puede ver/editar
+  el borrador de otro, no hay concepto de "borrador privado" en este sistema).
+
+Frontend: `NuevaPlanificacionView` autoguarda contra la base con demora corta (700ms sin
+cambios) en vez de escribir a `localStorage` en cada cambio — `crearBorradorPlanificacion` la
+primera vez, `actualizarBorradorPlanificacion` después, usando el id que devuelve la primera
+respuesta. El id vive en el componente padre (`PlanificadorComprasView`, no en el hijo) porque
+la flecha "Volver" del `AppHeader` —que se renderiza en el padre— necesita saber si hay algo
+guardado para decidir si pregunta o no. `PlanificacionesListView` ahora muestra los
+`BORRADOR` con borde verde, badge "Borrador" y botón "Continuar editando"; "+ Nueva
+planificación" siempre arranca sin id (`idBorradorActual = null`), nunca reengancha un
+borrador existente. Se borró `features/planificador-compras/borradorPlanificacion.ts`
+(el módulo de `localStorage` de la entrada anterior, ya no hace falta).
+
+Probado con `curl` sobre datos reales: crear borrador vacío, actualizarlo con nombre/fechas/
+productos, `GET .../borrador` para "continuar editando", el listado trayendo el borrador con
+su `estado`, confirmar (pasa a CONFIRMADA con el detalle calculado), rechazo de `DELETE`/`PUT`
+sobre una ya confirmada (409 en ambos), y rechazo de confirmar con un producto de diseño
+incompleto (la fila de borrador queda intacta, se pudo eliminar después). Datos de prueba
+borrados de la base dev al terminar. `mvnw clean compile` y `npm run build` sin errores — no
+se pudo probar la UI en navegador.
+
+## `ModalConfirmacion` reutilizable + flujo del borrador de Planificación (2026-08-30)
+
+`frontend/src/components/ModalConfirmacion.tsx`: popup de confirmación genérico (título +
+mensaje + N acciones con variante `primaria`/`secundaria`/`peligro`), mismo estilo que el
+resto de los modales del sistema (overlay + tarjeta blanca). Reemplaza los `window.confirm`
+que se venían usando en el Planificador de Compras — pensado para reusarse en cualquier otra
+pantalla que necesite plantear una decisión de 2+ opciones antes de algo irreversible.
+
+Ajustes al flujo del borrador de "Nueva planificación":
+- Si hay una planificación en curso guardada, `PlanificadorComprasView` arranca directo en la
+  pantalla de creación (con el borrador ya cargado), no en el listado — antes había que
+  clickear "+ Nueva planificación" para volver a verla aunque ya estuviera guardada.
+- La flecha "Volver" del `AppHeader` ahora abre un `ModalConfirmacion` de **3 opciones**
+  ("Guardar borrador y salir" / "Eliminar borrador y salir" / "Seguir editando") en vez del
+  sí/no de antes — "guardar" no hace nada especial más que no borrar (el borrador ya se
+  persiste solo en cada cambio), pero se lo ofrece como opción explícita.
+- El botón "Cancelar" del formulario sigue siendo binario (sí, borrar y salir / no, seguir
+  editando) pero ahora usa el mismo `ModalConfirmacion` en vez de `window.confirm`.
+
+`npm run build` sin errores. No se pudo probar en navegador.
+
+## Planificador de Compras — más filtros y fix del borrador (2026-08-30)
+
+Sobre la pantalla de creación (ver entradas de más abajo):
+- Filtro de tipo de prenda: pasó de chips siempre visibles a un desplegable de selección
+  múltiple (`FiltroTipoPrenda.tsx`, checkboxes, cerrado por defecto, se cierra solo al
+  clickear afuera — mismo criterio que `CambiarEstadoPopover`) porque los chips ocupaban
+  demasiado espacio horizontal con varios tipos de prenda.
+- Se agregó filtro de "Estado" (mismo patrón que ya usa `PedidosListView`: `<select>` con
+  `ESTADOS_PEDIDO`/`ESTADO_PEDIDO_LABELS`) y un tilde "Excluir ya planificados" (oculta los
+  productos con `planificacionesQueLoIncluyen.length > 0`).
+- Se sacó el botón "Buscar productos": ahora el rango de fechas arranca vacío y la búsqueda
+  se dispara sola en cuanto ambas fechas están cargadas — funciona igual que el resto de los
+  filtros (reactivo, sin acción explícita).
+
+**Bug real encontrado y arreglado**: al restaurar un borrador con fechas ya cargadas (volver a
+la pantalla después de haber tildado productos y navegado a otro lado), la selección se
+perdía aunque nombre y fechas sí se restauraban. Causa: el efecto que dispara la búsqueda
+usaba un `useRef` como flag de "es la primera búsqueda, preservar selección" que se consumía
+(pasaba a `false`) apenas se leía. En desarrollo, `StrictMode` (activo en `main.tsx`) invoca
+los efectos del montaje inicial **dos veces seguidas** para detectar justamente este tipo de
+problema — la primera invocación preservaba la selección con el flag en `true`, pero como el
+`ref` ya había quedado en `false`, la segunda invocación (disparada por el mismo montaje, no
+por una acción del usuario) volvía a buscar con `preservarSeleccion=false` y la limpiaba.
+Arreglado reemplazando el `ref` por una condición que se recalcula sola en cada invocación
+(`elegibles === null`, es decir "todavía no hay resultados de este montaje") en vez de un
+flag que se consume una sola vez — en ambas invocaciones de StrictMode da el mismo resultado
+(`true`) porque la búsqueda async ni siquiera resolvió todavía, así que ninguna de las dos
+pisa la selección. Efecto secundario aceptado: en desarrollo se dispara la búsqueda dos veces
+en ese caso puntual (pedido HTTP duplicado, gratis) — mismo comportamiento que ya tienen otros
+`useEffect` de fetch-on-mount en el proyecto con `StrictMode`, no es nuevo.
+
+`npm run build` sin errores. No se pudo probar en navegador — el usuario reportó el bug real
+al usar la pantalla en desarrollo (`npm run dev`, donde `StrictMode` sí aplica; no se
+manifestaría en el build de producción).
+
+## Planificador de Compras — ajustes de UX en la pantalla de creación (2026-08-30)
+
+Sobre la entrega de Fase 3 del mismo día (ver más abajo), a pedido del negocio:
+- Filtros: se sacó "Colegio" (no tenía catálogo real detrás, ver pantallas-pendientes.md) y
+  se agregaron "Tipo de prenda" (select, valores de los productos ya traídos) y rango de
+  "% pagado" (dos inputs numéricos de ingreso libre, sin opciones predefinidas) — todo sigue
+  filtrando 100% client-side sobre la respuesta ya cargada, sin volver a pegarle al backend.
+- Cada fila de producto ahora muestra: la imagen de ficha técnica a la izquierda (si tiene —
+  click abre `ImagenPreviewModal`, el mismo componente que ya usa Ficha Técnica, no uno
+  nuevo), moldería + swatches de los colores marcados, `EstadoBadge` del producto (mismo
+  componente que Ficha Técnica), y fecha de venta además de la de entrega — importante en
+  negro, secundario (colegio, fechas) en gris chico. Requirió sumar `fechaVentaPedido`,
+  `nombreMolderia` y `numeroInternoMolderia` a `ProductoElegibleResponse` (antes solo traía
+  `fechaEstimadaEntregaPedido`); `producto.estadoActual`/`imagenDisenoUrl`/`colores` ya venían
+  en `ProductoResponse`, no hizo falta tocar nada para esos tres.
+- **Borrador persistente en `localStorage`** (`features/planificador-compras/borradorPlanificacion.ts`,
+  clave `wc-planificacion-compra-borrador`): filtros, nombre y selección se guardan ante
+  cualquier cambio, y se restauran solos (relanzando la búsqueda) si el usuario navega a otra
+  pantalla y vuelve — antes se perdía todo al desmontar el componente. El borrador se limpia
+  al confirmar la planificación o al cancelar. "Cancelar" (tanto el botón del formulario como
+  la flecha "Volver" del `AppHeader`, que antes lo esquivaba sin avisar) pide confirmación
+  con `window.confirm` — mismo patrón que ya usa `UsuariosView` para eliminar un usuario — solo
+  si hay algo cargado (nombre o selección), para no molestar en una pantalla recién abierta.
+- Pendiente documentado (no implementado): mostrar si un pedido ya tiene talles/medidas
+  cargados por los alumnos, como otra señal para decidir si conviene comprar la tela todavía
+  — ese dato no existe en el sistema aún (Carga Descentralizada, ver pantallas-pendientes.md).
+
+Verificado con `curl` que `fechaVentaPedido`/`nombreMolderia`/`numeroInternoMolderia` llegan
+bien poblados desde datos reales de la base dev. `mvnw clean compile` y `npm run build` sin
+errores — sin probar la UI en navegador. Nota de proceso: la primera compilación después de
+este cambio falló en runtime con "Unresolved compilation problem" pese a que `mvnw compile`
+decía "Nothing to compile" — es el gotcha ya documentado de corrupción del build incremental
+(ver [[project-toolchain-gotchas]]); `mvnw clean compile` lo resolvió, como siempre.
+
+## Planificador de Compras — Fase 3 (2026-08-30)
+
+Entidades nuevas `PlanificacionCompra` (cabecera) y `PlanificacionCompraDetalle` (una fila por
+cada (`TipoTela`, `PaletaColores`) que un producto consume). Decisiones tomadas con el negocio
+antes de programar (ver [[feedback-ask-before-schema-decisions]]):
+- El filtro de fecha (tanto en `GET /api/productos/elegibles-planificacion` como en el
+  período que etiqueta la cabecera) es sobre **`Pedido.fechaEstimadaEntrega`**, no
+  `fechaVenta` — "qué necesito tener comprado para lo que se entrega en este rango".
+- El estimado en pesos del resumen unificado usa el **proveedor preferido** de cada color,
+  no el más barato ni un promedio — requirió agregar `ArticuloProveedor.preferido`
+  (boolean, Fase 2) con la regla "a lo sumo uno `true` por color", que
+  `ArticuloProveedorService` hace cumplir desmarcando cualquier otro al setear uno nuevo
+  (no hay unique constraint de base para esto, la regla es "a lo sumo uno", no "exactamente
+  uno"). Se agregó el toggle ★/☆ en `ModalDetalleColor.tsx` (Carta de colores) para poder
+  marcarlo desde la UI; si nadie marcó un preferido para un color, el estimado queda `null`
+  (sin fallback automático a otro precio).
+
+**`InsumoFijoTipoPrenda` no se creó como entidad nueva**: el pedido original asumía que
+existía un catálogo con ese nombre para "insumos esperados por tipo de prenda", pero lo que
+ya existía era `ProductoService.CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA` — un `Map` hardcodeado
+que hasta ahora solo se usaba para *sugerir* un default al confirmar colores (nunca se
+exigía). Se reusó tal cual como la lista de "esperados" para
+`ProductoService.motivoDisenoIncompleto(Producto)` (nuevo método público), que además
+verifica: `tipoTela` asignado (necesario para saber la unidad de la tela de cuerpo, no estaba
+en el pedido original pero es imprescindible para el cálculo), `patronCorte` asignado, y
+todas las posiciones de `PatronCorteColor` con su `ProductoColor` cargado. Este método es la
+única fuente de verdad de elegibilidad: lo usan tanto el endpoint de productos elegibles como
+`PlanificacionCompraService.crear` (revalida server-side por si el front quedó desactualizado).
+
+Cálculo de cada `PlanificacionCompraDetalle` (`PlanificacionCompraService.calcularDetalles`):
+gramos de cada posición ya marcada (`ProductoColor.patronCorteColor.gramos`) más cada
+`ProductoInsumoSecundario.cantidad` ya cargado (sin recalcular desde ningún default), todo
+× `producto.cantidadTotal`, fusionado en una sola fila por (tipoTela, color) dentro de ese
+producto. Es una foto real: los valores quedan copiados en la fila, no se recalculan al leer
+(`obtenerResumen`/`obtenerDetallePorProducto` leen `detalle.getCantidad()`/`getUnidadMedida()`
+directo, sin tocar `Producto` de nuevo) — verificado por inspección de código, no con una
+mutación en vivo sobre datos reales de la base dev.
+
+Roles: **todo el módulo** (lectura incluida: elegibles, resumen, detalle, listado) restringido
+a `ROLE_ADMINISTRATIVO`, mismo criterio no confirmado explícitamente que ya se aplicó en
+Proveedores/Fase 2 (ver esa entrada más abajo) — el ítem "Planificador Compras" del Sidebar
+ahora solo se muestra a ese rol (antes era un link inerte visible a todos, sin `view` asignada).
+
+Filtro de colegio en la pantalla de creación: **100% client-side**, a partir de los
+`nombreColegio` que ya trae la respuesta de elegibles — no se construyó un
+`GET /api/colegios` nuevo ni se agregó `idColegio` como filtro real desde el front (el
+backend sí acepta el query param `idColegio` opcional, sin usar por ahora). Se decidió así
+para no adelantar el trabajo de "Reutilización de Colegios existentes" que ya está pendiente
+aparte (ver pantallas-pendientes.md) — cuando ese catálogo exista, conviene revisar si el
+filtro debería pasar a ser server-side.
+
+Frontend: `frontend/src/features/planificador-compras/` (`PlanificadorComprasView` con
+sub-vistas listado/nueva/detalle, mismo patrón que `PatronesCorteView`).
+`utils/consumoProducto.ts` reimplementa en TypeScript el mismo cálculo de
+`calcularDetalles` del backend (mismo criterio de agrupación) para el contador en vivo de la
+pantalla de creación al tildar/destildar productos — es solo una previsualización, el cálculo
+autoritativo sigue siendo el del backend al confirmar.
+
+Probado con `curl` contra el backend real sobre datos reales de la base dev (no datos
+sintéticos): productos con diseño completo/incompleto detectados correctamente (Buzo con
+insumos faltantes, Remera sin colores marcados), rechazo 409 al incluir un producto
+incompleto, creación con productos de distintos pedidos/colegios, reinclusión de un producto
+ya usado en otra planificación sin bloqueo (solo badge), resumen unificado agrupando
+correctamente por (tipoTela, color), y el estimado en pesos vía proveedor preferido
+(14850 kg × $2500 = $37.125.000) incluyendo que un segundo "preferido" para el mismo color
+desmarca al primero. Todos los datos de prueba se borraron de la base dev al terminar.
+`mvnw clean compile` y `npm run build` (tsc + vite) sin errores — sin probar la UI en
+navegador (no hay herramienta de browser en esta sesión).
+
+## Catálogo de Proveedores + pantalla "Carta de colores" (2026-08-30)
+
+Entidad `Proveedor` nueva, fuera del diagrama de clases de CLAUDE.md (ahí `MateriaPrima.proveedor`
+era solo un string libre, y `MateriaPrima` en sí no está implementada — es de M3, sin empezar).
+Se decidió con el negocio antes de programar (ver también
+[[feedback-ask-before-schema-decisions]]):
+- `Proveedor.cuit` único a nivel global, se guarda **solo los 11 dígitos** (sin guiones); el
+  formato `XX-XXXXXXXX-X` es responsabilidad de la UI al mostrarlo (`formatearCuit` en
+  `types/proveedor.ts`). Sin dígito verificador real, solo formato/longitud.
+- `ArticuloProveedor` vincula un `Proveedor` con un color de `PaletaColores`, con
+  `UnidadMedida` (`KG`/`UNIDAD`, derivada de `TipoTela.esPorPeso`, no elegible por proveedor),
+  precio estimado opcional y `activo`. Único por **(proveedor, color)**, no global — puede
+  haber varios proveedores cargados para el mismo color a propósito, para comparar precio.
+- Sin pantalla de administración de `Proveedor` separada: se crea al vuelo desde el selector
+  de proveedores al cargar un color nuevo (nombre + CUIT), quedando disponible para reusar
+  después. El backend sí expone `PUT /api/proveedores/{id}` y
+  `PATCH /api/proveedores/{id}/activo` (editar/dar de baja), pero **sin ninguna UI que los
+  llame todavía** — quedan para cuando haga falta una pantalla de gestión de proveedores.
+- **Lectura también restringida a `ROLE_ADMINISTRATIVO`** (no solo alta/baja): a diferencia de
+  `TipoTela`/`PaletaColores` (catálogos de lectura libre), acá se restringió también el `GET`
+  porque el catálogo incluye precios de proveedores, un dato comercialmente sensible. Fue una
+  decisión propia al implementar, no confirmada explícitamente con el negocio — revisar si en
+  algún momento otro rol (ej. Compras/Planta) necesita leer este catálogo sin poder editarlo.
+
+Frontend: `frontend/src/features/carta-colores/` (`CartaColoresView`, `ModalNuevoColor`,
+`ModalDetalleColor`, `ColorGoteroInput`), nueva pestaña en el submenú Config (Sidebar), solo
+`ROLE_ADMINISTRATIVO`.
+- **Pestañas dinámicas por `TipoTela`**: se arman desde `GET /api/tipos-tela` (ya filtra
+  `activo=true`), no de una lista fija — un tipo de tela nuevo aparece con su propia pestaña
+  sin tocar código frontend. Esto incluye a "Cierre" como una pestaña más (ya es una fila del
+  catálogo `tipos_tela`), a pedido explícito del negocio.
+- El "gotero" (imagen de referencia → click → leer pixel → hex) es una implementación nueva y
+  standalone en `ColorGoteroInput.tsx`, **no** una extracción compartida con el gotero que ya
+  existía en `ModalColoresGotero` (ese está fuertemente acoplado a Producto/Moldería/
+  posiciones) — mismo mecanismo (canvas + `getImageData`), componente aparte. La imagen se
+  carga con `URL.createObjectURL` solo en el navegador y se descarta (`revokeObjectURL`); nunca
+  se sube al backend. Alternativa: `<input type="color">` nativo como selector RGB a ojo.
+- `services/cartaColoresService.ts` tiene su propio `crearColorCarta` con `tipoTela: string`
+  (no el union `TipoTela` acotado de `types/paletaColores.ts`, usado por el modal viejo) —
+  necesario porque acá se puede crear un color para cualquier tipo de tela del catálogo
+  dinámico, incluyendo uno que ese union todavía no conozca.
+- **Simplificación consciente**: la card de cada color en la grilla no muestra un badge de
+  "N proveedores" (para eso habría que traer el conteo de todos los colores de la pestaña de
+  una sola vez, y no hay endpoint para eso todavía) — hay que abrir el color para ver sus
+  proveedores cargados. Agregar un endpoint de conteo agrupado si hace falta el dato a simple
+  vista.
+- Enganche dejado para el Planificador de Compras (M3, sin empezar):
+  `ArticuloProveedorRepository.findByPaletaColorAndActivoTrue` resuelve, dado un color, qué
+  proveedores activos y precios existen.
+
+Probado con `curl` contra el backend real (alta/duplicado de CUIT, alta/duplicado de artículo,
+edición de precio y baja, guardia de "proveedor inactivo no admite artículos nuevos", 403 sin
+`X-Usuario-Id`) — sin probar la UI en navegador (no hay herramienta de browser disponible en
+esta sesión). `npm run build` (tsc + vite build) y `mvnw clean compile` sin errores.
+
 ## Frontend de insumos secundarios: Capucha/Puños/libres en el modal de gotero (2026-08-30)
 
 Se construyó la UI que faltaba en `ModalColoresGotero` para insumos secundarios genéricos

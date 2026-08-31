@@ -7,6 +7,8 @@ import UsuariosView from './components/UsuariosView';
 import LoginView from './components/LoginView';
 import PatronesCorteView from './features/patrones-corte/PatronesCorteView';
 import FichasTecnicasView from './features/fichas-tecnicas/FichasTecnicasView';
+import CartaColoresView from './features/carta-colores/CartaColoresView';
+import PlanificadorComprasView from './features/planificador-compras/PlanificadorComprasView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { PedidoResponse } from './types/pedido';
 import './App.css';
@@ -62,6 +64,10 @@ function AppShell() {
     contenido = <UsuariosView />;
   } else if (view === 'patrones-corte') {
     contenido = <PatronesCorteView />;
+  } else if (view === 'carta-colores') {
+    contenido = <CartaColoresView />;
+  } else if (view === 'planificador-compras') {
+    contenido = <PlanificadorComprasView />;
   } else {
     contenido = <FichasTecnicasView />;
   }

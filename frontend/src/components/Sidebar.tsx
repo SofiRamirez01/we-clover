@@ -89,6 +89,15 @@ const UsuariosIcon = (props: IconProps) => (
   </svg>
 );
 
+const CartaColoresIcon = (props: IconProps) => (
+  <svg {...baseIconProps(props)}>
+    <circle cx="8" cy="8" r="3.2" />
+    <circle cx="16" cy="8" r="3.2" />
+    <circle cx="8" cy="16" r="3.2" />
+    <circle cx="16" cy="16" r="3.2" />
+  </svg>
+);
+
 const ConfigIcon = (props: IconProps) => (
   <svg {...baseIconProps(props)}>
     <circle cx="12" cy="12" r="3" />
@@ -109,29 +118,40 @@ const BackIcon = (props: IconProps) => (
   </svg>
 );
 
-export type AppView = 'pedidos' | 'pedidos-nuevo' | 'usuarios' | 'patrones-corte' | 'fichas-tecnicas';
+export type AppView =
+  | 'pedidos'
+  | 'pedidos-nuevo'
+  | 'usuarios'
+  | 'patrones-corte'
+  | 'fichas-tecnicas'
+  | 'carta-colores'
+  | 'planificador-compras';
 
 interface NavItem {
   label: string;
   icon: (props: IconProps) => ReactElement;
   view?: AppView;
+  /** El backend de este módulo restringe todo (lectura incluida) a ROLE_ADMINISTRATIVO — no
+   *  tiene sentido mostrar el link a otros roles si va a devolver 403 apenas lo abran. */
+  soloAdministrativo?: boolean;
 }
 
 const NAV_ITEMS_RAIZ: NavItem[] = [
   { label: 'Pedidos', icon: PedidosIcon, view: 'pedidos' },
   { label: 'Ficha Técnica', icon: FichaTecnicaIcon, view: 'fichas-tecnicas' },
   { label: 'Producción', icon: ProduccionIcon },
-  { label: 'Planificador Compras', icon: ComprasIcon },
+  { label: 'Planificador Compras', icon: ComprasIcon, view: 'planificador-compras', soloAdministrativo: true },
   { label: 'Motor Tizada', icon: TizadaIcon },
   { label: 'Reportes', icon: ReportesIcon },
 ];
 
 const NAV_ITEMS_CONFIG: NavItem[] = [
   { label: 'Molderías', icon: FichasIcon, view: 'patrones-corte' },
+  { label: 'Carta de colores', icon: CartaColoresIcon, view: 'carta-colores' },
   { label: 'Usuarios', icon: UsuariosIcon, view: 'usuarios' },
 ];
 
-const VISTAS_CONFIG: AppView[] = ['patrones-corte', 'usuarios'];
+const VISTAS_CONFIG: AppView[] = ['patrones-corte', 'carta-colores', 'usuarios'];
 
 interface SidebarProps {
   activeView: AppView;
@@ -199,7 +219,7 @@ export default function Sidebar({ activeView, onNavigate }: SidebarProps) {
           </>
         ) : (
           <>
-            {NAV_ITEMS_RAIZ.map((item) => {
+            {NAV_ITEMS_RAIZ.filter((item) => !item.soloAdministrativo || esAdministrativo).map((item) => {
               const active =
                 item.view === activeView || (item.view === 'pedidos' && activeView === 'pedidos-nuevo');
               return renderLink(item, active);

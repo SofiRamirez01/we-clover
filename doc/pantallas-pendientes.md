@@ -6,7 +6,48 @@ detalle de lo ya construido (el "por qué" de cada decisión ya tomada) vive en
 [tareas-realizadas.md](tareas-realizadas.md). Cuando algo de acá se resuelva, mover el
 detalle a ese archivo y borrarlo de este.
 
-Última actualización: 2026-08-29.
+Última actualización: 2026-08-30.
+
+## Planificador de Compras: sin M4/nesting, sin baja/edición, sin dato de talles
+
+Cosas que quedaron explícitamente afuera de la Fase 3 (ver tareas-realizadas.md):
+- La pantalla de creación no tiene filtro de colegio (se sacó a pedido del negocio: ya se
+  puede filtrar por tipo de prenda y por rango de % pagado). El backend sigue aceptando
+  `idColegio` como query param opcional en `/api/productos/elegibles-planificacion`, sin usar
+  desde ningún lado del front — si en algún momento hace falta el filtro de vuelta, conviene
+  resolverlo junto con "Reutilización de Colegios existentes" (ver más abajo) en vez de
+  reagregar el que se sacó.
+- Una `PlanificacionCompra` **ya CONFIRMADA** no se puede editar ni borrar (ni
+  quitarle/agregarle productos) — si hace falta corregir una, hoy la única forma es crear una
+  nueva. Mientras está en `BORRADOR` sí se puede editar/eliminar libremente (ver la entrada de
+  borradores en base en tareas-realizadas.md).
+- Nada de esto se conecta todavía con Compras real (generar una orden de compra, marcarla
+  como comprada/recibida) ni con el Motor de Nesting/Tizada (M4) — el Planificador solo
+  calcula cuánto comprar, no optimiza cómo cortarlo.
+- `ROLE_ADMINISTRATIVO` como único rol con acceso (lectura incluida) fue una decisión propia,
+  igual que en Proveedores — ver el punto de abajo, aplica también acá.
+- **No hay dato de si se cargaron los talles de un pedido/producto** (la carga descentralizada
+  de medidas/talles de alumnos, mencionada en CLAUDE.md, todavía no está construida — ver
+  "Módulo completo de Carga Descentralizada" más abajo). Cuando ese dato exista, la fila de
+  producto de esta pantalla debería mostrarlo como un indicador más (ej. un ícono/badge de
+  "talles cargados" o "sin talles") — hoy no bloquea nada, es información que el negocio
+  quiere ver para decidir si conviene comprar la tela todavía o conviene esperar a tener los
+  talles confirmados.
+
+## Catálogo de Proveedores: sin pantalla de edición/baja
+
+`ProveedorService.actualizar`/`cambiarActivo` y sus endpoints (`PUT /api/proveedores/{id}`,
+`PATCH /api/proveedores/{id}/activo`) ya existen, pero **ninguna pantalla los llama** — el
+único flujo de alta hoy es la creación inline desde el selector de proveedores en "Carta de
+colores" (ver tareas-realizadas.md). Falta decidir si hace falta una pantalla de
+administración de proveedores aparte (editar nombre/CUIT, reactivar uno dado de baja) o si
+alcanza con seguir gestionándolo así.
+
+También sin confirmar con el negocio: se restringió la **lectura** de `/api/proveedores` y
+`/api/articulos-proveedor` a `ROLE_ADMINISTRATIVO` (no solo el alta/baja), por ser datos de
+precios — fue una decisión propia al implementar, no algo que se haya preguntado
+explícitamente. Revisar si otro rol (ej. uno de Compras/Planta, cuando exista) necesita leer
+este catálogo.
 
 ## Catálogo `TipoTela`: sin pantalla de administración
 
