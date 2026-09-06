@@ -2,12 +2,9 @@ package com.weclover.backend.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,15 +13,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Catálogo de grupos de talles (ej. "Campera/Buzo", "Chomba/Remera") — mismo criterio que
+ * TipoTela: configurable en base, no hardcodeado. Cada TipoPrenda que usa talles apunta a uno
+ * de estos grupos (ver TipoPrenda.grupoTalle); una TipoPrenda sin talle (ej. Bandera) no apunta
+ * a ninguno.
+ */
 @Entity
-@Table(name = "tipos_prenda")
+@Table(name = "grupos_talle")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "id")
-public class TipoPrenda {
+public class GrupoTalle {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,10 +35,4 @@ public class TipoPrenda {
 
     @Column(nullable = false, unique = true, length = 50)
     private String nombre;
-
-    /** Null = esta prenda no usa talles (ej. Bandera) — queda afuera de la carga de talles por
-     *  alumno (ver CargaTallesService). */
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "id_grupo_talle")
-    private GrupoTalle grupoTalle;
 }

@@ -16,26 +16,29 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** Un alumno cargado dentro de una CargaTallesPedido, con sus combos de prenda en
+ *  AlumnoProductoTalle. `orden` es el orden de alta (para que la tabla no reordene sola). */
 @Entity
-@Table(name = "tipos_prenda")
+@Table(name = "alumnos_pedido")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "id")
-public class TipoPrenda {
+public class AlumnoPedido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
-    private String nombre;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_carga_talles", nullable = false)
+    private CargaTallesPedido cargaTalles;
 
-    /** Null = esta prenda no usa talles (ej. Bandera) — queda afuera de la carga de talles por
-     *  alumno (ver CargaTallesService). */
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "id_grupo_talle")
-    private GrupoTalle grupoTalle;
+    @Column(name = "nombre_alumno", nullable = false, length = 150)
+    private String nombreAlumno;
+
+    @Column(nullable = false)
+    private int orden;
 }

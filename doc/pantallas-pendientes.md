@@ -8,6 +8,15 @@ detalle a ese archivo y borrarlo de este.
 
 Última actualización: 2026-08-30.
 
+## Carga de Talles: desglose por talle para producción
+
+La Carga de Talles (link público por Pedido) registra el talle de cada alumno para
+consulta, pero no desglosa `Producto.cantidadTotal` por talle (ej. "12 buzos talle 2, 8
+buzos talle 3") para que planta sepa cuánto cortar de cada uno. Conectarlo con
+producción/patrón de corte es un cambio aparte — probablemente vinculado a cómo cada
+talle consume distinta cantidad de tela (hoy el gramaje sale de `PatronCorteColor`,
+pensado para un solo talle, no por talle).
+
 ## generales
 Componentes de añadir, de filtros, algunos son grises o tienen distinta estetica, unificar, elegir libreria de componentes o ver cual usa para dar mejores indicaciones.
 Botones de editar, borrar unificar iconos y colores.

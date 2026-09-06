@@ -11,16 +11,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.weclover.backend.entity.Colegio;
+import com.weclover.backend.entity.GrupoTalle;
 import com.weclover.backend.entity.PaletaColores;
 import com.weclover.backend.entity.Permiso;
 import com.weclover.backend.entity.Rol;
+import com.weclover.backend.entity.TablaTalle;
 import com.weclover.backend.entity.TipoPrenda;
 import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.repository.ColegioRepository;
+import com.weclover.backend.repository.GrupoTalleRepository;
 import com.weclover.backend.repository.PaletaColoresRepository;
 import com.weclover.backend.repository.PermisoRepository;
 import com.weclover.backend.repository.RolRepository;
+import com.weclover.backend.repository.TablaTalleRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
 import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
@@ -42,6 +46,8 @@ public class DataInitializer implements CommandLineRunner {
     private final TipoPrendaRepository tipoPrendaRepository;
     private final TipoTelaRepository tipoTelaRepository;
     private final PaletaColoresRepository paletaColoresRepository;
+    private final GrupoTalleRepository grupoTalleRepository;
+    private final TablaTalleRepository tablaTalleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -164,6 +170,66 @@ public class DataInitializer implements CommandLineRunner {
                 }
             });
         }
+
+        // Catálogo de grupos de talles (Carga de Talles) — mismo criterio idempotente que
+        // TipoTela: por nombre/combinación, no por count()==0, para poder agregar un grupo o
+        // una fila nueva más adelante sin volver a correr todo el seed desde cero.
+        record DefinicionFilaTalle(String talle, int orden, int anchoCm, int largoCm) {
+        }
+
+        Map<String, List<DefinicionFilaTalle>> definicionesGrupoTalle = new LinkedHashMap<>();
+        definicionesGrupoTalle.put("Campera/Buzo", List.of(
+            new DefinicionFilaTalle("1", 1, 46, 60),
+            new DefinicionFilaTalle("2", 2, 48, 60),
+            new DefinicionFilaTalle("3", 3, 52, 62),
+            new DefinicionFilaTalle("4", 4, 54, 66),
+            new DefinicionFilaTalle("5", 5, 56, 68),
+            new DefinicionFilaTalle("6", 6, 59, 70),
+            new DefinicionFilaTalle("7", 7, 66, 74)
+        ));
+        definicionesGrupoTalle.put("Chomba/Remera", List.of(
+            new DefinicionFilaTalle("12", 1, 41, 56),
+            new DefinicionFilaTalle("14", 2, 44, 58),
+            new DefinicionFilaTalle("16", 3, 46, 61),
+            new DefinicionFilaTalle("18", 4, 49, 65),
+            new DefinicionFilaTalle("20", 5, 52, 67),
+            new DefinicionFilaTalle("22", 6, 55, 70),
+            new DefinicionFilaTalle("24", 7, 60, 74)
+        ));
+
+        definicionesGrupoTalle.forEach((nombreGrupo, filas) -> {
+            GrupoTalle grupo = grupoTalleRepository.findByNombre(nombreGrupo)
+                .orElseGet(() -> grupoTalleRepository.save(GrupoTalle.builder().nombre(nombreGrupo).build()));
+            filas.forEach(fila -> {
+                if (!tablaTalleRepository.existsByGrupoTalleAndOrden(grupo, fila.orden())) {
+                    tablaTalleRepository.save(TablaTalle.builder()
+                        .grupoTalle(grupo)
+                        .talle(fila.talle())
+                        .orden(fila.orden())
+                        .anchoCm(fila.anchoCm())
+                        .largoCm(fila.largoCm())
+                        .build());
+                }
+            });
+        });
+
+        // Asigna el grupo de talles a cada TipoPrenda existente (idempotente: si ya lo tiene
+        // asignado no lo vuelve a tocar). Bandera queda sin asignar a propósito — no usa talles.
+        Map<String, String> grupoTallePorTipoPrenda = Map.of(
+            "Buzo", "Campera/Buzo",
+            "Campera", "Campera/Buzo",
+            "Remera", "Chomba/Remera",
+            "Chomba", "Chomba/Remera"
+        );
+        grupoTallePorTipoPrenda.forEach((nombreTipoPrenda, nombreGrupo) ->
+            tipoPrendaRepository.findByNombre(nombreTipoPrenda).ifPresent(tipoPrenda -> {
+                if (tipoPrenda.getGrupoTalle() == null) {
+                    grupoTalleRepository.findByNombre(nombreGrupo).ifPresent(grupo -> {
+                        tipoPrenda.setGrupoTalle(grupo);
+                        tipoPrendaRepository.save(tipoPrenda);
+                    });
+                }
+            }));
 
         System.out.println("--- DATOS SEMILLA CARGADOS CORRECTAMENTE ---");
     }
