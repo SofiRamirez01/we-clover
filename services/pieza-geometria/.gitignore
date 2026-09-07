@@ -1,0 +1,8 @@
+.venv/
+app/__pycache__/
+*.log
+
+# El subtree trae sus propios .pyc de cuando se compiló con Python 3.11 (esos quedan
+# tracked, no se tocan); esto solo ignora los que genera de nuevo un intérprete distinto
+# (ej. 3.12) al correr el servicio localmente.
+vendor/OptimizacionCorteTextil/__pycache__/*.pyc

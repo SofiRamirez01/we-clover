@@ -98,6 +98,14 @@ const CartaColoresIcon = (props: IconProps) => (
   </svg>
 );
 
+const PiezasIcon = (props: IconProps) => (
+  <svg {...baseIconProps(props)}>
+    <path d="M6 3.5h7l4.5 4.5V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z" />
+    <path d="M13 3.5V8h4.5" />
+    <path d="M8 13.5c1.5-2 4.5-2 6 0" />
+  </svg>
+);
+
 const StockIcon = (props: IconProps) => (
   <svg {...baseIconProps(props)}>
     <path d="M3.5 8 12 3.5 20.5 8 12 12.5 3.5 8Z" />
@@ -131,6 +139,7 @@ export type AppView =
   | 'pedidos-nuevo'
   | 'usuarios'
   | 'patrones-corte'
+  | 'piezas'
   | 'fichas-tecnicas'
   | 'carta-colores'
   | 'planificador-compras'
@@ -158,10 +167,11 @@ const NAV_ITEMS_RAIZ: NavItem[] = [
 const NAV_ITEMS_CONFIG: NavItem[] = [
   { label: 'Molderías', icon: FichasIcon, view: 'patrones-corte' },
   { label: 'Carta de colores', icon: CartaColoresIcon, view: 'carta-colores' },
+  { label: 'Piezas', icon: PiezasIcon, view: 'piezas' },
   { label: 'Usuarios', icon: UsuariosIcon, view: 'usuarios' },
 ];
 
-const VISTAS_CONFIG: AppView[] = ['patrones-corte', 'carta-colores', 'usuarios'];
+const VISTAS_CONFIG: AppView[] = ['patrones-corte', 'carta-colores', 'piezas', 'usuarios'];
 
 interface SidebarProps {
   activeView: AppView;

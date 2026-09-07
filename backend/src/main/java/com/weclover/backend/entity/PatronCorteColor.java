@@ -41,4 +41,12 @@ public class PatronCorteColor {
 
     @Column(nullable = false)
     private int gramos;
+
+    /**
+     * Nullable: las filas existentes antes de esta entrega no tienen pieza asignada (se
+     * completa hacia adelante, sin migración de datos viejos — ver PiezaService/CAMBIO 2).
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_pieza")
+    private Pieza pieza;
 }

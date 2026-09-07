@@ -76,7 +76,7 @@ export default function CargaTallesFichaHeader({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[11px] font-semibold text-wc-text-muted">Link de talles:</span>
+        <span className="text-[11px] font-semibold text-wc-text-muted">Carga de talles:</span>
 
         <button
           type="button"

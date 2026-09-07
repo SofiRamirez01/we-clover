@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn==0.32.1
+shapely==2.0.6
+
+# matplotlib/numpy/prettytable NO hacen falta en esta entrega: solo eran necesarios porque
+# el wrapper importaba polyorder (que a su vez hace "import matplotlib.pyplot" a nivel de
+# módulo). Esa importación se sacó junto con el uso de create_margin_polygons (ver
+# geometria.py) — van a volver a hacer falta cuando se encare la fase de optimización de
+# layout de corte (algorpatronsnap.py).

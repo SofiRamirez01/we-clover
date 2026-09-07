@@ -6,6 +6,7 @@ import PedidosListView from './components/PedidosListView';
 import UsuariosView from './components/UsuariosView';
 import LoginView from './components/LoginView';
 import PatronesCorteView from './features/patrones-corte/PatronesCorteView';
+import PiezasView from './features/piezas/PiezasView';
 import FichasTecnicasView from './features/fichas-tecnicas/FichasTecnicasView';
 import CartaColoresView from './features/carta-colores/CartaColoresView';
 import PlanificadorComprasView from './features/planificador-compras/PlanificadorComprasView';
@@ -65,6 +66,8 @@ function AppShell() {
     contenido = <UsuariosView />;
   } else if (view === 'patrones-corte') {
     contenido = <PatronesCorteView />;
+  } else if (view === 'piezas') {
+    contenido = <PiezasView />;
   } else if (view === 'carta-colores') {
     contenido = <CartaColoresView />;
   } else if (view === 'planificador-compras') {
