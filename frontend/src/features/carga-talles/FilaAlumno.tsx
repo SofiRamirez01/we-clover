@@ -89,17 +89,16 @@ export default function FilaAlumno({ token, alumno, productosConTalle, tablasTal
   async function guardarFila() {
     setError(null);
 
-    // Solo se intenta guardar lo que quedó con ancho Y largo completos — una unidad que
-    // todavía no se midió se deja para más adelante, no bloquea el guardado del resto.
+    // Para confirmar la fila hacen falta las medidas de TODAS las unidades del alumno — no se
+    // puede dejar una sin medir y guardar igual (eso era lo que pasaba antes: con todo vacío,
+    // "Guardar" bloqueaba la fila sin haber cargado nada).
     const combosAGuardar: { combo: ComboResponse; ancho: number; largo: number; observacion: string | null }[] = [];
     for (const combo of alumno.combos) {
       const d = borrador[combo.id];
-      if (!d) continue;
-      const anchoTexto = d.ancho.trim();
-      const largoTexto = d.largo.trim();
-      if (!anchoTexto && !largoTexto) continue;
+      const anchoTexto = (d?.ancho ?? '').trim();
+      const largoTexto = (d?.largo ?? '').trim();
       if (!anchoTexto || !largoTexto) {
-        setError(`Completá ancho y largo juntos para "${combo.nombreTipoPrenda}" (o dejá los dos vacíos).`);
+        setError('Para confirmar tenés que completar las medidas pedidas.');
         return;
       }
       const ancho = Number(anchoTexto);
@@ -108,7 +107,7 @@ export default function FilaAlumno({ token, alumno, productosConTalle, tablasTal
         setError(`Ancho y largo de "${combo.nombreTipoPrenda}" tienen que ser mayores a cero.`);
         return;
       }
-      const observacion = d.observacion.trim() || null;
+      const observacion = (d?.observacion ?? '').trim() || null;
       const sinCambios = ancho === combo.anchoCm && largo === combo.largoCm && observacion === combo.observacionPersonalizado;
       if (sinCambios) continue;
       combosAGuardar.push({ combo, ancho, largo, observacion });

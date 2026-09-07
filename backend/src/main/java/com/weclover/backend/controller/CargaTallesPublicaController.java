@@ -74,4 +74,10 @@ public class CargaTallesPublicaController {
         return cargaTallesService.actualizarCombo(token, idCombo, request);
     }
 
+    @PostMapping("/finalizar")
+    public ResponseEntity<Void> finalizar(@PathVariable String token) {
+        cargaTallesService.finalizarPorRepresentante(token);
+        return ResponseEntity.noContent().build();
+    }
+
 }

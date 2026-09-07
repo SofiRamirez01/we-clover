@@ -64,20 +64,14 @@ public class CargaTallesService {
     private final TablaTalleRepository tablaTalleRepository;
     private final AutorizacionService autorizacionService;
 
-    // ---------- Internas (autenticadas: ROLE_VENDEDOR / ROLE_ADMINISTRATIVO) ----------
+    // ---------- Internas ----------
 
+    /** Se llama automáticamente al crear un pedido (ver PedidoService.crearPedido) para que el
+     *  link ya exista desde el alta y nadie tenga que generarlo a mano. Sin chequeo de rol: quien
+     *  ya pudo crear el pedido no necesita revalidar acá. */
     @Transactional
-    public LinkCargaTallesResponse generarOObtenerLink(Long idPedido, Long idUsuarioActor) {
-        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_CARGA_TALLES);
-        Pedido pedido = obtenerPedido(idPedido);
-        CargaTallesPedido carga = cargaTallesPedidoRepository.findByPedido(pedido)
-            .orElseGet(() -> cargaTallesPedidoRepository.save(CargaTallesPedido.builder()
-                .pedido(pedido)
-                .token(UUID.randomUUID().toString())
-                .estado(EstadoCargaTalles.ABIERTO)
-                .fechaCreacion(LocalDateTime.now())
-                .build()));
-        return aLinkResponse(carga);
+    public void generarLinkParaPedidoNuevo(Pedido pedido) {
+        obtenerOCrearCargaDePedido(pedido);
     }
 
     @Transactional
@@ -100,10 +94,14 @@ public class CargaTallesService {
         return aLinkResponse(cargaTallesPedidoRepository.save(carga));
     }
 
-    @Transactional(readOnly = true)
-    public CargaTallesResponse obtenerInterno(Long idPedido, Long idUsuarioActor) {
-        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_CARGA_TALLES);
-        return construirRespuesta(obtenerCargaDePedido(idPedido));
+    /** Sin chequeo de rol — Ficha Técnica (donde vive esto ahora) ya es visible para cualquier
+     *  rol, así que el link/conteo de talles acompaña a esa misma visibilidad. Si el pedido es
+     *  viejo y todavía no tiene carga de talles (de antes de que se generara automáticamente al
+     *  crear el pedido), se crea acá mismo la primera vez que se consulta. */
+    @Transactional
+    public CargaTallesResponse obtenerInterno(Long idPedido) {
+        Pedido pedido = obtenerPedido(idPedido);
+        return construirRespuesta(obtenerOCrearCargaDePedido(pedido));
     }
 
     // ---------- Públicas (sin login, por token) ----------
@@ -161,6 +159,22 @@ public class CargaTallesService {
         return aComboResponse(unidad);
     }
 
+    /** Cierra la carga desde el link público — la usa el representante de curso cuando ya
+     *  terminó de cargar todo (ver el botón "Finalizar" en CargaTallesPublicaView). Vuelve a
+     *  validar que esté todo completo acá (no solo confiar en el botón deshabilitado del
+     *  front), y queda `cerradoPor = null` para distinguirlo de un cierre hecho por
+     *  Vendedor/Administrativo desde Ficha Técnica — que sigue pudiendo reabrir/cerrar esto
+     *  igual que antes, sin cambios. */
+    @Transactional
+    public void finalizarPorRepresentante(String token) {
+        CargaTallesPedido carga = obtenerCargaAbiertaPorToken(token);
+        validarTallesCompletos(carga);
+        carga.setEstado(EstadoCargaTalles.CERRADO);
+        carga.setFechaCierre(LocalDateTime.now());
+        carga.setCerradoPor(null);
+        cargaTallesPedidoRepository.save(carga);
+    }
+
     @Transactional
     public ComboResponse actualizarCombo(String token, Long idCombo, ComboUpsertRequest request) {
         CargaTallesPedido carga = obtenerCargaAbiertaPorToken(token);
@@ -213,6 +227,16 @@ public class CargaTallesService {
                 "Este pedido todavía no tiene un link de carga de talles generado"));
     }
 
+    private CargaTallesPedido obtenerOCrearCargaDePedido(Pedido pedido) {
+        return cargaTallesPedidoRepository.findByPedido(pedido)
+            .orElseGet(() -> cargaTallesPedidoRepository.save(CargaTallesPedido.builder()
+                .pedido(pedido)
+                .token(UUID.randomUUID().toString())
+                .estado(EstadoCargaTalles.ABIERTO)
+                .fechaCreacion(LocalDateTime.now())
+                .build()));
+    }
+
     private CargaTallesPedido obtenerCargaPorToken(String token) {
         return cargaTallesPedidoRepository.findByToken(token)
             .orElseThrow(() -> new ResourceNotFoundException("El link de carga de talles no existe o ya no es válido"));
@@ -247,6 +271,29 @@ public class CargaTallesService {
     private AlumnoProductoTalle obtenerComboDeCarga(Long idCombo, CargaTallesPedido carga) {
         return alumnoProductoTalleRepository.findByIdAndAlumnoPedido_CargaTalles(idCombo, carga)
             .orElseThrow(() -> new ResourceNotFoundException("No existe ese combo en esta carga de talles"));
+    }
+
+    /** "Completo" para un Producto con talle es: se asignaron exactamente las unidades del
+     *  pedido (ni de más — eso ya lo impide agregarUnidad — ni de menos) Y todas esas unidades
+     *  ya tienen ancho/largo cargados. `cantidadCargada` del resumen cuenta unidades asignadas
+     *  sin importar si están medidas, así que acá hace falta mirar los combos uno por uno. */
+    private void validarTallesCompletos(CargaTallesPedido carga) {
+        List<AlumnoProductoTalle> todosLosCombos = alumnoProductoTalleRepository.findByAlumnoPedido_CargaTalles(carga);
+        Map<Long, List<AlumnoProductoTalle>> combosPorProducto = todosLosCombos.stream()
+            .collect(Collectors.groupingBy(c -> c.getProducto().getId()));
+
+        for (Producto producto : carga.getPedido().getProductos()) {
+            if (producto.getTipoPrenda() == null || producto.getTipoPrenda().getGrupoTalle() == null) {
+                continue;
+            }
+            List<AlumnoProductoTalle> combos = combosPorProducto.getOrDefault(producto.getId(), List.of());
+            boolean completo = combos.size() == producto.getCantidadTotal()
+                && combos.stream().allMatch(c -> c.getAnchoCm() != null && c.getLargoCm() != null);
+            if (!completo) {
+                throw new BusinessRuleException(
+                    "Todavía faltan medidas de \"" + producto.getTipoPrenda().getNombre() + "\" para poder finalizar");
+            }
+        }
     }
 
     // ---------- Armado de respuestas ----------
@@ -315,11 +362,14 @@ public class CargaTallesService {
 
         return new CargaTallesResponse(
             pedido.getId(),
+            pedido.getCodigoInterno(),
             pedido.getColegio().getNombre(),
+            pedido.getColegio().getLocalidad(),
             pedido.getCurso(),
             pedido.getCantAlumnos(),
             carga.getEstado(),
             carga.getToken(),
+            carga.getFechaCierre(),
             productosResponse,
             alumnosResponse,
             tablasTalleResponse

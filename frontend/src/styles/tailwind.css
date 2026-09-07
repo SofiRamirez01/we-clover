@@ -7,6 +7,30 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/*
+ * Sin preflight, cada botón del sitio se queda con el bevel/borde nativo del navegador a
+ * menos que alguna clase le ponga su propio fondo o borde — esto lo resetea a "sobrio" (sin
+ * borde, sin fondo, ver .btn-icono de UsuariosView.css) como punto de partida. Va DENTRO de
+ * `layer(utilities)` (mismo layer donde caen las clases de fondo y borde de Tailwind) a
+ * propósito: un selector de elemento (`button`, especificidad 0-0-1) siempre pierde contra
+ * una clase (`.border-wc-border`, 0-1-0) dentro del MISMO layer sin importar el orden — así
+ * que cualquier botón con su propia clase de color o borde de Tailwind la sigue mostrando con
+ * normalidad, y solo los botones sin ninguna quedan "planos". Las clases sueltas sin @layer
+ * (.btn-icono, .btn-guardar, etc.) tampoco las toca esto: por spec, una regla sin layer le
+ * gana SIEMPRE a cualquier regla dentro de un @layer.
+ */
+@layer utilities {
+  button {
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+}
+
 @theme {
   --color-wc-green: #025939;
   --color-wc-green-dark: #007450;

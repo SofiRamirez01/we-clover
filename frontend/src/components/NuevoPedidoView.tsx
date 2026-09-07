@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import './NuevoPedidoView.css';
 import AppHeader from './AppHeader';
-import CargaTallesInternoPanel from '../features/carga-talles/CargaTallesInternoPanel';
 import { actualizarPedido, crearPedido, listarTiposPrenda } from '../services/pedidoService';
 import { useAuth } from '../context/AuthContext';
 import { extraerMensajeError } from '../utils/errores';
@@ -307,12 +306,6 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
       {mensaje && (
         <div className={`alerta alerta--${estado === 'error' ? 'error' : 'exito'}`} role="status">
           {mensaje}
-        </div>
-      )}
-
-      {esEdicion && pedidoAEditar && (
-        <div style={{ marginBottom: '16px' }}>
-          <CargaTallesInternoPanel idPedido={pedidoAEditar.id} />
         </div>
       )}
 

@@ -67,7 +67,7 @@ export default function VistaPortfolioMenu({ valor, onCambiar }: VistaPortfolioM
         onClick={() => setAbierto((v) => !v)}
         aria-label="Cambiar tamaño de vista"
         aria-expanded={abierto}
-        className="flex items-center gap-2 rounded-lg border border-wc-border bg-white px-3 py-2 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20"
+        className={`flex items-center gap-2 rounded-lg border border-wc-border px-3 py-2 text-sm text-wc-text transition hover:bg-wc-bg ${abierto ? 'bg-wc-bg' : 'bg-white'}`}
       >
         <ViewButtonIcon />
       </button>

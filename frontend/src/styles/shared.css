@@ -79,6 +79,15 @@ textarea:focus {
   background: #ffffff;
 }
 
+/* Sin @layer a propósito (ver el mismo truco en tailwind.css para inputs): una regla sin
+ * layer siempre le gana a una regla dentro de `layer(utilities)`, así que esto saca el
+ * anillo de foco por default del navegador en TODOS los botones del sistema (CSS plano y
+ * Tailwind por igual) — el límite del botón lo da solo el cambio de color en hover/active
+ * que ya tiene cada uno, no un borde/sombra de foco aparte. */
+button {
+  outline: none;
+}
+
 .input-readonly {
   background: #f1f1ee;
   color: var(--wc-text);

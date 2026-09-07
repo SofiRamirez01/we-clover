@@ -75,6 +75,7 @@ public class PedidoService {
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
     private final ProductoService productoService;
+    private final CargaTallesService cargaTallesService;
 
     @Transactional
     public PedidoResponse crearPedido(PedidoCreateRequest request) {
@@ -156,6 +157,7 @@ public class PedidoService {
         }
 
         Pedido guardado = pedidoRepository.save(pedido);
+        cargaTallesService.generarLinkParaPedidoNuevo(guardado);
         return construirRespuesta(guardado);
     }
 

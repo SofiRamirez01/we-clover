@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import FilaAlumno from './FilaAlumno';
 import InstructivoTalles from './InstructivoTalles';
-import { agregarAlumno, agregarUnidadCombo, obtenerCargaTallesPorToken } from '../../services/cargaTallesService';
+import { agregarAlumno, agregarUnidadCombo, finalizarCargaTalles, obtenerCargaTallesPorToken } from '../../services/cargaTallesService';
 import { extraerMensajeError } from '../../utils/errores';
 import type { CargaTallesResponse, ProductoPedidoResumenResponse } from '../../types/cargaTalles';
 
 interface CargaTallesPublicaViewProps {
   token: string;
+}
+
+function formatearFechaCierre(iso: string): string {
+  const [fecha] = iso.split('T');
+  const [anio, mes, dia] = fecha.split('-');
+  return `${dia}/${mes}/${anio}`;
 }
 
 /** Pantalla pública de carga de talles — accedida por /carga-talles/{token}, sin login (ver
@@ -21,6 +27,8 @@ export default function CargaTallesPublicaView({ token }: CargaTallesPublicaView
   const [composicionNueva, setComposicionNueva] = useState<Record<number, number>>({});
   const [guardandoAlumno, setGuardandoAlumno] = useState(false);
   const [errorAlumno, setErrorAlumno] = useState<string | null>(null);
+  const [finalizando, setFinalizando] = useState(false);
+  const [errorFinalizar, setErrorFinalizar] = useState<string | null>(null);
 
   function recargar() {
     obtenerCargaTallesPorToken(token)
@@ -75,6 +83,19 @@ export default function CargaTallesPublicaView({ token }: CargaTallesPublicaView
     }
   }
 
+  async function handleFinalizar() {
+    setFinalizando(true);
+    setErrorFinalizar(null);
+    try {
+      await finalizarCargaTalles(token);
+      recargar();
+    } catch (err) {
+      setErrorFinalizar(extraerMensajeError(err, 'No se pudo finalizar la carga.'));
+    } finally {
+      setFinalizando(false);
+    }
+  }
+
   if (estadoCarga === 'cargando') {
     return (
       <div className="tw-scope flex min-h-screen items-center justify-center bg-wc-bg">
@@ -100,26 +121,28 @@ export default function CargaTallesPublicaView({ token }: CargaTallesPublicaView
   const productosConTalle = data.productos.filter((p) => p.tieneTalle);
   const columnas = 1 + productosConTalle.length + 1;
 
+  // "Completo" no es solo que la cantidad cargada llegue al total (eso cuenta unidades
+  // asignadas, midan o no) — hace falta además que cada una de esas unidades ya tenga
+  // ancho/largo cargados, si no "Finalizar" se habilitaría con talles sin medir.
+  const todosLosCombos = data.alumnos.flatMap((a) => a.combos);
+  const todoCompleto = productosConTalle.every((p) => {
+    const combosDelProducto = todosLosCombos.filter((c) => c.idProducto === p.idProducto);
+    return combosDelProducto.length === p.cantidadTotal && combosDelProducto.every((c) => c.anchoCm != null && c.largoCm != null);
+  });
+
   return (
     <div className="tw-scope min-h-screen bg-wc-bg px-4 py-6 sm:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-5">
+        <h1 className="text-xl font-extrabold uppercase tracking-wide text-wc-text">Carga de talles</h1>
         <div className="rounded-xl border border-wc-border bg-white p-4 shadow-sm">
-          <h1 className="text-base font-bold text-wc-text">Carga de talles</h1>
+          <p className="text-base font-bold text-wc-text">Ficha Num: {data.codigoInterno}</p>
           <p className="text-sm text-wc-text-muted">
-            {data.nombreColegio} · {data.curso}
+            {data.nombreColegio}, {data.localidadColegio} · {data.curso}
           </p>
-        </div>
 
-        {soloLectura && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-800">
-            Esta carga fue cerrada — los datos quedan disponibles para consulta, pero ya no se pueden editar.
-          </div>
-        )}
+          
 
-        <InstructivoTalles tablasTalle={data.tablasTalle} />
-
-        <div className="rounded-xl border border-wc-border bg-white p-4 shadow-sm">
-          <h2 className="mb-2 text-sm font-bold text-wc-text">Resumen del pedido</h2>
+          <h2 className="mb-2 mt-4 text-sm font-bold text-wc-text">Resumen del pedido</h2>
           <p className="text-sm text-wc-text">
             Tu pedido: {data.productos.map((p) => `${p.cantidadTotal} ${p.nombreTipoPrenda}`).join(', ')}
           </p>
@@ -141,8 +164,34 @@ export default function CargaTallesPublicaView({ token }: CargaTallesPublicaView
               })}
             </div>
           )}
-        </div>
+          {soloLectura && (
+            <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-800">
+              {data.fechaCierre
+                ? `Carga de talles enviada el día ${formatearFechaCierre(data.fechaCierre)} — si necesitás realizar modificaciones, comunicate con tu vendedor.`
+                : 'Esta carga fue cerrada — los datos quedan disponibles para consulta, pero ya no se pueden editar.'}
+            </div>
+          )}
 
+          {!soloLectura && (
+            <div className="mt-4 flex flex-col items-start gap-1 border-t border-wc-border pt-3">
+              <button
+                type="button"
+                onClick={handleFinalizar}
+                disabled={!todoCompleto || finalizando}
+                title={!todoCompleto ? 'Completá todas las medidas antes de finalizar' : undefined}
+                className="rounded-lg bg-wc-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-wc-green-dark disabled:cursor-not-allowed disabled:bg-wc-text-muted/20 disabled:text-wc-text-muted"
+              >
+                {finalizando ? 'Finalizando…' : 'Finalizar carga de talles'}
+              </button>
+              {!todoCompleto && (
+                <p className="text-xs text-wc-text-muted">
+                  Vas a poder finalizar cuando termines de cargar todas las medidas.
+                </p>
+              )}
+              {errorFinalizar && <p className="text-xs font-medium text-red-600">{errorFinalizar}</p>}
+            </div>
+          )}
+        </div>
         <div className="overflow-x-auto rounded-xl border border-wc-border bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead>
@@ -253,6 +302,9 @@ export default function CargaTallesPublicaView({ token }: CargaTallesPublicaView
             {errorAlumno && <p className="text-xs font-medium text-red-600">{errorAlumno}</p>}
           </form>
         )}
+
+
+        <InstructivoTalles tablasTalle={data.tablasTalle} />
       </div>
     </div>
   );

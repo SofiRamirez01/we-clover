@@ -55,11 +55,14 @@ export interface GrupoTallaResponse {
 
 export interface CargaTallesResponse {
   idPedido: number;
+  codigoInterno: string;
   nombreColegio: string;
+  localidadColegio: string;
   curso: string;
   cantAlumnosPedido: number;
   estado: EstadoCargaTalles;
   token: string;
+  fechaCierre: string | null;
   tablasTalle: GrupoTallaResponse[];
   productos: ProductoPedidoResumenResponse[];
   alumnos: AlumnoResponse[];

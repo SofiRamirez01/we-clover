@@ -13,9 +13,10 @@ import com.weclover.backend.service.CargaTallesService;
 
 import lombok.RequiredArgsConstructor;
 
-/** Acciones internas (autenticadas) sobre la carga de talles de un Pedido puntual — generar el
- *  link, cerrar/reabrir, y consultar de solo lectura. Ver CargaTallesPublicaController para las
- *  rutas sin login que usa el representante de curso. */
+/** Acciones internas sobre la carga de talles de un Pedido puntual — el link se genera solo al
+ *  crear el pedido (ver PedidoService.crearPedido), así que acá solo queda consultarlo (Ficha
+ *  Técnica, visible para cualquier rol) y cerrar/reabrir. Ver CargaTallesPublicaController para
+ *  las rutas sin login que usa el representante de curso. */
 @RestController
 @RequestMapping("/api/pedidos/{idPedido}/carga-talles")
 @RequiredArgsConstructor
@@ -23,18 +24,9 @@ public class PedidoCargaTallesController {
 
     private final CargaTallesService cargaTallesService;
 
-    @PostMapping
-    public LinkCargaTallesResponse generarOObtenerLink(
-            @PathVariable Long idPedido,
-            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
-        return cargaTallesService.generarOObtenerLink(idPedido, idUsuarioActor);
-    }
-
     @GetMapping
-    public CargaTallesResponse obtener(
-            @PathVariable Long idPedido,
-            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
-        return cargaTallesService.obtenerInterno(idPedido, idUsuarioActor);
+    public CargaTallesResponse obtener(@PathVariable Long idPedido) {
+        return cargaTallesService.obtenerInterno(idPedido);
     }
 
     @PostMapping("/cerrar")
