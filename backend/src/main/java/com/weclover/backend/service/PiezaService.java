@@ -1,6 +1,9 @@
 package com.weclover.backend.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,12 +14,14 @@ import com.weclover.backend.dto.pieza.PiezaResponse;
 import com.weclover.backend.dto.pieza.SegmentoDto;
 import com.weclover.backend.entity.GrupoTalle;
 import com.weclover.backend.entity.Pieza;
+import com.weclover.backend.entity.PiezaTalle;
 import com.weclover.backend.entity.TablaTalle;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PiezaMapper;
 import com.weclover.backend.repository.GrupoTalleRepository;
 import com.weclover.backend.repository.PiezaRepository;
+import com.weclover.backend.repository.PiezaTalleRepository;
 import com.weclover.backend.repository.TablaTalleRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +32,7 @@ import tools.jackson.databind.ObjectMapper;
 public class PiezaService {
 
     private final PiezaRepository piezaRepository;
+    private final PiezaTalleRepository piezaTalleRepository;
     private final GrupoTalleRepository grupoTalleRepository;
     private final TablaTalleRepository tablaTalleRepository;
     private final PiezaMapper piezaMapper;
@@ -56,14 +62,14 @@ public class PiezaService {
             .grupoTalle(grupoTalle)
             .talleBase(talleBase)
             .segmentosBaseJson(objectMapper.writeValueAsString(segmentos))
-            .coordenadasBaseJson(objectMapper.writeValueAsString(calculo.coordenadas()))
-            .anchoBaseCm(calculo.anchoCm())
-            .largoBaseCm(calculo.largoCm())
             .simetrica(simetrica)
             .activo(true)
             .build();
+        pieza = piezaRepository.save(pieza);
 
-        return piezaMapper.toResponse(piezaRepository.save(pieza));
+        PiezaTalle piezaTalleBase = upsertBase(pieza, talleBase, calculo);
+
+        return construirResponse(pieza, piezaTalleBase);
     }
 
     @Transactional
@@ -91,12 +97,12 @@ public class PiezaService {
         pieza.setGrupoTalle(grupoTalle);
         pieza.setTalleBase(talleBase);
         pieza.setSegmentosBaseJson(objectMapper.writeValueAsString(segmentos));
-        pieza.setCoordenadasBaseJson(objectMapper.writeValueAsString(calculo.coordenadas()));
-        pieza.setAnchoBaseCm(calculo.anchoCm());
-        pieza.setLargoBaseCm(calculo.largoCm());
         pieza.setSimetrica(simetrica);
+        pieza = piezaRepository.save(pieza);
 
-        return piezaMapper.toResponse(piezaRepository.save(pieza));
+        PiezaTalle piezaTalleBase = upsertBase(pieza, talleBase, calculo);
+
+        return construirResponse(pieza, piezaTalleBase);
     }
 
     @Transactional(readOnly = true)
@@ -113,10 +119,15 @@ public class PiezaService {
         List<Pieza> piezas = idGrupoTalle != null
             ? piezaRepository.findByGrupoTalle_Id(idGrupoTalle)
             : piezaRepository.findByActivoTrue();
+        piezas = piezas.stream().filter(Pieza::isActivo).toList();
+
+        Map<Long, PiezaTalle> basesPorPieza = piezaTalleRepository
+            .findByPieza_IdInAndEsBaseTrue(piezas.stream().map(Pieza::getId).toList())
+            .stream()
+            .collect(Collectors.toMap(fila -> fila.getPieza().getId(), fila -> fila));
 
         return piezas.stream()
-            .filter(Pieza::isActivo)
-            .map(piezaMapper::toResponse)
+            .map(pieza -> construirResponse(pieza, basesPorPieza.get(pieza.getId())))
             .toList();
     }
 
@@ -132,6 +143,8 @@ public class PiezaService {
             pieza.getSegmentosBaseJson(),
             objectMapper.getTypeFactory().constructCollectionType(List.class, SegmentoDto.class));
 
+        PiezaTalle piezaTalleBase = obtenerBase(pieza.getId());
+
         return new PiezaDetalleResponse(
             pieza.getId(),
             pieza.getNombre(),
@@ -141,9 +154,54 @@ public class PiezaService {
             pieza.getTalleBase().getTalle(),
             segmentos,
             pieza.isSimetrica(),
-            pieza.getAnchoBaseCm(),
-            pieza.getLargoBaseCm(),
+            piezaTalleBase.getAnchoCm(),
+            piezaTalleBase.getLargoCm(),
             pieza.isActivo());
+    }
+
+    /**
+     * Crea o actualiza la fila PiezaTalle esBase=true de esta pieza con el resultado fresco de
+     * calcularBase. Si el talle base cambió respecto de una edición anterior, la fila que era
+     * base en el talle viejo deja de serlo (pero conserva su geometría, que queda desactualizada
+     * hasta que se la regenere desde la pantalla de graduación).
+     */
+    private PiezaTalle upsertBase(Pieza pieza, TablaTalle talleBase, PiezaGeometriaCalculoResponse calculo) {
+        piezaTalleRepository.findByPieza_IdAndEsBaseTrue(pieza.getId())
+            .filter(fila -> !fila.getTalle().getId().equals(talleBase.getId()))
+            .ifPresent(fila -> {
+                fila.setEsBase(false);
+                piezaTalleRepository.save(fila);
+            });
+
+        PiezaTalle piezaTalleBase = piezaTalleRepository.findByPieza_IdAndTalle_Id(pieza.getId(), talleBase.getId())
+            .orElseGet(() -> PiezaTalle.builder().pieza(pieza).talle(talleBase).build());
+
+        piezaTalleBase.setCoordenadasJson(objectMapper.writeValueAsString(calculo.coordenadas()));
+        piezaTalleBase.setAreaCm2(calculo.areaCm2());
+        piezaTalleBase.setAnchoCm(calculo.anchoCm());
+        piezaTalleBase.setLargoCm(calculo.largoCm());
+        piezaTalleBase.setPerimetroCm(calculo.perimetroCm());
+        piezaTalleBase.setEsBase(true);
+        piezaTalleBase.setEditadoManualmente(false);
+        piezaTalleBase.setFechaGeneracion(LocalDateTime.now());
+
+        return piezaTalleRepository.save(piezaTalleBase);
+    }
+
+    private PiezaTalle obtenerBase(Long idPieza) {
+        return piezaTalleRepository.findByPieza_IdAndEsBaseTrue(idPieza)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "La pieza con id " + idPieza + " todavía no tiene generada la geometría de su talle base"));
+    }
+
+    private PiezaResponse construirResponse(Pieza pieza, PiezaTalle piezaTalleBase) {
+        PiezaResponse mapeada = piezaMapper.toResponse(pieza);
+        double anchoBaseCm = piezaTalleBase != null ? piezaTalleBase.getAnchoCm() : 0;
+        double largoBaseCm = piezaTalleBase != null ? piezaTalleBase.getLargoCm() : 0;
+        return new PiezaResponse(
+            mapeada.id(), mapeada.nombre(), mapeada.idGrupoTalle(), mapeada.nombreGrupoTalle(),
+            mapeada.idTalleBase(), mapeada.talleBase(), mapeada.simetrica(),
+            anchoBaseCm, largoBaseCm, mapeada.activo());
     }
 
     private GrupoTalle obtenerGrupoTalle(Long idGrupoTalle) {

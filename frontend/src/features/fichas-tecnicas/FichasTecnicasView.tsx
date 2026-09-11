@@ -3,12 +3,45 @@ import AppHeader from '../../components/AppHeader';
 import { useAuth } from '../../context/AuthContext';
 import { listarPedidos } from '../../services/pedidoService';
 import { listarPaletaColores } from '../../services/paletaColoresService';
+import { obtenerCargaTallesInterno } from '../../services/cargaTallesService';
+import { listarTiposTela } from '../../services/tipoTelaService';
 import FichaPedidoCard from './FichaPedidoCard';
 import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS } from '../../types/pedido';
 import type { EstadoPedido, PedidoResponse, ProductoResponse } from '../../types/pedido';
-import { TIPOS_TELA_PRENDA, TIPO_TELA_LABELS } from '../../types/paletaColores';
+import { TIPOS_TELA_PRENDA } from '../../types/paletaColores';
 import type { PaletaColorResponse, TipoTela } from '../../types/paletaColores';
-import { telaEfectiva } from './telaUtils';
+import type { CargaTallesResponse, ProductoPedidoResumenResponse } from '../../types/cargaTalles';
+import type { TipoTelaCatalogo } from '../../types/tipoTela';
+import { estadoDiseno, nombreTela, telaEfectiva } from './telaUtils';
+
+type FiltroCompletitud = '' | 'FALTA_DISENO' | 'FALTAN_TALLES' | 'LISTO';
+
+const OPCIONES_COMPLETITUD: { value: FiltroCompletitud; label: string }[] = [
+  { value: '', label: 'Producción (todos)' },
+  { value: 'FALTA_DISENO', label: 'Falta diseño' },
+  { value: 'FALTAN_TALLES', label: 'Faltan talles' },
+  { value: 'LISTO', label: 'Listo para producción' },
+];
+
+/** true si a la prenda le faltan talles por cargar — solo aplica a prendas que trackean talle
+ *  (tieneTalle); una Bandera, por ejemplo, nunca "falta" talles porque no le corresponde. */
+function faltanTalles(resumen: ProductoPedidoResumenResponse | undefined): boolean {
+  if (!resumen || !resumen.tieneTalle) return false;
+  return resumen.cantidadCargada < resumen.cantidadTotal;
+}
+
+function productoCumpleCompletitud(
+  producto: ProductoResponse,
+  resumen: ProductoPedidoResumenResponse | undefined,
+  filtro: FiltroCompletitud,
+): boolean {
+  if (!filtro) return true;
+  const disenoCompleto = estadoDiseno(producto).completo;
+  const tallesIncompletos = faltanTalles(resumen);
+  if (filtro === 'FALTA_DISENO') return !disenoCompleto;
+  if (filtro === 'FALTAN_TALLES') return tallesIncompletos;
+  return disenoCompleto && !tallesIncompletos;
+}
 
 /** Roles habilitados para cargar/reemplazar la imagen de diseño (debe coincidir con ProductoService.java). */
 const ROLES_CARGA_DISENIO = ['ROLE_ADMINISTRATIVO', 'ROLE_VENDEDOR', 'ROLE_DISENADOR'];
@@ -34,9 +67,37 @@ interface Filtros {
   estado: EstadoPedido | '';
   nombreColor: string;
   tipoTela: TipoTela | '';
+  pagoDesde: string;
+  pagoHasta: string;
+  completitud: FiltroCompletitud;
 }
 
-const filtrosIniciales: Filtros = { buscar: '', estado: '', nombreColor: '', tipoTela: '' };
+/** Encabezados de columna de la lista de prendas — mismos anchos y breakpoints que
+ *  FilaProducto en FichaPedidoCard.tsx, para que quede alineado como una tabla real. */
+function EncabezadoColumnas() {
+  return (
+    <div className="hidden items-center gap-3 px-3 text-[11px] font-bold uppercase tracking-wide text-wc-text-muted sm:flex">
+      <div className="w-14 shrink-0" />
+      <div className="w-28 shrink-0">Prenda</div>
+      <div className="w-16 shrink-0 text-center">Cant.</div>
+      <div className="w-20 shrink-0">Tela</div>
+      <div className="hidden min-w-0 flex-1 truncate md:block">Colores</div>
+      <div className="w-28 shrink-0">Diseño</div>
+      <div className="hidden w-32 shrink-0 md:block">Talles</div>
+      <div className="w-36 shrink-0 sm:w-40">Estado</div>
+    </div>
+  );
+}
+
+const filtrosIniciales: Filtros = {
+  buscar: '',
+  estado: '',
+  nombreColor: '',
+  tipoTela: '',
+  pagoDesde: '',
+  pagoHasta: '',
+  completitud: '',
+};
 
 export default function FichasTecnicasView() {
   const { usuario } = useAuth();
@@ -48,14 +109,31 @@ export default function FichasTecnicasView() {
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciales);
   const [paletaColores, setPaletaColores] = useState<PaletaColorResponse[]>([]);
   const [coloresCierre, setColoresCierre] = useState<PaletaColorResponse[]>([]);
+  const [tiposTela, setTiposTela] = useState<TipoTelaCatalogo[]>([]);
+  /** Resumen de talles por pedido, solo para poder filtrar por "Faltan talles"/"Listo para
+   *  producción" — se trae una sola vez acá, en paralelo, independiente del fetch propio que
+   *  cada FichaPedidoCard hace para sus controles de cerrar/reabrir/copiar link (ver
+   *  useCargaTallesFicha). Duplica el GET, pero evita tener que levantar ese estado hasta acá y
+   *  pasarlo para abajo — con la cantidad de pedidos actual no es un problema de performance. */
+  const [cargaTallesPorPedido, setCargaTallesPorPedido] = useState<Map<number, CargaTallesResponse>>(new Map());
 
   useEffect(() => {
     let cancelado = false;
     listarPedidos()
-      .then((data) => {
+      .then(async (data) => {
         if (cancelado) return;
         setPedidos(data);
         setEstadoCarga('listo');
+        const entradas = await Promise.all(
+          data.map((pedido) =>
+            obtenerCargaTallesInterno(pedido.id)
+              .then((carga): [number, CargaTallesResponse] => [pedido.id, carga])
+              .catch(() => null),
+          ),
+        );
+        if (!cancelado) {
+          setCargaTallesPorPedido(new Map(entradas.filter((e): e is [number, CargaTallesResponse] => e !== null)));
+        }
       })
       .catch(() => {
         if (!cancelado) setEstadoCarga('error');
@@ -93,6 +171,20 @@ export default function FichasTecnicasView() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelado = false;
+    listarTiposTela()
+      .then((data) => {
+        if (!cancelado) setTiposTela(data);
+      })
+      .catch(() => {
+        /* si falla, se muestra el código de la tela como fallback (ver nombreTela) */
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   function actualizarFiltro<K extends keyof Filtros>(campo: K, valor: Filtros[K]) {
     setFiltros((prev) => ({ ...prev, [campo]: valor }));
   }
@@ -122,6 +214,8 @@ export default function FichasTecnicasView() {
 
   const pedidosFiltrados = useMemo(() => {
     const buscar = filtros.buscar.trim().toLowerCase();
+    const pagoDesde = filtros.pagoDesde.trim() ? Number(filtros.pagoDesde) : null;
+    const pagoHasta = filtros.pagoHasta.trim() ? Number(filtros.pagoHasta) : null;
     return pedidos
       .filter((pedido) => {
         if (buscar) {
@@ -131,6 +225,8 @@ export default function FichasTecnicasView() {
           if (!coincide) return false;
         }
         if (filtros.estado && pedido.estadoActual !== filtros.estado) return false;
+        if (pagoDesde != null && !Number.isNaN(pagoDesde) && pedido.porcentajePagado < pagoDesde) return false;
+        if (pagoHasta != null && !Number.isNaN(pagoHasta) && pedido.porcentajePagado > pagoHasta) return false;
         if (
           filtros.nombreColor !== '' &&
           !pedido.productos.some((producto) =>
@@ -142,14 +238,19 @@ export default function FichasTecnicasView() {
         return true;
       })
       .map((pedido) => {
-        if (!filtros.tipoTela) return pedido;
+        if (!filtros.tipoTela && !filtros.completitud) return pedido;
+        const resumenPorProducto = new Map(
+          cargaTallesPorPedido.get(pedido.id)?.productos.map((r) => [r.idProducto, r]) ?? [],
+        );
         return {
           ...pedido,
-          productos: pedido.productos.filter((producto) => telaEfectiva(producto) === filtros.tipoTela),
+          productos: pedido.productos
+            .filter((producto) => !filtros.tipoTela || telaEfectiva(producto) === filtros.tipoTela)
+            .filter((producto) => productoCumpleCompletitud(producto, resumenPorProducto.get(producto.id), filtros.completitud)),
         };
       })
       .filter((pedido) => pedido.productos.length > 0);
-  }, [pedidos, filtros]);
+  }, [pedidos, filtros, cargaTallesPorPedido]);
 
   return (
     <div className="tw-scope px-8 pt-7 pb-12">
@@ -211,10 +312,53 @@ export default function FichasTecnicasView() {
               <option value="">Tela (todas)</option>
               {TIPOS_TELA_PRENDA.map((tela) => (
                 <option key={tela} value={tela}>
-                  {TIPO_TELA_LABELS[tela]}
+                  {nombreTela(tela, tiposTela)}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="relative">
+            <select
+              value={filtros.completitud}
+              onChange={(e) => actualizarFiltro('completitud', e.target.value as FiltroCompletitud)}
+              className="rounded-lg border border-wc-border bg-white py-2 pl-3 pr-8 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20"
+            >
+              {OPCIONES_COMPLETITUD.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-semibold text-wc-text-muted" htmlFor="ficha-pago-desde">
+              % Pago desde
+            </label>
+            <input
+              id="ficha-pago-desde"
+              type="number"
+              min={0}
+              max={100}
+              value={filtros.pagoDesde}
+              onChange={(e) => actualizarFiltro('pagoDesde', e.target.value)}
+              placeholder="0"
+              className="w-16 rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20"
+            />
+            <label className="text-xs font-semibold text-wc-text-muted" htmlFor="ficha-pago-hasta">
+              hasta
+            </label>
+            <input
+              id="ficha-pago-hasta"
+              type="number"
+              min={0}
+              max={100}
+              value={filtros.pagoHasta}
+              onChange={(e) => actualizarFiltro('pagoHasta', e.target.value)}
+              placeholder="100"
+              className="w-16 rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20"
+            />
           </div>
         </div>
 
@@ -227,17 +371,21 @@ export default function FichasTecnicasView() {
         )}
 
         {estadoCarga === 'listo' && pedidosFiltrados.length > 0 && (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {pedidosFiltrados.map((pedido) => (
-              <FichaPedidoCard
-                key={pedido.id}
-                pedido={pedido}
-                puedeCargar={puedeCargar}
-                puedeCambiarEstado={puedeCambiarEstado}
-                coloresCierre={coloresCierre}
-                onActualizado={(actualizado) => actualizarProducto(pedido.id, actualizado)}
-              />
-            ))}
+          <div className="flex flex-col gap-3">
+            <EncabezadoColumnas />
+            <div className="flex flex-col gap-4">
+              {pedidosFiltrados.map((pedido) => (
+                <FichaPedidoCard
+                  key={pedido.id}
+                  pedido={pedido}
+                  puedeCargar={puedeCargar}
+                  puedeCambiarEstado={puedeCambiarEstado}
+                  coloresCierre={coloresCierre}
+                  tiposTela={tiposTela}
+                  onActualizado={(actualizado) => actualizarProducto(pedido.id, actualizado)}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -27,6 +27,19 @@ const LockIcon = ({ abierto }: { abierto: boolean }) => (
   </svg>
 );
 
+/** Filas con viñetas: para que "Ver detalle" se lea como "abrir un listado" y no como un link
+ *  cualquiera. */
+const ListaIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="21" y2="12" />
+    <line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+);
+
 interface CargaTallesFichaHeaderProps {
   idPedido: number;
   carga: CargaTallesResponse | null;
@@ -34,6 +47,10 @@ interface CargaTallesFichaHeaderProps {
   accionando: boolean;
   error: string | null;
   onCerrarOReabrir: () => void;
+  /** Versión angosta para cuando esto va dentro de la columna "Talles" de Ficha Técnica
+   *  (FichaPedidoCard): sin la etiqueta "Carga de talles:" (ya está bajo esa columna) y con
+   *  menos padding, para que entre en ~128px de ancho. */
+  compacto?: boolean;
 }
 
 /** Barra compacta con el link de carga de talles: el estado (ABIERTO/CERRADO) es un botón — al
@@ -48,6 +65,7 @@ export default function CargaTallesFichaHeader({
   accionando,
   error,
   onCerrarOReabrir,
+  compacto = false,
 }: CargaTallesFichaHeaderProps) {
   const [copiado, setCopiado] = useState(false);
 
@@ -75,20 +93,20 @@ export default function CargaTallesFichaHeader({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[11px] font-semibold text-wc-text-muted">Carga de talles:</span>
+      <div className={`flex items-center ${compacto ? 'flex-nowrap gap-1' : 'flex-wrap gap-1.5'}`}>
+        {!compacto && <span className="text-[11px] font-semibold text-wc-text-muted">Carga de talles:</span>}
 
         <button
           type="button"
           onClick={onCerrarOReabrir}
           disabled={accionando}
-          title={abierta ? 'Presioná para cerrar' : 'Presioná para abrir'}
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold transition disabled:cursor-wait disabled:opacity-60 ${
-            abierta ? 'bg-wc-green/10 text-wc-green hover:bg-wc-green/20' : 'bg-wc-text-muted/10 text-wc-text-muted hover:bg-wc-text-muted/20'
-          }`}
+          title={abierta ? 'Abierta — presioná para cerrar' : 'Cerrada — presioná para abrir'}
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full text-[11px] font-semibold transition disabled:cursor-wait disabled:opacity-60 ${
+            compacto ? 'px-1.5 py-0.5' : 'px-2 py-1'
+          } ${abierta ? 'bg-wc-green/10 text-wc-green hover:bg-wc-green/20' : 'bg-wc-text-muted/10 text-wc-text-muted hover:bg-wc-text-muted/20'}`}
         >
           <LockIcon abierto={abierta} />
-          {accionando ? '…' : abierta ? 'Abierta' : 'Cerrada'}
+          {!compacto && (accionando ? '…' : abierta ? 'Abierta' : 'Cerrada')}
         </button>
 
         <button
@@ -96,7 +114,9 @@ export default function CargaTallesFichaHeader({
           onClick={copiarLink}
           title="Copiar link de carga de talles"
           aria-label="Copiar link de carga de talles"
-          className="inline-flex items-center justify-center rounded-md p-1.5 text-wc-text-muted transition hover:bg-wc-bg hover:text-wc-text"
+          className={`inline-flex shrink-0 items-center justify-center rounded-md text-wc-text-muted transition hover:bg-wc-bg hover:text-wc-text ${
+            compacto ? 'p-1' : 'p-1.5'
+          }`}
         >
           {copiado ? <CheckIcon /> : <CopiarLinkIcon />}
         </button>
@@ -104,9 +124,13 @@ export default function CargaTallesFichaHeader({
         <button
           type="button"
           onClick={verDetalle}
-          className="ml-auto text-[11px] font-semibold text-wc-green underline"
+          title="Ver el listado de talles por alumno"
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full bg-wc-green/10 text-[11px] font-semibold text-wc-green transition hover:bg-wc-green/20 ${
+            compacto ? 'px-1.5 py-0.5' : 'ml-auto px-2 py-1'
+          }`}
         >
-          Ver detalle
+          <ListaIcon />
+          {!compacto && 'Ver detalle'}
         </button>
       </div>
       {error && <p className="text-[11px] font-medium text-red-600">{error}</p>}

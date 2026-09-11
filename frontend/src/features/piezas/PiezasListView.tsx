@@ -23,15 +23,22 @@ const DuplicarIcon = () => (
   </svg>
 );
 
+const GraduacionIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+  </svg>
+);
+
 interface PiezasListViewProps {
   onNueva: () => void;
   onVer: (id: number) => void;
   onEditar: (id: number) => void;
   onDuplicar: (id: number) => void;
+  onGraduacion: (id: number) => void;
   mensajeExito?: string | null;
 }
 
-export default function PiezasListView({ onNueva, onVer, onEditar, onDuplicar, mensajeExito }: PiezasListViewProps) {
+export default function PiezasListView({ onNueva, onVer, onEditar, onDuplicar, onGraduacion, mensajeExito }: PiezasListViewProps) {
   const [piezas, setPiezas] = useState<PiezaResponse[]>([]);
   const [estadoCarga, setEstadoCarga] = useState<'cargando' | 'listo' | 'error'>('cargando');
 
@@ -124,6 +131,15 @@ export default function PiezasListView({ onNueva, onVer, onEditar, onDuplicar, m
                         className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-wc-border bg-white text-wc-text-muted transition hover:border-wc-green hover:bg-wc-green/10 hover:text-wc-green-dark"
                       >
                         <DuplicarIcon />
+                      </button>
+                      <button
+                        type="button"
+                        title="Graduación por talle"
+                        aria-label="Graduación por talle"
+                        onClick={() => onGraduacion(pieza.id)}
+                        className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-wc-border bg-white text-wc-text-muted transition hover:border-wc-green hover:bg-wc-green/10 hover:text-wc-green-dark"
+                      >
+                        <GraduacionIcon />
                       </button>
                     </div>
                   </td>

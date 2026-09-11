@@ -5,16 +5,17 @@ import AppHeader from './AppHeader';
 import { actualizarPedido, crearPedido, listarTiposPrenda } from '../services/pedidoService';
 import { useAuth } from '../context/AuthContext';
 import { extraerMensajeError } from '../utils/errores';
-import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS } from '../types/pedido';
+import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS, RESPONSABLE_CURSO_LABELS } from '../types/pedido';
 import type {
   EstadoPedido,
   PedidoCreateRequest,
   PedidoResponse,
   PedidoUpdateRequest,
+  ResponsableCurso,
   TipoPrendaOption,
 } from '../types/pedido';
 
-const FORMATO_NUMERO_FICHA = /^\d{4}-\d{2}$/;
+const FORMATO_NUMERO_FICHA = /^\d{4}-\d{2,}$/;
 
 const ESTADOS_INICIALES: { value: EstadoPedido; label: string }[] = [
   { value: 'PRESUPUESTADO', label: 'Presupuestado' },
@@ -34,6 +35,7 @@ interface ClienteForm {
   colegioNombre: string;
   localidad: string;
   provincia: string;
+  nivelColegio: string;
   nombreContacto: string;
   telefono: string;
   mail: string;
@@ -47,6 +49,9 @@ interface InfoGeneralForm {
   fechaEstimadaEntrega: string;
   estado: EstadoPedido;
   observaciones: string;
+  responsableCurso: ResponsableCurso | '';
+  contratoFirmado: boolean;
+  cantidadCuotas: string;
 }
 
 type EnvioEstado = 'idle' | 'enviando' | 'exito' | 'error';
@@ -55,6 +60,7 @@ const clienteInicial: ClienteForm = {
   colegioNombre: '',
   localidad: '',
   provincia: '',
+  nivelColegio: '',
   nombreContacto: '',
   telefono: '',
   mail: '',
@@ -68,6 +74,9 @@ const infoGeneralInicial: InfoGeneralForm = {
   fechaEstimadaEntrega: '',
   estado: 'PRESUPUESTADO',
   observaciones: '',
+  responsableCurso: '',
+  contratoFirmado: false,
+  cantidadCuotas: '',
 };
 
 function nuevaPrenda(): PrendaRow {
@@ -88,6 +97,7 @@ function clienteDesdePedido(pedido: PedidoResponse): ClienteForm {
     colegioNombre: pedido.nombreColegio,
     localidad: pedido.localidadColegio ?? '',
     provincia: pedido.provinciaColegio ?? '',
+    nivelColegio: pedido.nivelColegio ?? '',
     nombreContacto: pedido.nombreRepresentanteCurso,
     telefono: pedido.telefonoRepresentanteCurso ?? '',
     mail: pedido.emailRepresentanteCurso,
@@ -103,6 +113,9 @@ function infoGeneralDesdePedido(pedido: PedidoResponse): InfoGeneralForm {
     fechaEstimadaEntrega: pedido.fechaEstimadaEntrega,
     estado: pedido.estadoActual,
     observaciones: pedido.observaciones ?? '',
+    responsableCurso: pedido.responsableCurso ?? '',
+    contratoFirmado: pedido.contratoFirmado,
+    cantidadCuotas: pedido.cantidadCuotas != null ? String(pedido.cantidadCuotas) : '',
   };
 }
 
@@ -205,7 +218,7 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
     const numeroFicha = infoGeneral.numeroFicha.trim();
     if (!FORMATO_NUMERO_FICHA.test(numeroFicha)) {
       setEstado('error');
-      setMensaje('El Nº de ficha debe tener el formato AAAA-NN (ej: 2026-01).');
+      setMensaje('El Nº de ficha debe tener el formato AAAA-NN, con NN de al menos 2 dígitos (ej: 2026-01, o 2026-100 al superar los 99 pedidos del año).');
       return;
     }
 
@@ -244,6 +257,7 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
           colegioNombre: cliente.colegioNombre.trim(),
           colegioLocalidad: cliente.localidad.trim() || undefined,
           colegioProvincia: cliente.provincia.trim() || undefined,
+          colegioNivel: cliente.nivelColegio.trim() || undefined,
           representanteNombre: cliente.nombreContacto.trim(),
           representanteTelefono: cliente.telefono.trim() || undefined,
           representanteEmail: cliente.mail.trim(),
@@ -256,6 +270,9 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
           fechaEstimadaEntrega: infoGeneral.fechaEstimadaEntrega,
           productos,
           pagoInicial: aNumero(pagoInicial),
+          responsableCurso: infoGeneral.responsableCurso || undefined,
+          contratoFirmado: infoGeneral.contratoFirmado,
+          cantidadCuotas: infoGeneral.cantidadCuotas ? aNumero(infoGeneral.cantidadCuotas) : undefined,
         };
         const pedidoActualizado = await actualizarPedido(pedidoAEditar.id, payload);
         onCreado(
@@ -267,6 +284,7 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
           colegioNombre: cliente.colegioNombre.trim(),
           colegioLocalidad: cliente.localidad.trim() || undefined,
           colegioProvincia: cliente.provincia.trim() || undefined,
+          colegioNivel: cliente.nivelColegio.trim() || undefined,
           representanteNombre: cliente.nombreContacto.trim(),
           representanteTelefono: cliente.telefono.trim() || undefined,
           representanteEmail: cliente.mail.trim(),
@@ -280,6 +298,9 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
           fechaEstimadaEntrega: infoGeneral.fechaEstimadaEntrega,
           productos,
           pagoInicial: aNumero(pagoInicial),
+          responsableCurso: infoGeneral.responsableCurso || undefined,
+          contratoFirmado: infoGeneral.contratoFirmado,
+          cantidadCuotas: infoGeneral.cantidadCuotas ? aNumero(infoGeneral.cantidadCuotas) : undefined,
         };
         const pedidoCreado = await crearPedido(payload);
         limpiarFormulario();
@@ -335,6 +356,14 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
               <input
                 value={cliente.provincia}
                 onChange={(e) => actualizarCliente('provincia', e.target.value)}
+              />
+            </label>
+            <label>
+              Nivel del colegio
+              <input
+                value={cliente.nivelColegio}
+                onChange={(e) => actualizarCliente('nivelColegio', e.target.value)}
+                placeholder="Ej: Secundaria"
               />
             </label>
             <label>
@@ -439,6 +468,39 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
                         </option>
                       ))}
                 </select>
+              </label>
+              <label>
+                Responsable del curso
+                <select
+                  value={infoGeneral.responsableCurso}
+                  onChange={(e) =>
+                    actualizarInfoGeneral('responsableCurso', e.target.value as ResponsableCurso | '')
+                  }
+                >
+                  <option value="">Sin especificar</option>
+                  {(Object.keys(RESPONSABLE_CURSO_LABELS) as ResponsableCurso[]).map((valor) => (
+                    <option key={valor} value={valor}>
+                      {RESPONSABLE_CURSO_LABELS[valor]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Cantidad de Cuotas
+                <input
+                  type="number"
+                  min={0}
+                  value={infoGeneral.cantidadCuotas}
+                  onChange={(e) => actualizarInfoGeneral('cantidadCuotas', e.target.value)}
+                />
+              </label>
+              <label className="campo-checkbox">
+                <input
+                  type="checkbox"
+                  checked={infoGeneral.contratoFirmado}
+                  onChange={(e) => actualizarInfoGeneral('contratoFirmado', e.target.checked)}
+                />
+                Contrato firmado
               </label>
             </div>
 

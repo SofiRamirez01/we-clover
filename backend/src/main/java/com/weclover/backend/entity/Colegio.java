@@ -35,4 +35,9 @@ public class Colegio {
 
     @Column(nullable = false, length = 100)
     private String localidad;
+
+    /** Nivel educativo (ej. "Secundaria", "Primaria"). Nullable: dato nuevo, ausente en colegios
+     *  cargados antes de agregarlo y opcional al crear un pedido a mano. */
+    @Column(length = 50)
+    private String nivel;
 }

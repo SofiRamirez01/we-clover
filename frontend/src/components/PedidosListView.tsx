@@ -5,6 +5,7 @@ import DateRangePicker from './DateRangePicker';
 import CambiarEstadoPopover from './CambiarEstadoPopover';
 import AccionesPedidoMenu from './AccionesPedidoMenu';
 import HistorialPedidoModal from './HistorialPedidoModal';
+import ImportarExcelModal from './ImportarExcelModal';
 import { listarPedidos } from '../services/pedidoService';
 import { BUCKET_POR_ESTADO, ESTADO_PEDIDO_LABELS } from '../types/pedido';
 import type { BucketEstadoPedido, EstadoPedido, PedidoResponse } from '../types/pedido';
@@ -34,14 +35,6 @@ function sumarUnidadesPorTipos(pedido: PedidoResponse, tipos: string[]): number 
     .reduce((acc, p) => acc + p.cantidadTotal, 0);
 }
 
-function totalUnidades(pedido: PedidoResponse): number {
-  return pedido.productos.reduce((acc, p) => acc + p.cantidadTotal, 0);
-}
-
-function precioUnitarioPromedio(pedido: PedidoResponse): number {
-  const unidades = totalUnidades(pedido);
-  return unidades > 0 ? pedido.precioTotal / unidades : 0;
-}
 
 function contarPorBucket(pedidos: PedidoResponse[], valor: (p: PedidoResponse) => number): Contadores {
   const acc: Record<BucketEstadoPedido, number> = { pendiente: 0, en_produccion: 0, entregado: 0 };
@@ -86,6 +79,19 @@ export default function PedidosListView({ onNuevoPedido, onEditarPedido, mensaje
   const [estadoCarga, setEstadoCarga] = useState<'cargando' | 'listo' | 'error'>('cargando');
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciales);
   const [pedidoHistorial, setPedidoHistorial] = useState<PedidoResponse | null>(null);
+  const [mostrarImportar, setMostrarImportar] = useState(false);
+
+  function cargarPedidos() {
+    setEstadoCarga('cargando');
+    listarPedidos()
+      .then((data) => {
+        setPedidos(data);
+        setEstadoCarga('listo');
+      })
+      .catch(() => {
+        setEstadoCarga('error');
+      });
+  }
 
   useEffect(() => {
     let cancelado = false;
@@ -199,6 +205,9 @@ export default function PedidosListView({ onNuevoPedido, onEditarPedido, mensaje
               </option>
             ))}
           </select>
+          <button type="button" className="btn-secondary pedidos-btn-nuevo" onClick={() => setMostrarImportar(true)}>
+            Importar Excel
+          </button>
           <button type="button" className="btn-guardar pedidos-btn-nuevo" onClick={onNuevoPedido}>
             + Nuevo Pedido
           </button>
@@ -235,7 +244,7 @@ export default function PedidosListView({ onNuevoPedido, onEditarPedido, mensaje
                     <td>{sumarUnidadesPorTipos(pedido, TIPOS_BUZO_CAMPERA)}</td>
                     <td>{sumarUnidadesPorTipos(pedido, ['Remera'])}</td>
                     <td>{sumarUnidadesPorTipos(pedido, ['Chomba'])}</td>
-                    <td>${formatearMoneda(precioUnitarioPromedio(pedido))}</td>
+                    <td>${formatearMoneda(pedido.precioUnitario)}</td>
                     <td>${formatearMoneda(pedido.precioTotal)}</td>
                     <td>{pedido.porcentajePagado.toFixed(0)}%</td>
                     <td>
@@ -264,6 +273,13 @@ export default function PedidosListView({ onNuevoPedido, onEditarPedido, mensaje
 
       {pedidoHistorial && (
         <HistorialPedidoModal pedido={pedidoHistorial} onClose={() => setPedidoHistorial(null)} />
+      )}
+
+      {mostrarImportar && (
+        <ImportarExcelModal
+          onClose={() => setMostrarImportar(false)}
+          onImportado={cargarPedidos}
+        />
       )}
     </div>
   );

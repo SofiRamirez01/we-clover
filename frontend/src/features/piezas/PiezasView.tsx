@@ -2,8 +2,9 @@ import { useState } from 'react';
 import AppHeader from '../../components/AppHeader';
 import PiezasListView from './PiezasListView';
 import PiezaForm from './PiezaForm';
+import GraduacionTalleView from './GraduacionTalleView';
 
-type Vista = 'listado' | 'nueva' | 'ver' | 'editar' | 'duplicar';
+type Vista = 'listado' | 'nueva' | 'ver' | 'editar' | 'duplicar' | 'graduacion';
 
 export default function PiezasView() {
   const [vista, setVista] = useState<Vista>('listado');
@@ -34,6 +35,12 @@ export default function PiezasView() {
     setVista('duplicar');
   }
 
+  function irAGraduacion(id: number) {
+    setMensajeExito(null);
+    setPiezaSeleccionadaId(id);
+    setVista('graduacion');
+  }
+
   function volverAlListado(mensaje: string) {
     setMensajeExito(mensaje);
     setPiezaSeleccionadaId(null);
@@ -50,7 +57,14 @@ export default function PiezasView() {
     <div className="tw-scope px-8 pt-7 pb-12">
       <AppHeader title="Piezas" onBack={vista !== 'listado' ? cancelar : undefined} />
       {vista === 'listado' && (
-        <PiezasListView onNueva={irANueva} onVer={irAVer} onEditar={irAEditar} onDuplicar={irADuplicar} mensajeExito={mensajeExito} />
+        <PiezasListView
+          onNueva={irANueva}
+          onVer={irAVer}
+          onEditar={irAEditar}
+          onDuplicar={irADuplicar}
+          onGraduacion={irAGraduacion}
+          mensajeExito={mensajeExito}
+        />
       )}
       {vista === 'nueva' && <PiezaForm modo="crear" onGuardada={() => volverAlListado('Pieza guardada correctamente.')} />}
       {vista === 'ver' && piezaSeleccionadaId != null && <PiezaForm modo="ver" piezaId={piezaSeleccionadaId} />}
@@ -60,6 +74,7 @@ export default function PiezasView() {
       {vista === 'duplicar' && piezaSeleccionadaId != null && (
         <PiezaForm modo="duplicar" piezaId={piezaSeleccionadaId} onGuardada={() => volverAlListado('Pieza duplicada correctamente.')} />
       )}
+      {vista === 'graduacion' && piezaSeleccionadaId != null && <GraduacionTalleView piezaId={piezaSeleccionadaId} />}
     </div>
   );
 }

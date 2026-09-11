@@ -37,7 +37,14 @@ public class Usuario {
     @Column(nullable = false, length = 150)
     private String nombre;
 
-    @Column(nullable = false, unique = true, length = 150)
+    /**
+     * Nullable a nivel de base (MySQL permite múltiples NULL en una columna unique): los
+     * representantes de curso dados de alta por la importación de Excel (ver PedidoImportService)
+     * a veces no traen email real en el origen, y ahí no hay con qué buscar/reutilizar un
+     * Usuario existente por email — cada fila crea uno nuevo. El alta manual de un pedido
+     * sigue exigiendo el email a nivel de DTO (@NotBlank en PedidoCreateRequest).
+     */
+    @Column(unique = true, length = 150)
     private String email;
 
     @Column(length = 30)

@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.weclover.backend.dto.producto.ProductoCreateRequest;
 import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.ResponsableCurso;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -29,6 +30,9 @@ public record PedidoUpdateRequest(
     @Size(max = 100, message = "La provincia no puede superar los 100 caracteres")
     String colegioProvincia,
 
+    @Size(max = 50, message = "El nivel no puede superar los 50 caracteres")
+    String colegioNivel,
+
     @NotBlank(message = "El nombre del representante de curso es obligatorio")
     @Size(max = 150, message = "El nombre del representante no puede superar los 150 caracteres")
     String representanteNombre,
@@ -41,7 +45,7 @@ public record PedidoUpdateRequest(
     String representanteEmail,
 
     @NotBlank(message = "El código interno es obligatorio")
-    @Pattern(regexp = "^\\d{4}-\\d{2}$", message = "El Nº de ficha debe tener el formato AAAA-NN (ej: 2026-01)")
+    @Pattern(regexp = "^\\d{4}-\\d{2,}$", message = "El Nº de ficha debe tener el formato AAAA-NN, con NN de al menos 2 dígitos (ej: 2026-01, o 2026-100 al superar los 99 pedidos del año)")
     String codigoInterno,
 
     @NotBlank(message = "El curso es obligatorio")
@@ -68,6 +72,15 @@ public record PedidoUpdateRequest(
     List<ProductoCreateRequest> productos,
 
     @PositiveOrZero(message = "El pago inicial no puede ser negativo")
-    float pagoInicial
+    float pagoInicial,
+
+    ResponsableCurso responsableCurso,
+
+    /** Boolean (no boolean primitivo): así Jackson no revienta con 400 cuando el campo no
+     *  viaja en el JSON (ej. clientes que no lo conocen todavía) — se interpreta como false. */
+    Boolean contratoFirmado,
+
+    @Positive(message = "La cantidad de cuotas debe ser mayor a cero")
+    Integer cantidadCuotas
 ) {
 }

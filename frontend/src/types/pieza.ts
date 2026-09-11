@@ -76,3 +76,39 @@ export interface TablaTalleOption {
   anchoCm: number;
   largoCm: number;
 }
+
+/** Una fila existente de PiezaTalle. Un talle de TablaTalleOption sin fila acá está "Pendiente". */
+export interface PiezaTalleResponse {
+  idTalle: number;
+  talle: string;
+  coordenadas: Punto[];
+  areaCm2: number;
+  anchoCm: number;
+  largoCm: number;
+  perimetroCm: number;
+  esBase: boolean;
+  editadoManualmente: boolean;
+  fechaGeneracion: string;
+}
+
+/** El backend no recalcula nada: manda las mismas estadísticas que ya calculó escalarPieza (o el
+ * shoelace/perímetro locales, si se editó a mano) del lado del frontend. */
+export interface PiezaTalleUpsertPayload {
+  coordenadas: Punto[];
+  areaCm2: number;
+  anchoCm: number;
+  largoCm: number;
+  perimetroCm: number;
+  esBase: boolean;
+  editadoManualmente: boolean;
+}
+
+export interface PiezaTalleBatchItemPayload {
+  idTalle: number;
+  coordenadas: Punto[];
+  areaCm2: number;
+  anchoCm: number;
+  largoCm: number;
+  perimetroCm: number;
+  editadoManualmente: boolean;
+}

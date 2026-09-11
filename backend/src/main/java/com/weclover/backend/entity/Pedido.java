@@ -79,6 +79,41 @@ public class Pedido {
     @Builder.Default
     private float pagoInicial = 0f;
 
+    /** Quién coordina la carga de talles del curso (alumno/adulto). Nullable: dato nuevo, opcional. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "responsable_curso", length = 20)
+    private ResponsableCurso responsableCurso;
+
+    @Column(name = "contrato_firmado", nullable = false)
+    @Builder.Default
+    private boolean contratoFirmado = false;
+
+    /** Cantidad de cuotas del plan de pago. Nullable: dato nuevo, no todos los pedidos lo cargan. */
+    @Column(name = "cantidad_cuotas")
+    private Integer cantidadCuotas;
+
+    /**
+     * Monto de referencia (ver PedidoImportService) para pedidos importados con más de un tipo
+     * de prenda, donde no se puede desglosar el costo real por prenda sin inventar datos: el
+     * Excel de origen solo trae un total/precio unitario blended para todo el pedido. Se usa como
+     * respaldo de precioTotal en PedidoService.construirRespuesta mientras los Producto.costo
+     * reales sigan en 0; una vez que se completan a mano deja de usarse (no se borra, queda como
+     * dato histórico de la importación).
+     */
+    @Column(name = "monto_referencia_importado")
+    private Float montoReferenciaImportado;
+
+    /**
+     * "Precio Unitario" tal cual venía en el Excel de Kommo, para pedidos importados con más de
+     * un tipo de prenda (ver Pedido.montoReferenciaImportado). No es derivable como
+     * montoReferenciaImportado / unidades — en la práctica Kommo lo carga como precio por
+     * alumno/paquete, no por prenda física, así que perderlo sería perder un dato real de
+     * negocio. Puramente informativo: no se usa en ningún cálculo de precioTotal/saldo, solo se
+     * expone para mostrarlo en vez de un "precio unitario" por prenda que no existe en este caso.
+     */
+    @Column(name = "precio_unitario_referencia_importado")
+    private Float precioUnitarioReferenciaImportado;
+
     @CreatedDate
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;

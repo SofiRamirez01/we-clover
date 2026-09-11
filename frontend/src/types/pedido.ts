@@ -103,10 +103,18 @@ export const BUCKET_POR_ESTADO: Record<EstadoPedido, BucketEstadoPedido> = {
   ENTREGADO: 'entregado',
 };
 
+export type ResponsableCurso = 'ALUMNO' | 'ADULTO';
+
+export const RESPONSABLE_CURSO_LABELS: Record<ResponsableCurso, string> = {
+  ALUMNO: 'Alumno',
+  ADULTO: 'Adulto',
+};
+
 export interface PedidoCreateRequest {
   colegioNombre: string;
   colegioLocalidad?: string;
   colegioProvincia?: string;
+  colegioNivel?: string;
   representanteNombre: string;
   representanteTelefono?: string;
   representanteEmail: string;
@@ -120,6 +128,9 @@ export interface PedidoCreateRequest {
   fechaEstimadaEntrega: string;
   productos: ProductoCreateRequest[];
   pagoInicial: number;
+  responsableCurso?: ResponsableCurso;
+  contratoFirmado?: boolean;
+  cantidadCuotas?: number;
 }
 
 export const ESTADOS_PEDIDO: EstadoPedido[] = [
@@ -144,6 +155,7 @@ export interface PedidoUpdateRequest {
   colegioNombre: string;
   colegioLocalidad?: string;
   colegioProvincia?: string;
+  colegioNivel?: string;
   representanteNombre: string;
   representanteTelefono?: string;
   representanteEmail: string;
@@ -156,6 +168,9 @@ export interface PedidoUpdateRequest {
   fechaEstimadaEntrega: string;
   productos: ProductoCreateRequest[];
   pagoInicial: number;
+  responsableCurso?: ResponsableCurso;
+  contratoFirmado?: boolean;
+  cantidadCuotas?: number;
 }
 
 export interface HistorialEstadoPedidoResponse {
@@ -173,6 +188,7 @@ export interface PedidoResponse {
   nombreColegio: string;
   localidadColegio: string | null;
   provinciaColegio: string | null;
+  nivelColegio: string | null;
   estadoActual: EstadoPedido;
   idRepresentanteCurso: number;
   nombreRepresentanteCurso: string;
@@ -191,7 +207,34 @@ export interface PedidoResponse {
   emailVendedor: string;
   productos: ProductoResponse[];
   precioTotal: number;
+  /** Precio del "combo": suma de costo de cada tipo de prenda del pedido (no ponderado por
+   *  cantidad) — no necesariamente coincide con precioTotal / cantAlumnos, y está bien que no
+   *  coincida. */
+  precioUnitario: number;
   pagoInicial: number;
   saldo: number;
   porcentajePagado: number;
+  responsableCurso: ResponsableCurso | null;
+  contratoFirmado: boolean;
+  cantidadCuotas: number | null;
+}
+
+export interface PedidoImportadoResumen {
+  filaExcel: number;
+  idPedido: number;
+  codigoInterno: string;
+  colegio: string;
+}
+
+export interface FilaImportacionSaltada {
+  filaExcel: number;
+  colegio: string | null;
+  motivo: string;
+}
+
+export interface ImportacionPedidosExcelResponse {
+  totalFilas: number;
+  importados: number;
+  pedidosImportados: PedidoImportadoResumen[];
+  filasSalteadas: FilaImportacionSaltada[];
 }

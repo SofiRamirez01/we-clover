@@ -1,4 +1,18 @@
-import type { Punto, Segmento, SegmentoArco, SegmentoCirculo, SegmentoRecta } from '../../types/pieza';
+import type { CalculoBaseResponse, Punto, Segmento, SegmentoArco, SegmentoCirculo, SegmentoRecta } from '../../types/pieza';
+
+/**
+ * Genera un tramo RECTA por cada par de vértices consecutivos de un contorno ya tesselado (ej.
+ * el de un talle graduado, que solo tiene coordenadas planas, nunca segmentos). Es una
+ * representación "de partida" con pérdida (un arco/círculo original queda como polilínea) pero
+ * funcional: permite reabrir el editor de segmentos para corregir a mano un talle no-base.
+ */
+export function segmentosDesdeCoordenadas(coordenadas: Punto[]): SegmentoRecta[] {
+  return coordenadas.map((puntoInicial, i) => ({
+    tipo: 'RECTA' as const,
+    puntoInicial,
+    puntoFinal: coordenadas[(i + 1) % coordenadas.length],
+  }));
+}
 
 /**
  * Réplica en TS de services/pieza-geometria/app/geometria.py: arma las mismas cadenas y
@@ -348,4 +362,86 @@ export function evaluarContorno(segmentos: Segmento[]): EvaluacionContorno {
     resultado[0].indicesSegmentos.length === segmentos.length;
 
   return { cadenas: resultado, cerradoCompleto };
+}
+
+/**
+ * Graduación automática de Piezas por talle (Requisito 4.1, Parte 3): dado el contorno ya
+ * tesselado del talle base y las estadísticas (área/ancho/largo/perímetro) de un talle
+ * cualquiera, sin depender del servicio de geometría en Python/Shapely — todo se recalcula acá
+ * mismo sobre la lista de vértices, igual que hace services/pieza-geometria/app/geometria.py
+ * (calcularBase) pero en TypeScript puro.
+ */
+
+/** Área de un polígono cerrado (fórmula del shoelace). No asume que `puntos` repita el primero al final. */
+export function calcularAreaPoligono(puntos: Punto[]): number {
+  let suma = 0;
+  for (let i = 0; i < puntos.length; i++) {
+    const [x1, y1] = puntos[i];
+    const [x2, y2] = puntos[(i + 1) % puntos.length];
+    suma += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(suma) / 2;
+}
+
+/** Perímetro de un polígono cerrado: suma de distancias entre vértices consecutivos, incluyendo el cierre. */
+export function calcularPerimetroPoligono(puntos: Punto[]): number {
+  let total = 0;
+  for (let i = 0; i < puntos.length; i++) {
+    total += distancia(puntos[i], puntos[(i + 1) % puntos.length]);
+  }
+  return total;
+}
+
+export interface BoundingBox {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+export function calcularBoundingBox(puntos: Punto[]): BoundingBox {
+  const xs = puntos.map(([x]) => x);
+  const ys = puntos.map(([, y]) => y);
+  return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+}
+
+/** Área/ancho/largo/perímetro recalculados sobre un contorno ya tesselado — mismo criterio que
+ * PiezaGeometriaCalculoResponse del lado Java/Python, pero sin llamar a ningún servicio. */
+export function calcularEstadisticasPoligono(puntos: Punto[]): Omit<CalculoBaseResponse, 'coordenadas'> {
+  const { minX, maxX, minY, maxY } = calcularBoundingBox(puntos);
+  return {
+    areaCm2: calcularAreaPoligono(puntos),
+    anchoCm: maxX - minX,
+    largoCm: maxY - minY,
+    perimetroCm: calcularPerimetroPoligono(puntos),
+  };
+}
+
+/**
+ * Escala anisotrópicamente (factor de X y de Y independientes) el contorno del talle base para
+ * que su bounding box pase a medir anchoObjetivoCm x largoObjetivoCm, anclado en la esquina
+ * (minX, minY) del bounding box de la base — no en su centro, ni por traslación de cada vértice
+ * respecto de uno de referencia. Un escalado anisotrópico de un polígono simple (sin
+ * auto-intersecciones) siempre da otro polígono simple: no hace falta validar nada extra acá.
+ *
+ * Si el ancho o el largo base es 0 (contorno degenerado) se deja ese eje sin escalar (factor 1)
+ * en vez de dividir por cero.
+ */
+export function escalarPieza(
+  coordenadasBase: Punto[],
+  anchoObjetivoCm: number,
+  largoObjetivoCm: number,
+): CalculoBaseResponse {
+  const { minX, minY, maxX, maxY } = calcularBoundingBox(coordenadasBase);
+  const anchoBase = maxX - minX;
+  const largoBase = maxY - minY;
+  const factorX = anchoBase > EPSILON_CM ? anchoObjetivoCm / anchoBase : 1;
+  const factorY = largoBase > EPSILON_CM ? largoObjetivoCm / largoBase : 1;
+
+  const coordenadas: Punto[] = coordenadasBase.map(([x, y]) => [
+    minX + (x - minX) * factorX,
+    minY + (y - minY) * factorY,
+  ]);
+
+  return { coordenadas, ...calcularEstadisticasPoligono(coordenadas) };
 }

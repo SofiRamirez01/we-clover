@@ -108,6 +108,7 @@ public class PedidoService {
             .nombre(request.colegioNombre())
             .localidad(request.colegioLocalidad())
             .provincia(request.colegioProvincia())
+            .nivel(request.colegioNivel())
             .build());
 
         Usuario representanteCurso = obtenerOCrearRepresentante(
@@ -125,6 +126,9 @@ public class PedidoService {
             .fechaVenta(request.fechaVenta())
             .fechaEstimadaEntrega(request.fechaEstimadaEntrega())
             .pagoInicial(request.pagoInicial())
+            .responsableCurso(request.responsableCurso())
+            .contratoFirmado(Boolean.TRUE.equals(request.contratoFirmado()))
+            .cantidadCuotas(request.cantidadCuotas())
             .build();
 
         HistorialEstadoPedido historialInicial = HistorialEstadoPedido.builder()
@@ -244,6 +248,7 @@ public class PedidoService {
         colegio.setNombre(request.colegioNombre());
         colegio.setLocalidad(request.colegioLocalidad());
         colegio.setProvincia(request.colegioProvincia());
+        colegio.setNivel(request.colegioNivel());
 
         Usuario representanteActual = pedido.getRepresentanteCurso();
         if (representanteActual.getEmail().equalsIgnoreCase(request.representanteEmail())) {
@@ -261,6 +266,9 @@ public class PedidoService {
         pedido.setFechaVenta(request.fechaVenta());
         pedido.setFechaEstimadaEntrega(request.fechaEstimadaEntrega());
         pedido.setPagoInicial(request.pagoInicial());
+        pedido.setResponsableCurso(request.responsableCurso());
+        pedido.setContratoFirmado(Boolean.TRUE.equals(request.contratoFirmado()));
+        pedido.setCantidadCuotas(request.cantidadCuotas());
 
         if (request.estado() != pedido.getEstadoActual()) {
             if (idUsuarioActor == null) {
@@ -395,9 +403,27 @@ public class PedidoService {
             .map(productoService::construirRespuesta)
             .toList();
 
-        float precioTotal = productos.stream()
+        float precioProductos = productos.stream()
             .map(ProductoResponse::subtotal)
             .reduce(0f, Float::sum);
+        // Respaldo para pedidos importados de Excel con más de un tipo de prenda, donde
+        // Producto.costo queda en 0 por no poder desglosarse sin inventar datos (ver
+        // Pedido.montoReferenciaImportado). Deja de usarse solo en cuanto se cargan costos
+        // reales por prenda (precioProductos > 0).
+        float precioTotal = precioProductos > 0
+            ? precioProductos
+            : (pedido.getMontoReferenciaImportado() != null ? pedido.getMontoReferenciaImportado() : 0f);
+
+        // Precio del "combo": suma de Producto.costo de cada tipo de prenda (no ponderado por
+        // cantidad, a diferencia de precioTotal) — ver PedidoResponse.precioUnitario. Mismo
+        // respaldo que precioTotal cuando el pedido importado no tiene costo real por prenda.
+        float sumaCostosPorPrenda = productos.stream()
+            .map(ProductoResponse::costo)
+            .reduce(0f, Float::sum);
+        float precioUnitario = sumaCostosPorPrenda > 0
+            ? sumaCostosPorPrenda
+            : (pedido.getPrecioUnitarioReferenciaImportado() != null ? pedido.getPrecioUnitarioReferenciaImportado() : 0f);
+
         float saldo = precioTotal - base.pagoInicial();
         float porcentajePagado = precioTotal > 0 ? (base.pagoInicial() / precioTotal) * 100 : 0f;
 
@@ -407,6 +433,7 @@ public class PedidoService {
             base.nombreColegio(),
             base.localidadColegio(),
             base.provinciaColegio(),
+            base.nivelColegio(),
             base.estadoActual(),
             base.idRepresentanteCurso(),
             base.nombreRepresentanteCurso(),
@@ -425,9 +452,13 @@ public class PedidoService {
             base.emailVendedor(),
             productos,
             precioTotal,
+            precioUnitario,
             base.pagoInicial(),
             saldo,
-            porcentajePagado
+            porcentajePagado,
+            base.responsableCurso(),
+            base.contratoFirmado(),
+            base.cantidadCuotas()
         );
     }
 }

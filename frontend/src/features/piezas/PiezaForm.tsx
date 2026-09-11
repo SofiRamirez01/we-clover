@@ -3,9 +3,10 @@ import type { FormEvent } from 'react';
 import { listarGruposTalle } from '../../services/grupoTalleService';
 import { listarTablasTalle } from '../../services/tablaTalleService';
 import { actualizarPieza, crearPieza, obtenerPieza } from '../../services/piezaService';
+import { guardarTallesPiezaEnLote, listarTallesPieza } from '../../services/piezaTalleService';
 import { extraerMensajeError } from '../../utils/errores';
 import SegmentoEditor from './SegmentoEditor';
-import { evaluarContorno } from './geometriaPieza';
+import { escalarPieza, evaluarContorno } from './geometriaPieza';
 import type { GrupoTalleOption, Segmento, TablaTalleOption } from '../../types/pieza';
 
 interface FormErrors {
@@ -147,6 +148,28 @@ export default function PiezaForm({ modo = 'crear', piezaId, onGuardada }: Pieza
     return Object.keys(nuevosErrores).length === 0;
   }
 
+  /**
+   * Requisito 4.1 Parte 3 (CAMBIO 4): al editar el contorno del talle base, todo talle generado
+   * automáticamente (editadoManualmente=false, sin contar el propio base) se recalcula contra el
+   * NUEVO contorno base, apuntando a SU PROPIO ancho/largo ya guardado (no al del catálogo de
+   * talles) — así una graduación ya hecha no se "resetea" al tocar la base, solo se reproyecta.
+   * Los talles corregidos a mano (editadoManualmente=true) quedan intactos.
+   */
+  async function recalcularGraduacionAutomatica(idPieza: number) {
+    const talles = await listarTallesPieza(idPieza);
+    const base = talles.find((t) => t.esBase);
+    if (!base) return;
+
+    const aRecalcular = talles.filter((t) => !t.esBase && !t.editadoManualmente);
+    if (aRecalcular.length === 0) return;
+
+    const items = aRecalcular.map((t) => {
+      const resultado = escalarPieza(base.coordenadas, t.anchoCm, t.largoCm);
+      return { idTalle: t.idTalle, ...resultado, editadoManualmente: false };
+    });
+    await guardarTallesPiezaEnLote(idPieza, items);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (modo === 'ver') return;
@@ -158,6 +181,7 @@ export default function PiezaForm({ modo = 'crear', piezaId, onGuardada }: Pieza
     try {
       if (modo === 'editar' && piezaId) {
         await actualizarPieza(piezaId, nombre.trim(), Number(idGrupoTalle), Number(idTalleBase), segmentos, simetrica);
+        await recalcularGraduacionAutomatica(piezaId);
         setMensajeExito('Cambios guardados correctamente.');
       } else {
         await crearPieza(nombre.trim(), Number(idGrupoTalle), Number(idTalleBase), segmentos, simetrica);

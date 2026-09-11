@@ -6,7 +6,83 @@ detalle de lo ya construido (el "por qué" de cada decisión ya tomada) vive en
 [tareas-realizadas.md](tareas-realizadas.md). Cuando algo de acá se resuelva, mover el
 detalle a ese archivo y borrarlo de este.
 
-Última actualización: 2026-08-30.
+Última actualización: 2026-09-10.
+
+## Importación de pedidos desde Excel (Kommo)
+
+`POST /api/pedidos/importar-excel` (botón "Importar Excel" en el listado de Pedidos) lee el
+Excel de exportación de leads de Kommo y da de alta un Pedido por fila. El mapeo de columnas se
+acordó con el negocio fila por fila (ver `PedidoImportRowService` para el detalle de cada regla).
+Puntos a tener presentes:
+
+- **Migración manual pendiente en cualquier entorno nuevo**: `Usuario.email` pasó a ser
+  nullable (antes `NOT NULL UNIQUE`) porque el Excel no siempre trae el email del representante
+  de curso y no se quiso inventar uno. `spring.jpa.hibernate.ddl-auto=update` **no afloja** un
+  `NOT NULL` ya existente en una columna — hay que correr a mano
+  `ALTER TABLE usuarios MODIFY email VARCHAR(150) NULL;` en cada base que no sea nueva (ya se
+  corrió en la base de desarrollo local). El alta manual de un pedido (`PedidoCreateRequest`)
+  sigue exigiendo el email a nivel de DTO — esto solo afecta a representantes creados por
+  importación.
+- **Posiciones de columna hardcodeadas** (`PedidoImportService`, constantes `COL_*`): se
+  matchean por posición (0-based), no por nombre de encabezado, porque la columna "Responsable"
+  aparece dos veces con el mismo texto (vendedor y responsable de curso alumno/adulto) y el
+  nombre por sí solo es ambiguo. Si Kommo cambia el orden de columnas de esta exportación, hay
+  que actualizar esas constantes a mano — no hay ninguna validación que lo detecte automáticamente
+  (una columna corrida silenciosamente podría, por ejemplo, leer "Provincia" donde se espera
+  "Colegio").
+- **Vendedor**: se busca por coincidencia parcial de nombre (`findFirstByNombreContainingIgnoreCaseAndHabilitadoTrue`)
+  contra la columna "Responsable" de Kommo (que trae un apodo corto, ej. "Sofi"). Si el apodo
+  matchea a más de un usuario habilitado (ej. "Sofia Ramirez" y "Sofia" en la base de prueba),
+  se queda con el primero que devuelva la consulta — sin orden definido. No es un problema
+  bloqueante hoy (pocos usuarios), pero si crece el equipo puede asignar el pedido al vendedor
+  equivocado sin avisar.
+- **`curso` no tiene columna de origen** en el Excel: queda siempre como placeholder `"Sin
+  curso"` a corregir a mano después de importar (decisión tomada con el negocio: no inventar un
+  valor más específico).
+- **`cantAlumnos` se aproxima** con la cantidad máxima entre las prendas del pedido (ej. 29
+  Buzos + 28 Chombas → 29), no es un dato real de Kommo — puede no coincidir con la cantidad
+  real de alumnos si alguno pidió más de una prenda.
+- **Costo por prenda y "Precio Unitario" del listado**: si el pedido tiene un solo tipo de
+  prenda (sin contar Bandera, que siempre es regalo — cantidad fija 1, costo 0), su costo es el
+  "Precio Unitario" real del Excel. Si tiene más de un tipo, no se inventa un costo por prenda:
+  los `Producto.costo` quedan en 0, el total real del Excel ("Presupuesto") se guarda aparte en
+  `Pedido.montoReferenciaImportado`, y el "Precio Unitario" real del Excel (que en Kommo es un
+  precio por alumno/paquete, no por prenda — no se puede derivar dividiendo el total por las
+  unidades) se guarda aparte en `Pedido.precioUnitarioReferenciaImportado`. Ninguno de los dos
+  participa en ningún cálculo — son puramente de respaldo para no perder el dato.
+  `PedidoService.construirRespuesta` calcula, en cada request (no se guarda), dos columnas:
+  `precioTotal` (suma de cantidad×costo de cada producto, o `montoReferenciaImportado` si esa
+  suma da 0) y `precioUnitario` — el "precio del combo": suma de `Producto.costo` de cada tipo
+  de prenda del pedido, **sin** ponderar por cantidad (ej. Buzo $120.000 + Chomba $90.000 =
+  $210.000; no calza con `precioTotal / cantAlumnos` y está bien que no calce), o
+  `precioUnitarioReferenciaImportado` si esa suma da 0. Es el mismo criterio para pedidos
+  cargados a mano y para importados — decidido así con el negocio para no guardar una columna
+  redundante que hay que mantener sincronizada a mano en cada edición de producto.
+- **Nº de ficha (`codigoInterno`) y detección de duplicados**: se regenera como año de "Promo" +
+  el número completo de la Ficha de Kommo, nunca truncado (ej. `323-27` → `2027-323`). Al ser
+  una transformación determinística, volver a importar la misma fila de Kommo siempre genera el
+  mismo código, y como `codigoInterno` es único, `PedidoImportRowService.generarCodigoInterno`
+  usa `existsByCodigoInterno` para detectar que esa fila ya se importó antes y saltearla (se
+  reporta en `filasSalteadas` como cualquier otro error de fila, sin necesidad de guardar el
+  número de Kommo aparte solo para compararlo). Esto solo es seguro porque el patrón
+  `^\d{4}-\d{2,}$` de `PedidoCreateRequest`/`PedidoUpdateRequest` (backend) y
+  `FORMATO_NUMERO_FICHA` (`NuevoPedidoView.tsx`, frontend) ya no limita NN a exactamente 2
+  dígitos — antes sí lo hacía (`^\d{4}-\d{2}$`), lo cual era un bug real e independiente de esta
+  importación: al superar los 99 pedidos de un año, un `codigoInterno` como `2026-100` ya
+  hubiera fallado la validación del alta/edición manual también. Se corrigió al mismo tiempo. La
+  columna "Promo" en sí tampoco se persiste como campo propio (decisión del negocio) — solo se
+  usa de forma transitoria para calcular el año.
+- **Pique/Tejido**: si alguna de las dos columnas dice "Sí", se agrega una nota en
+  `observaciones` ("Lleva Pique", "Lleva Tejido" o "Lleva Pique y Tejido"); si ambas son "No" no
+  se agrega nada. Se concatena con las notas no vacías de "Nota 1" a "Nota 5" del Excel.
+- **Campos del Excel que se decidió no guardar**: todo lo que es metadata de CRM/marketing
+  (utm_*, gclid/fbclid, Estatus del lead, Embudo de ventas, Fuente, Tareas próximas, fechas del
+  embudo de venta previo a la producción como "Fecha de Derivación/Cotizado/Interesado", etc.) —
+  ver el análisis completo hecho antes de programar esto, no repetido acá para no duplicar.
+- Cada fila se importa en su propia transacción (`PedidoImportRowService.importarFila`,
+  `REQUIRES_NEW`): una fila con datos inválidos se saltea y se lista con el motivo en la
+  respuesta del endpoint (mostrado en el modal del frontend) — el resto de las filas se importa
+  igual.
 
 ## Carga de Talles: desglose por talle para producción
 
@@ -91,9 +167,7 @@ este catálogo.
 
 Solo hay lectura (`GET /api/tipos-tela`) — falta una pantalla de alta/edición del catálogo
 (agregar un tipo nuevo, ej. "Corderito", sin tocar código; editar
-`esPorPeso`/`telaCuerpo`/`gramosSugerido`/`activo`). También falta mostrar `nombre`
-(humano-legible, ej. "Piqué") en vez de `codigo` ("PIQUE") en la UI de Tela del modal de
-gotero, una vez que el front deje de depender del string crudo para comparaciones.
+`esPorPeso`/`telaCuerpo`/`gramosSugerido`/`activo`).
 
 ## Seguridad real (JWT / Spring Security)
 
@@ -149,9 +223,6 @@ producción" (ya confeccionado, pero no entregado) o como una cuarta categoría 
 También: la sección "Colegios" del listado en realidad cuenta **pedidos**, no colegios
 distintos (un colegio con 3 pedidos suma 3, no 1) — así lo aclaró el pedido original, pero el
 rótulo puede confundir a futuro.
-
-"Precio Unitario" en la tabla es un promedio (`precioTotal / cantidad total de unidades`),
-no un precio real de un artículo puntual — revisar si esa aproximación alcanza.
 
 ## Listado de Pedidos: filtros y datos 100% del lado del cliente
 

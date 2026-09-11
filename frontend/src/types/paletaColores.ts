@@ -1,12 +1,10 @@
+/**
+ * `codigo` estable del catálogo tipos_tela (backend) — para el nombre humano-legible real
+ * (que puede cambiar en la base, ej. corregir una falta de ortografía) usar
+ * `nombreTela(codigo, tiposTela)` de features/fichas-tecnicas/telaUtils.ts contra el catálogo
+ * de GET /api/tipos-tela, no un mapa fijo acá.
+ */
 export type TipoTela = 'FRIZA' | 'JERSEY' | 'PIQUE' | 'SPUM' | 'CIERRE';
-
-export const TIPO_TELA_LABELS: Record<TipoTela, string> = {
-  FRIZA: 'Friza',
-  JERSEY: 'Jersey',
-  PIQUE: 'Piqué',
-  SPUM: 'Spum',
-  CIERRE: 'Cierre',
-};
 
 /** Telas reales de una prenda (excluye CIERRE, que solo categoriza colores de cierre). */
 export const TIPOS_TELA_PRENDA: TipoTela[] = ['FRIZA', 'JERSEY', 'PIQUE', 'SPUM'];

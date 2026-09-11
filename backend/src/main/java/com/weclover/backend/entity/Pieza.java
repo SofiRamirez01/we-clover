@@ -23,12 +23,18 @@ import lombok.Setter;
  * PatronCorteColor.pieza). El nombre es único dentro de su GrupoTalle (no global): dos grupos
  * de talle distintos pueden tener cada uno su propia "Manga", con formas y medidas distintas.
  *
- * `segmentosBaseJson`/`coordenadasBaseJson` guardan el contorno del talle base (talleBase, que
- * debe pertenecer a grupoTalle — validado en PiezaService) como texto JSON: la definición por
- * segmentos que cargó el usuario, y la lista de vértices ya tesselada que devolvió el servicio
- * de geometría a partir de esos segmentos, respectivamente. anchoBaseCm/largoBaseCm son el
- * ancho/largo de esa forma base, también calculados por el servicio de geometría; una fase
- * futura los usa como base de escala para graduar automáticamente el resto de los talles.
+ * `segmentosBaseJson` guarda la definición por segmentos del contorno del talle base (talleBase,
+ * que debe pertenecer a grupoTalle — validado en PiezaService) que cargó el usuario, como texto
+ * JSON: se conserva acá (y no en PiezaTalle) porque es la única representación "editable" del
+ * contorno base — la que reabre el editor de segmentos — mientras que PiezaTalle solo guarda
+ * vértices ya tesselados, para el base talle y para cada talle graduado del grupo.
+ *
+ * El resto de la geometría resuelta (coordenadas/área/ancho/largo/perímetro), tanto del talle
+ * base como del resto de los talles del grupo, vive en PiezaTalle (una fila por talle resuelto,
+ * incluido el base con esBase=true) — ver Requisito 4.1 Parte 3. Las columnas
+ * coordenadas_base_json/ancho_base_cm/largo_base_cm siguen físicamente en la tabla piezas
+ * (migración manual, no se tocan hasta confirmar que la migración a PiezaTalle está OK) pero ya
+ * no se mapean acá: nada en el código las lee ni las escribe.
  */
 @Entity
 @Table(name = "piezas",
@@ -58,15 +64,6 @@ public class Pieza {
 
     @Column(name = "segmentos_base_json", nullable = false, columnDefinition = "TEXT")
     private String segmentosBaseJson;
-
-    @Column(name = "coordenadas_base_json", nullable = false, columnDefinition = "TEXT")
-    private String coordenadasBaseJson;
-
-    @Column(name = "ancho_base_cm", nullable = false)
-    private double anchoBaseCm;
-
-    @Column(name = "largo_base_cm", nullable = false)
-    private double largoBaseCm;
 
     /**
      * Para la fase futura de optimización de layout de corte (algorpatronsnap.py): si la pieza

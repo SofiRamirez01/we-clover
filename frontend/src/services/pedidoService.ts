@@ -2,6 +2,7 @@ import api from './api';
 import type {
   CambioEstadoRequest,
   HistorialEstadoPedidoResponse,
+  ImportacionPedidosExcelResponse,
   PedidoCreateRequest,
   PedidoResponse,
   PedidoUpdateRequest,
@@ -43,5 +44,14 @@ export async function listarPedidos(): Promise<PedidoResponse[]> {
 
 export async function listarTiposPrenda(): Promise<TipoPrendaOption[]> {
   const { data } = await api.get<TipoPrendaOption[]>('/tipos-prenda');
+  return data;
+}
+
+export async function importarPedidosExcel(archivo: File): Promise<ImportacionPedidosExcelResponse> {
+  const formData = new FormData();
+  formData.append('archivo', archivo);
+  const { data } = await api.post<ImportacionPedidosExcelResponse>('/pedidos/importar-excel', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return data;
 }

@@ -15,7 +15,7 @@ import { colorMasCercano, rgbAHex } from '../../utils/colorMatch';
 import type { ColorRgb } from '../../utils/colorMatch';
 import { extraerMensajeError } from '../../utils/errores';
 import { urlArchivoSubido } from '../../utils/urlArchivos';
-import { TIPOS_TELA_PRENDA, TIPO_TELA_LABELS } from '../../types/paletaColores';
+import { TIPOS_TELA_PRENDA } from '../../types/paletaColores';
 import type {
   PaletaColorResponse,
   ProductoColorItemRequest,
@@ -26,7 +26,7 @@ import type {
 import type { ProductoResponse } from '../../types/pedido';
 import type { PatronCorteResponse } from '../../types/patronCorte';
 import type { TipoTelaCatalogo } from '../../types/tipoTela';
-import { TIPO_PRENDA_BUZO, TIPO_PRENDA_CAMPERA, telaEfectiva } from './telaUtils';
+import { TIPO_PRENDA_BUZO, TIPO_PRENDA_CAMPERA, nombreTela, telaEfectiva } from './telaUtils';
 
 const TIPOS_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png'];
 const ZOOM_MIN = 0.1;
@@ -776,7 +776,7 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
                 </option>
                 {TIPOS_TELA_PRENDA.map((tela) => (
                   <option key={tela} value={tela}>
-                    {TIPO_TELA_LABELS[tela]}
+                    {nombreTela(tela, tiposTela)}
                   </option>
                 ))}
               </select>
@@ -858,7 +858,7 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
                 <>
                   <p className="text-xs font-semibold text-wc-text">
                     Marcá el color de la posición {pasoActual + 1} de {posiciones.length} ({posicionActual.gramos} g de{' '}
-                    {TIPO_TELA_LABELS[telaDraft]}) — hacé click sobre la imagen de la izquierda.
+                    {nombreTela(telaDraft, tiposTela)}) — hacé click sobre la imagen de la izquierda.
                   </p>
 
                   {errorLectura && <p className="text-xs font-medium text-red-600">{errorLectura}</p>}

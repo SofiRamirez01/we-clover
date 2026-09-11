@@ -13,6 +13,7 @@ public interface PedidoMapper {
     @Mapping(source = "colegio.nombre", target = "nombreColegio")
     @Mapping(source = "colegio.localidad", target = "localidadColegio")
     @Mapping(source = "colegio.provincia", target = "provinciaColegio")
+    @Mapping(source = "colegio.nivel", target = "nivelColegio")
     @Mapping(source = "representanteCurso.id", target = "idRepresentanteCurso")
     @Mapping(source = "representanteCurso.nombre", target = "nombreRepresentanteCurso")
     @Mapping(source = "representanteCurso.telefono", target = "telefonoRepresentanteCurso")
@@ -21,6 +22,7 @@ public interface PedidoMapper {
     @Mapping(source = "creadoPor.nombre", target = "nombreVendedor")
     @Mapping(source = "creadoPor.email", target = "emailVendedor")
     @Mapping(target = "precioTotal", ignore = true)
+    @Mapping(target = "precioUnitario", ignore = true)
     @Mapping(target = "saldo", ignore = true)
     @Mapping(target = "porcentajePagado", ignore = true)
     PedidoResponse toResponse(Pedido pedido);

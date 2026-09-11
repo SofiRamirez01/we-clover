@@ -1,5 +1,6 @@
 package com.weclover.backend.config;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,10 +11,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.weclover.backend.dto.pieza.PiezaGeometriaCalculoResponse;
+import com.weclover.backend.dto.pieza.SegmentoDto;
 import com.weclover.backend.entity.Colegio;
 import com.weclover.backend.entity.GrupoTalle;
 import com.weclover.backend.entity.PaletaColores;
 import com.weclover.backend.entity.Permiso;
+import com.weclover.backend.entity.Pieza;
+import com.weclover.backend.entity.PiezaTalle;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.TablaTalle;
 import com.weclover.backend.entity.TipoPrenda;
@@ -23,13 +28,17 @@ import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.GrupoTalleRepository;
 import com.weclover.backend.repository.PaletaColoresRepository;
 import com.weclover.backend.repository.PermisoRepository;
+import com.weclover.backend.repository.PiezaRepository;
+import com.weclover.backend.repository.PiezaTalleRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TablaTalleRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
 import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
+import com.weclover.backend.service.PiezaGeometriaClient;
 
 import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -48,6 +57,10 @@ public class DataInitializer implements CommandLineRunner {
     private final PaletaColoresRepository paletaColoresRepository;
     private final GrupoTalleRepository grupoTalleRepository;
     private final TablaTalleRepository tablaTalleRepository;
+    private final PiezaRepository piezaRepository;
+    private final PiezaTalleRepository piezaTalleRepository;
+    private final PiezaGeometriaClient piezaGeometriaClient;
+    private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -230,6 +243,44 @@ public class DataInitializer implements CommandLineRunner {
                     });
                 }
             }));
+
+        // Migración manual (Requisito 4.1 Parte 3, CAMBIO 1): backfill de PiezaTalle esBase=true
+        // para las Piezas que ya existían antes de que la geometría base se moviera de Pieza a
+        // PiezaTalle. No se tocan ni se leen las columnas viejas de piezas (coordenadas_base_json/
+        // ancho_base_cm/largo_base_cm): se recalcula todo de cero contra el servicio de geometría
+        // a partir de segmentos_base_json, que es la única fuente que sigue viva en el código.
+        // Idempotente por diseño (solo corre para una Pieza sin fila esBase=true) y no debe
+        // tumbar el arranque si el servicio de geometría está caído: se loguea y se sigue, la
+        // Pieza queda pendiente de re-intentar en el próximo arranque.
+        for (Pieza pieza : piezaRepository.findAll()) {
+            if (piezaTalleRepository.findByPieza_IdAndEsBaseTrue(pieza.getId()).isPresent()) {
+                continue;
+            }
+            try {
+                List<SegmentoDto> segmentos = objectMapper.readValue(
+                    pieza.getSegmentosBaseJson(),
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, SegmentoDto.class));
+                PiezaGeometriaCalculoResponse calculo = piezaGeometriaClient.calcularBase(segmentos, pieza.isSimetrica());
+
+                piezaTalleRepository.save(PiezaTalle.builder()
+                    .pieza(pieza)
+                    .talle(pieza.getTalleBase())
+                    .coordenadasJson(objectMapper.writeValueAsString(calculo.coordenadas()))
+                    .areaCm2(calculo.areaCm2())
+                    .anchoCm(calculo.anchoCm())
+                    .largoCm(calculo.largoCm())
+                    .perimetroCm(calculo.perimetroCm())
+                    .esBase(true)
+                    .editadoManualmente(false)
+                    .fechaGeneracion(LocalDateTime.now())
+                    .build());
+                System.out.println("--- MIGRACIÓN PiezaTalle: base generada para Pieza id=" + pieza.getId()
+                    + " (" + pieza.getNombre() + ") ---");
+            } catch (Exception error) {
+                System.out.println("--- MIGRACIÓN PiezaTalle: NO se pudo generar la base de Pieza id=" + pieza.getId()
+                    + " (" + pieza.getNombre() + "): " + error.getMessage() + " — se reintenta en el próximo arranque ---");
+            }
+        }
 
         System.out.println("--- DATOS SEMILLA CARGADOS CORRECTAMENTE ---");
     }
