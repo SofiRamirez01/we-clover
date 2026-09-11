@@ -8,8 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.weclover.backend.dto.patroncorte.PatronCorteColorResponse;
 import com.weclover.backend.dto.patroncorte.PatronCorteCreateRequest;
 import com.weclover.backend.dto.patroncorte.PatronCorteResponse;
+import com.weclover.backend.dto.patroncorte.PatronCortePosicionPiezaResponse;
+import com.weclover.backend.entity.GrupoTalle;
 import com.weclover.backend.entity.PatronCorte;
 import com.weclover.backend.entity.PatronCorteColor;
 import com.weclover.backend.entity.TipoPrenda;
@@ -40,6 +43,7 @@ public class PatronCorteService {
     private final PatronCorteMapper patronCorteMapper;
     private final AutorizacionService autorizacionService;
     private final AlmacenamientoImagenService almacenamientoImagenService;
+    private final PiezaService piezaService;
 
     @Value("${app.uploads.patrones-corte-dir}")
     private String directorioUploads;
@@ -87,7 +91,7 @@ public class PatronCorteService {
         }
 
         PatronCorte guardado = patronCorteRepository.save(patronCorte);
-        return patronCorteMapper.toResponse(guardado);
+        return construirResponse(guardado);
     }
 
     /**
@@ -123,7 +127,7 @@ public class PatronCorteService {
             : patronCorteRepository.findByActivoTrueOrderByNombreAsc();
 
         return patrones.stream()
-            .map(patronCorteMapper::toResponse)
+            .map(this::construirResponse)
             .toList();
     }
 
@@ -133,6 +137,37 @@ public class PatronCorteService {
 
         PatronCorte patronCorte = patronCorteRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el patrón de corte con id " + id));
-        return patronCorteMapper.toResponse(patronCorte);
+        return construirResponse(patronCorte);
+    }
+
+    /**
+     * `colores` se arma a mano acá (no vía MapStruct, ver PatronCorteMapper): cada
+     * PatronCortePosicionPiezaResponse necesita el resumen de su Pieza asignada
+     * (PiezaService.construirResumen), que implica ir a buscar su PiezaTalle base — no es una
+     * simple copia de campos.
+     */
+    PatronCorteResponse construirResponse(PatronCorte patronCorte) {
+        PatronCorteResponse base = patronCorteMapper.toResponse(patronCorte);
+        List<PatronCorteColorResponse> colores = patronCorte.getColores().stream()
+            .map(this::construirColorResponse)
+            .toList();
+        GrupoTalle grupoTalle = PatronCorteGrupoTalleResolver.resolverSiExiste(patronCorte).orElse(null);
+        return new PatronCorteResponse(
+            base.id(), base.numeroInterno(), base.nombre(), base.tiposPrenda(),
+            base.imagenUrl(), base.cantidadColores(), base.activo(), colores,
+            grupoTalle != null ? grupoTalle.getId() : null,
+            grupoTalle != null ? grupoTalle.getNombre() : null);
+    }
+
+    private PatronCorteColorResponse construirColorResponse(PatronCorteColor color) {
+        List<PatronCortePosicionPiezaResponse> piezas = color.getPosicionesPieza().stream()
+            .map(posicion -> new PatronCortePosicionPiezaResponse(
+                posicion.getId(),
+                posicion.getCoordenadaXPin(),
+                posicion.getCoordenadaYPin(),
+                posicion.getEtiqueta(),
+                piezaService.construirResumen(posicion.getPieza())))
+            .toList();
+        return new PatronCorteColorResponse(color.getId(), color.getOrden(), color.getGramos(), piezas);
     }
 }

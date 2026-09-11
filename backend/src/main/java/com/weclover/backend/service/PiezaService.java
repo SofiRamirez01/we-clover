@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.weclover.backend.dto.pieza.PiezaDetalleResponse;
 import com.weclover.backend.dto.pieza.PiezaGeometriaCalculoResponse;
 import com.weclover.backend.dto.pieza.PiezaResponse;
+import com.weclover.backend.dto.pieza.PiezaResumenResponse;
 import com.weclover.backend.dto.pieza.SegmentoDto;
 import com.weclover.backend.entity.GrupoTalle;
 import com.weclover.backend.entity.Pieza;
@@ -129,6 +130,47 @@ public class PiezaService {
         return piezas.stream()
             .map(pieza -> construirResponse(pieza, basesPorPieza.get(pieza.getId())))
             .toList();
+    }
+
+    /**
+     * Picker de Piezas (Requisito 4.1 Parte 4): versión liviana con la geometría del talle base
+     * (para la miniatura) y si ya está graduada por completo, filtrable por grupoTalle y por
+     * nombre. Mismo criterio de permisos que listarActivas — administrativo únicamente por
+     * ahora (avisar si hace falta sumar ROLE_DISENADOR más adelante).
+     */
+    @Transactional(readOnly = true)
+    public List<PiezaResumenResponse> listarResumen(Long idGrupoTalle, String q, Long idUsuarioActor) {
+        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+
+        String busqueda = q == null ? "" : q.trim().toLowerCase();
+        List<Pieza> piezas = (idGrupoTalle != null ? piezaRepository.findByGrupoTalle_Id(idGrupoTalle) : piezaRepository.findByActivoTrue())
+            .stream()
+            .filter(Pieza::isActivo)
+            .filter(pieza -> busqueda.isEmpty() || pieza.getNombre().toLowerCase().contains(busqueda))
+            .toList();
+
+        return piezas.stream().map(this::construirResumen).toList();
+    }
+
+    /** Resumen de una Pieza puntual, reusado tanto por listarResumen (picker) como por el
+     * armado de PatronCortePosicionPiezaResponse (ver PatronCorteService). */
+    public PiezaResumenResponse construirResumen(Pieza pieza) {
+        PiezaTalle base = piezaTalleRepository.findByPieza_IdAndEsBaseTrue(pieza.getId()).orElse(null);
+        long totalTalles = tablaTalleRepository.findByGrupoTalleOrderByOrdenAsc(pieza.getGrupoTalle()).size();
+        long resueltos = piezaTalleRepository.findByPieza_Id(pieza.getId()).size();
+
+        return new PiezaResumenResponse(
+            pieza.getId(),
+            pieza.getNombre(),
+            pieza.isSimetrica(),
+            base != null ? deserializarCoordenadas(base.getCoordenadasJson()) : List.of(),
+            base != null ? base.getAnchoCm() : 0,
+            base != null ? base.getLargoCm() : 0,
+            totalTalles > 0 && resueltos >= totalTalles);
+    }
+
+    private List<double[]> deserializarCoordenadas(String json) {
+        return List.of(objectMapper.readValue(json, double[][].class));
     }
 
     /** Detalle completo (incluye los segmentos originales), para reabrir el editor al editar o duplicar. */

@@ -155,7 +155,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS_RAIZ: NavItem[] = [
-  { label: 'Pedidos', icon: PedidosIcon, view: 'pedidos' },
+  { label: 'Basde Ventas', icon: PedidosIcon, view: 'pedidos' },
   { label: 'Ficha Técnica', icon: FichaTecnicaIcon, view: 'fichas-tecnicas' },
   { label: 'Producción', icon: ProduccionIcon },
   { label: 'Planificador Compras', icon: ComprasIcon, view: 'planificador-compras', soloAdministrativo: true },

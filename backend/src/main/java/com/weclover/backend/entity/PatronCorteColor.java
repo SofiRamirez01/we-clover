@@ -1,5 +1,9 @@
 package com.weclover.backend.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -8,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -43,10 +49,13 @@ public class PatronCorteColor {
     private int gramos;
 
     /**
-     * Nullable: las filas existentes antes de esta entrega no tienen pieza asignada (se
-     * completa hacia adelante, sin migración de datos viejos — ver PiezaService/CAMBIO 2).
+     * Piezas físicas puestas sobre la imagen del patrón para este color, cada una con su pin
+     * (ver PatronCortePosicionPieza) — reemplaza al viejo campo singular `pieza` (agregado en
+     * una sesión anterior y nunca usado): un mismo color casi siempre corresponde a varias
+     * piezas físicas distintas, no a una sola.
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "id_pieza")
-    private Pieza pieza;
+    @OneToMany(mappedBy = "patronCorteColor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("id ASC")
+    @Builder.Default
+    private List<PatronCortePosicionPieza> posicionesPieza = new ArrayList<>();
 }

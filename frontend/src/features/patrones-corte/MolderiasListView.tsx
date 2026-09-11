@@ -138,10 +138,11 @@ function PatronImagen({ patron, size }: { patron: PatronCorteResponse; size?: nu
 
 interface MolderiasListViewProps {
   onNueva: () => void;
+  onVerDetalle: (id: number) => void;
   mensajeExito?: string | null;
 }
 
-export default function MolderiasListView({ onNueva, mensajeExito }: MolderiasListViewProps) {
+export default function MolderiasListView({ onNueva, onVerDetalle, mensajeExito }: MolderiasListViewProps) {
   const [patrones, setPatrones] = useState<PatronCorteResponse[]>([]);
   const [tiposPrenda, setTiposPrenda] = useState<TipoPrendaOption[]>([]);
   const [estadoCarga, setEstadoCarga] = useState<'cargando' | 'listo' | 'error'>('cargando');
@@ -287,7 +288,8 @@ export default function MolderiasListView({ onNueva, mensajeExito }: MolderiasLi
                 {grupo.patrones.map((patron) => (
                   <div
                     key={patron.id}
-                    className="flex items-center gap-4 rounded-lg border border-wc-border bg-white px-4 py-2.5 shadow-sm"
+                    onClick={() => onVerDetalle(patron.id)}
+                    className="flex cursor-pointer items-center gap-4 rounded-lg border border-wc-border bg-white px-4 py-2.5 shadow-sm transition hover:border-wc-green"
                   >
                     <div className="h-12 w-12 flex-shrink-0">
                       <PatronImagen patron={patron} size={22} />
@@ -325,7 +327,8 @@ export default function MolderiasListView({ onNueva, mensajeExito }: MolderiasLi
                 {grupo.patrones.map((patron) => (
                   <div
                     key={patron.id}
-                    className={`flex flex-col gap-3 rounded-xl border border-wc-border bg-white ${config.padding} shadow-sm`}
+                    onClick={() => onVerDetalle(patron.id)}
+                    className={`flex cursor-pointer flex-col gap-3 rounded-xl border border-wc-border bg-white ${config.padding} shadow-sm transition hover:border-wc-green`}
                   >
                     <PatronImagen patron={patron} />
                     <div>

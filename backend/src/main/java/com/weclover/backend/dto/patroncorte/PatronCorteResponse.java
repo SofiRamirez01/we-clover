@@ -12,6 +12,10 @@ public record PatronCorteResponse(
     String imagenUrl,
     int cantidadColores,
     boolean activo,
-    List<PatronCorteColorResponse> colores
+    List<PatronCorteColorResponse> colores,
+    /** Derivado de tiposPrenda (ver PatronCorteGrupoTalleResolver); null si no hay un único
+     * grupo de talle determinable — en ese caso no se le pueden asignar Piezas a los pines. */
+    Long idGrupoTalle,
+    String nombreGrupoTalle
 ) {
 }

@@ -19,6 +19,7 @@ import com.weclover.backend.dto.pieza.PiezaCreateRequest;
 import com.weclover.backend.dto.pieza.PiezaDetalleResponse;
 import com.weclover.backend.dto.pieza.PiezaGeometriaCalculoResponse;
 import com.weclover.backend.dto.pieza.PiezaResponse;
+import com.weclover.backend.dto.pieza.PiezaResumenResponse;
 import com.weclover.backend.dto.pieza.PiezaUpdateRequest;
 import com.weclover.backend.service.PiezaService;
 
@@ -59,6 +60,15 @@ public class PiezaController {
             @RequestParam(required = false) Long idGrupoTalle,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return piezaService.listarActivas(idGrupoTalle, idUsuarioActor);
+    }
+
+    /** Picker de Piezas (buscador + miniaturas), ver PiezaService.listarResumen. */
+    @GetMapping("/resumen")
+    public List<PiezaResumenResponse> listarResumen(
+            @RequestParam(required = false) Long idGrupoTalle,
+            @RequestParam(required = false) String q,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return piezaService.listarResumen(idGrupoTalle, q, idUsuarioActor);
     }
 
     /** Detalle completo (con los segmentos originales), para reabrir el editor al editar o duplicar. */

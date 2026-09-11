@@ -1,5 +1,5 @@
 import api from './api';
-import type { CalculoBaseResponse, PiezaDetalleResponse, PiezaResponse, Segmento } from '../types/pieza';
+import type { CalculoBaseResponse, PiezaDetalleResponse, PiezaResponse, PiezaResumenResponse, Segmento } from '../types/pieza';
 
 export async function calcularBasePieza(segmentos: Segmento[]): Promise<CalculoBaseResponse> {
   // simetrica no afecta este cálculo (área/ancho/largo/perímetro se computan sobre el
@@ -29,6 +29,15 @@ export async function listarPiezas(idGrupoTalle?: number): Promise<PiezaResponse
   const { data } = await api.get<PiezaResponse[]>('/piezas', {
     params: idGrupoTalle ? { idGrupoTalle } : {},
   });
+  return data;
+}
+
+/** Picker de Piezas (Requisito 4.1 Parte 4): buscador por nombre, filtrable por grupo de talle. */
+export async function listarPiezasResumen(idGrupoTalle?: number, q?: string): Promise<PiezaResumenResponse[]> {
+  const params: Record<string, string | number> = {};
+  if (idGrupoTalle != null) params.idGrupoTalle = idGrupoTalle;
+  if (q) params.q = q;
+  const { data } = await api.get<PiezaResumenResponse[]>('/piezas/resumen', { params });
   return data;
 }
 

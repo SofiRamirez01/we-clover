@@ -112,3 +112,15 @@ export interface PiezaTalleBatchItemPayload {
   perimetroCm: number;
   editadoManualmente: boolean;
 }
+
+/** Versión liviana de una Pieza para el picker (Requisito 4.1 Parte 4) y para lo que trae cada
+ * pin de PatronCortePosicionPiezaResponse. */
+export interface PiezaResumenResponse {
+  id: number;
+  nombre: string;
+  simetrica: boolean;
+  coordenadas: Punto[];
+  anchoCm: number;
+  largoCm: number;
+  graduacionCompleta: boolean;
+}

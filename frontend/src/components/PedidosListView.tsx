@@ -148,7 +148,7 @@ export default function PedidosListView({ onNuevoPedido, onEditarPedido, mensaje
 
   return (
     <div className="pedidos-list-view">
-      <AppHeader title="Pedidos" />
+      <AppHeader title="Base Ventas" />
 
       {mensajeExito && (
         <div className="alerta alerta--exito" role="status">

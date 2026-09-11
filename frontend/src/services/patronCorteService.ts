@@ -26,3 +26,8 @@ export async function listarPatronesCorte(): Promise<PatronCorteResponse[]> {
   const { data } = await api.get<PatronCorteResponse[]>('/patrones-corte');
   return data;
 }
+
+export async function obtenerPatronCorte(id: number): Promise<PatronCorteResponse> {
+  const { data } = await api.get<PatronCorteResponse>(`/patrones-corte/${id}`);
+  return data;
+}

@@ -5,8 +5,9 @@ import { guardarTallePieza, listarTallesPieza, revertirTallePieza } from '../../
 import { escalarPieza, segmentosDesdeCoordenadas } from './geometriaPieza';
 import EditorTalleModal from './EditorTalleModal';
 import type { ResultadoEdicionTalle } from './EditorTalleModal';
+import MiniaturaContorno from './MiniaturaContorno';
 import { extraerMensajeError } from '../../utils/errores';
-import type { PiezaDetalleResponse, PiezaTalleResponse, Punto, TablaTalleOption } from '../../types/pieza';
+import type { PiezaDetalleResponse, PiezaTalleResponse, TablaTalleOption } from '../../types/pieza';
 
 interface GraduacionTalleViewProps {
   piezaId: number;
@@ -26,27 +27,6 @@ const ESTILO_BADGE: Record<EstadoTalle, string> = {
   'Editado manualmente': 'bg-amber-50 text-amber-700',
   Pendiente: 'bg-wc-bg text-wc-text-muted',
 };
-
-function MiniaturaContorno({ coordenadas }: { coordenadas: Punto[] }) {
-  if (coordenadas.length === 0) {
-    return <div className="flex h-14 w-14 items-center justify-center text-[10px] text-wc-text-muted">—</div>;
-  }
-  const xs = coordenadas.map(([x]) => x);
-  const ys = coordenadas.map(([, y]) => -y);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
-  const margen = Math.max(maxX - minX, maxY - minY, 1) * 0.12;
-  const viewBox = `${minX - margen} ${minY - margen} ${maxX - minX + margen * 2} ${maxY - minY + margen * 2}`;
-  const d = `M ${coordenadas.map(([x, y]) => `${x} ${-y}`).join(' L ')} Z`;
-  const grosor = Math.max((maxX - minX + maxY - minY) / 120, 0.15);
-  return (
-    <svg viewBox={viewBox} className="h-14 w-14 shrink-0">
-      <path d={d} fill="#2f855a22" stroke="#2f855a" strokeWidth={grosor} />
-    </svg>
-  );
-}
 
 /**
  * Requisito 4.1, Parte 3: una fila por cada TablaTalle del grupo de la Pieza (no solo los que ya

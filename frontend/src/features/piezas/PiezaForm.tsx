@@ -50,13 +50,17 @@ interface PiezaFormProps {
   modo?: ModoPiezaForm;
   /** Requerido para 'editar' y 'duplicar': de qué pieza traer los datos para precargar el formulario. */
   piezaId?: number;
+  /** Preselecciona y bloquea el grupo de talle (ej. alta rápida de una Pieza desde el picker de
+   *  una moldería: tiene que quedar en el mismo grupoTalle que esa moldería, si no el backend
+   *  rechaza la asignación del pin). Solo tiene efecto en modo 'crear'. */
+  idGrupoTalleFijo?: number;
   onGuardada?: () => void;
 }
 
-export default function PiezaForm({ modo = 'crear', piezaId, onGuardada }: PiezaFormProps) {
+export default function PiezaForm({ modo = 'crear', piezaId, idGrupoTalleFijo, onGuardada }: PiezaFormProps) {
   const [nombre, setNombre] = useState('');
   const [gruposTalle, setGruposTalle] = useState<GrupoTalleOption[]>([]);
-  const [idGrupoTalle, setIdGrupoTalle] = useState('');
+  const [idGrupoTalle, setIdGrupoTalle] = useState(idGrupoTalleFijo != null ? String(idGrupoTalleFijo) : '');
   const [tablasTalle, setTablasTalle] = useState<TablaTalleOption[]>([]);
   const [idTalleBase, setIdTalleBase] = useState('');
   const [segmentos, setSegmentos] = useState<Segmento[]>([]);
@@ -261,7 +265,7 @@ export default function PiezaForm({ modo = 'crear', piezaId, onGuardada }: Pieza
               setIdGrupoTalle(e.target.value);
               setErrors((prev) => ({ ...prev, idGrupoTalle: undefined }));
             }}
-            disabled={soloLectura}
+            disabled={soloLectura || idGrupoTalleFijo != null}
             className={`w-full rounded-lg border px-3 py-2 text-sm text-wc-text outline-none transition focus:border-wc-green focus:ring-2 focus:ring-wc-green/20 disabled:cursor-not-allowed disabled:bg-wc-bg ${
               errors.idGrupoTalle ? 'border-red-400' : 'border-wc-border'
             }`}
