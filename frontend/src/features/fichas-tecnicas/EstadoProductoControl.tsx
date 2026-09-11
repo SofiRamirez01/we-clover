@@ -39,7 +39,7 @@ export default function EstadoProductoControl({ producto, puedeEditar, onActuali
         disabled={guardando}
         onChange={(e) => handleChange(e.target.value as EstadoPedido)}
         aria-label="Estado de producción de la prenda"
-        className={`w-fit rounded-full border-0 py-1 pl-2.5 pr-6 text-[11px] font-bold outline-none transition ${estiloBadgeEstado(
+        className={`w-full truncate rounded-full border-0 py-1 pl-2.5 pr-5 text-[11px] font-bold outline-none transition ${estiloBadgeEstado(
           producto.estadoActual,
         )} ${guardando ? 'cursor-wait opacity-60' : 'cursor-pointer hover:brightness-95'}`}
       >

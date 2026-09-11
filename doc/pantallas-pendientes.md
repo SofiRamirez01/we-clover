@@ -8,6 +8,23 @@ detalle a ese archivo y borrarlo de este.
 
 Última actualización: 2026-09-10.
 
+## Responsive: falta verificar por debajo de 1280px y otras pantallas con tablas
+
+En Ficha Técnica (`FichasTecnicasView.tsx`/`FichaPedidoCard.tsx`) se probó a mano en 480, 1000,
+1279, 1280, 1440 y 1920px durante esta sesión, pero fue sobre los pedidos de prueba que había
+en la base en ese momento — falta una pasada de verificación más sistemática, sobre todo por
+debajo de 1280px (breakpoint `xl` donde se oculta Tela/Colores/Diseño/Talles/Pago) con datos
+reales/variados (nombres de colegio largos, "Listo para Producción" como estado, etc.).
+
+También quedó sin revisar el mismo tipo de comportamiento responsive en el resto de pantallas
+con tablas, que no pasaron por este trabajo: `PedidosListView.tsx`, `UsuariosView.tsx`,
+`StockView.tsx`, `PlanificacionDetalleView.tsx`, `PiezasListView.tsx`/`GraduacionTalleView.tsx`,
+`CargaTallesDetalleTabla.tsx`.
+
+Y falta revisar la versión mobile de la vista pública de carga de talles (sin login, para
+alumnos/representantes) — `CargaTallesPublicaView.tsx` — que es la que más probablemente se usa
+desde el celular en la práctica.
+
 ## Importación de pedidos desde Excel (Kommo)
 
 `POST /api/pedidos/importar-excel` (botón "Importar Excel" en el listado de Pedidos) lee el

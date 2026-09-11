@@ -78,15 +78,16 @@ interface Filtros {
  *  las filas, así que un encabezado suelto no aportaría nada). */
 function EncabezadoColumnas() {
   return (
-    <div className="hidden items-center gap-3 overflow-x-auto px-3 text-[11px] font-bold uppercase tracking-wide text-wc-text-muted xl:flex">
+    <div className="hidden items-center gap-3 px-3 text-[11px] font-bold uppercase tracking-wide text-wc-text-muted xl:flex">
       <div className="w-14 shrink-0" />
-      <div className="min-w-28 flex-1">Prenda</div>
+      <div className="min-w-20 flex-1">Prenda</div>
       <div className="min-w-16 flex-1 text-center">Cant.</div>
       <div className="min-w-24 flex-1">Tela</div>
       <div className="min-w-56 flex-1 truncate">Colores</div>
       <div className="min-w-28 flex-1">Diseño</div>
       <div className="min-w-32 flex-1">Talles</div>
-      <div className="min-w-36 flex-1">Estado</div>
+      <div className="min-w-24 flex-1">Pago</div>
+      <div className="min-w-32 flex-1">Estado</div>
     </div>
   );
 }
@@ -373,20 +374,26 @@ export default function FichasTecnicasView() {
         )}
 
         {estadoCarga === 'listo' && pedidosFiltrados.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <EncabezadoColumnas />
-            <div className="flex flex-col gap-4">
-              {pedidosFiltrados.map((pedido) => (
-                <FichaPedidoCard
-                  key={pedido.id}
-                  pedido={pedido}
-                  puedeCargar={puedeCargar}
-                  puedeCambiarEstado={puedeCambiarEstado}
-                  coloresCierre={coloresCierre}
-                  tiposTela={tiposTela}
-                  onActualizado={(actualizado) => actualizarProducto(pedido.id, actualizado)}
-                />
-              ))}
+          // Un solo scroll horizontal para toda la sección (encabezado + todas las filas de
+          // todos los pedidos), no uno por fila — así, si en algún ancho la suma de anchos
+          // mínimos de las columnas no entra, todo se corre junto en vez de que cada tarjeta
+          // scrollee por su cuenta con su propia barra.
+          <div className="overflow-x-auto">
+            <div className="flex flex-col gap-3">
+              <EncabezadoColumnas />
+              <div className="flex flex-col gap-4">
+                {pedidosFiltrados.map((pedido) => (
+                  <FichaPedidoCard
+                    key={pedido.id}
+                    pedido={pedido}
+                    puedeCargar={puedeCargar}
+                    puedeCambiarEstado={puedeCambiarEstado}
+                    coloresCierre={coloresCierre}
+                    tiposTela={tiposTela}
+                    onActualizado={(actualizado) => actualizarProducto(pedido.id, actualizado)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}

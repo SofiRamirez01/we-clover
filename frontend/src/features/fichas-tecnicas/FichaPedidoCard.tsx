@@ -2,6 +2,7 @@ import { useState } from 'react';
 import CargaTallesFichaHeader from '../carga-talles/CargaTallesFichaHeader';
 import { useCargaTallesFicha } from '../carga-talles/useCargaTallesFicha';
 import { urlArchivoSubido } from '../../utils/urlArchivos';
+import BarraProgresoPago from './BarraProgresoPago';
 import BarraProgresoTalles from './BarraProgresoTalles';
 import EstadoBadge from './EstadoBadge';
 import EstadoDisenoBadge from './EstadoDisenoBadge';
@@ -49,12 +50,24 @@ interface FilaProductoProps {
   coloresCierre: PaletaColorResponse[];
   tiposTela: TipoTelaCatalogo[];
   resumenTalles: ResumenTalles | null;
+  /** Pedido.porcentajePagado — se repite igual en todas las filas del mismo pedido, no hay
+   *  desglose de pago por prenda. */
+  porcentajePagado: number;
   onActualizado: (producto: ProductoResponse) => void;
 }
 
 /** Una fila = una prenda del pedido, con columnas alineadas entre todas las filas de todos los
  *  pedidos (mismos anchos que el encabezado de columnas en FichasTecnicasView). */
-function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre, tiposTela, resumenTalles, onActualizado }: FilaProductoProps) {
+function FilaProducto({
+  producto,
+  puedeCargar,
+  puedeCambiarEstado,
+  coloresCierre,
+  tiposTela,
+  resumenTalles,
+  porcentajePagado,
+  onActualizado,
+}: FilaProductoProps) {
   const [errorImagen, setErrorImagen] = useState(false);
   const [previewAbierto, setPreviewAbierto] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -77,12 +90,11 @@ function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre
     });
 
   return (
-    // overflow-x-auto de respaldo: las columnas se reparten con flex-1 + min-width para
-    // aprovechar todo el ancho sin dejar espacio muerto, pero en anchos intermedios (donde
-    // "xl" todavía no ocultó Tela/Colores/Diseño/Talles) la suma de mínimos puede superar el
-    // ancho disponible — sin esto, ese sobrante quedaría cortado e inaccesible en vez de
-    // poder scrollear.
-    <div className="flex items-center gap-3 overflow-x-auto border-t border-wc-border px-3 py-2.5 first:border-t-0">
+    // El respaldo de overflow-x-auto para cuando la suma de anchos mínimos supera el ancho
+    // disponible vive en un solo contenedor arriba de todo (FichasTecnicasView), no acá — así
+    // toda la sección (encabezado + todas las filas de todos los pedidos) scrollea junta como
+    // una unidad en vez de que cada fila tenga su propia barra de scroll independiente.
+    <div className="flex items-center gap-3 border-t border-wc-border px-3 py-2.5 first:border-t-0">
       <div className="relative h-14 w-14 shrink-0">
         {puedeCargar && (
           <button
@@ -123,7 +135,7 @@ function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre
         <ModalColoresGotero producto={producto} coloresCierre={coloresCierre} onActualizado={onActualizado} onCerrar={() => setModalAbierto(false)} />
       )}
 
-      <div className="min-w-28 flex-1">
+      <div className="min-w-20 flex-1">
         <p className="truncate text-xs font-semibold text-wc-text">{producto.tipoPrenda ?? 'Sin tipo'}</p>
         {/* Resumen compacto para pantallas chicas, donde el resto de las columnas se ocultan
             (mismo breakpoint que la columna real de Tela, para que no haya un rango de anchos
@@ -161,7 +173,11 @@ function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre
         )}
       </div>
 
-      <div className="min-w-36 flex-1">
+      <div className="hidden min-w-24 flex-1 xl:block">
+        <BarraProgresoPago porcentajePagado={porcentajePagado} />
+      </div>
+
+      <div className="min-w-32 flex-1">
         <EstadoProductoControl producto={producto} puedeEditar={puedeCambiarEstado} onActualizado={onActualizado} />
       </div>
     </div>
@@ -211,14 +227,16 @@ export default function FichaPedidoCard({ pedido, puedeCargar, puedeCambiarEstad
             con precisión (ya lo intenté dos veces y el cálculo de flex-1 se rompe apenas falta
             un elemento) — con CSS Grid sí, usando los mismos anchos de columna que
             EncabezadoColumnas/FilaProducto: el título ocupa las columnas de
-            imagen+prenda+cant+tela+colores+diseño (1 a 6), los íconos de talles la columna 7 y
-            el estado la columna 8. Columnas flexibles (minmax con 1fr) para que se repartan el
-            ancho disponible en vez de dejar espacio muerto — mismo criterio que las filas. */}
+            imagen+prenda+cant+tela+colores+diseño (1 a 6), los íconos de talles la columna 7,
+            la columna 8 (Pago) queda vacía — no hay ningún control de pago que mostrar acá,
+            solo existe como dato por prenda más abajo — y el estado la columna 9. Columnas
+            flexibles (minmax con 1fr) para que se repartan el ancho disponible en vez de dejar
+            espacio muerto — mismo criterio que las filas. */}
         <div
-          className="hidden items-center gap-3 overflow-x-auto xl:grid"
+          className="hidden items-center gap-3 xl:grid"
           style={{
             gridTemplateColumns:
-              '56px minmax(112px,1fr) minmax(64px,1fr) minmax(96px,1fr) minmax(224px,1fr) minmax(112px,1fr) minmax(128px,1fr) minmax(160px,1fr)',
+              '56px minmax(80px,1fr) minmax(64px,1fr) minmax(96px,1fr) minmax(224px,1fr) minmax(112px,1fr) minmax(128px,1fr) minmax(96px,1fr) minmax(128px,1fr)',
           }}
         >
           <div className="min-w-0" style={{ gridColumn: '1 / 7' }}>
@@ -241,12 +259,12 @@ export default function FichaPedidoCard({ pedido, puedeCargar, puedeCambiarEstad
               compacto
             />
           </div>
-          <div style={{ gridColumn: '8' }}>
+          <div style={{ gridColumn: '9' }}>
             <EstadoBadge estado={pedido.estadoActual} />
           </div>
         </div>
 
-        <div className="md:hidden">
+        <div className="xl:hidden">
           <CargaTallesFichaHeader
             idPedido={pedido.id}
             carga={carga}
@@ -270,6 +288,7 @@ export default function FichaPedidoCard({ pedido, puedeCargar, puedeCambiarEstad
               coloresCierre={coloresCierre}
               tiposTela={tiposTela}
               resumenTalles={resumen && resumen.tieneTalle ? { cantidadCargada: resumen.cantidadCargada, cantidadTotal: resumen.cantidadTotal } : null}
+              porcentajePagado={pedido.porcentajePagado}
               onActualizado={onActualizado}
             />
           );
