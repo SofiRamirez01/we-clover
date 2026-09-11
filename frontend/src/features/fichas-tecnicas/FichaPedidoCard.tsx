@@ -77,7 +77,12 @@ function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre
     });
 
   return (
-    <div className="flex items-center gap-3 border-t border-wc-border px-3 py-2.5 first:border-t-0">
+    // overflow-x-auto de respaldo: las columnas se reparten con flex-1 + min-width para
+    // aprovechar todo el ancho sin dejar espacio muerto, pero en anchos intermedios (donde
+    // "xl" todavía no ocultó Tela/Colores/Diseño/Talles) la suma de mínimos puede superar el
+    // ancho disponible — sin esto, ese sobrante quedaría cortado e inaccesible en vez de
+    // poder scrollear.
+    <div className="flex items-center gap-3 overflow-x-auto border-t border-wc-border px-3 py-2.5 first:border-t-0">
       <div className="relative h-14 w-14 shrink-0">
         {puedeCargar && (
           <button
@@ -118,23 +123,25 @@ function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre
         <ModalColoresGotero producto={producto} coloresCierre={coloresCierre} onActualizado={onActualizado} onCerrar={() => setModalAbierto(false)} />
       )}
 
-      <div className="w-28 shrink-0">
+      <div className="min-w-28 flex-1">
         <p className="truncate text-xs font-semibold text-wc-text">{producto.tipoPrenda ?? 'Sin tipo'}</p>
-        {/* Resumen compacto para pantallas chicas, donde el resto de las columnas se ocultan. */}
-        <p className="mt-1 text-[10px] leading-snug text-wc-text-muted sm:hidden">
+        {/* Resumen compacto para pantallas chicas, donde el resto de las columnas se ocultan
+            (mismo breakpoint que la columna real de Tela, para que no haya un rango de anchos
+            donde no se vea en ninguno de los dos lados). */}
+        <p className="mt-1 text-[10px] leading-snug text-wc-text-muted xl:hidden">
           {telaActual ? nombreTela(telaActual, tiposTela) : 'Sin tela'}
         </p>
       </div>
 
-      <div className="w-16 shrink-0 text-center">
+      <div className="min-w-16 flex-1 text-center">
         <p className="text-lg font-extrabold text-wc-text">{producto.cantidadTotal}</p>
       </div>
 
-      <div className="hidden w-20 shrink-0 text-xs text-wc-text-muted sm:block">
+      <div className="hidden min-w-24 flex-1 text-sm font-medium text-wc-text-muted xl:block">
         {telaActual ? nombreTela(telaActual, tiposTela) : 'Sin definir'}
       </div>
 
-      <div className="hidden min-w-0 flex-1 flex-wrap gap-1 overflow-hidden md:flex">
+      <div className="hidden min-w-56 flex-1 flex-wrap gap-1 overflow-hidden xl:flex">
         {chips.length > 0 ? (
           chips.map((chip) => <ColorChip key={chip.key} etiqueta={chip.etiqueta} nombre={chip.nombre} hex={chip.hex} />)
         ) : (
@@ -142,11 +149,11 @@ function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre
         )}
       </div>
 
-      <div className="hidden w-28 shrink-0 sm:block">
+      <div className="hidden min-w-28 flex-1 xl:block">
         <EstadoDisenoBadge producto={producto} />
       </div>
 
-      <div className="hidden w-32 shrink-0 md:block">
+      <div className="hidden min-w-32 flex-1 xl:block">
         {resumenTalles ? (
           <BarraProgresoTalles cargados={resumenTalles.cantidadCargada} total={resumenTalles.cantidadTotal} />
         ) : (
@@ -154,7 +161,7 @@ function FilaProducto({ producto, puedeCargar, puedeCambiarEstado, coloresCierre
         )}
       </div>
 
-      <div className="w-36 shrink-0 sm:w-40">
+      <div className="min-w-36 flex-1">
         <EstadoProductoControl producto={producto} puedeEditar={puedeCambiarEstado} onActualizado={onActualizado} />
       </div>
     </div>
@@ -181,10 +188,11 @@ export default function FichaPedidoCard({ pedido, puedeCargar, puedeCambiarEstad
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-wc-border bg-white shadow-sm">
       <div className="flex flex-col gap-1.5 border-b border-wc-border bg-wc-bg/60 px-3 py-2.5">
-        {/* Debajo de md, la columna "Talles" ni existe en las filas — no hay con qué alinear,
-            así que va todo en una línea simple (ficha+colegio / estado) y la carga de talles
-            completa (con texto) en una línea propia abajo. */}
-        <div className="flex flex-wrap items-center justify-between gap-2 md:hidden">
+        {/* Debajo de xl (mismo breakpoint que la columna "Talles" de las filas), esa columna
+            ni existe — no hay con qué alinear, así que va todo en una línea simple
+            (ficha+colegio / estado) y la carga de talles completa (con texto) en una línea
+            propia abajo. */}
+        <div className="flex flex-wrap items-center justify-between gap-2 xl:hidden">
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
               <span className="text-xl font-extrabold text-wc-text">#{pedido.codigoInterno}</span>
@@ -197,17 +205,21 @@ export default function FichaPedidoCard({ pedido, puedeCargar, puedeCambiarEstad
           <EstadoBadge estado={pedido.estadoActual} />
         </div>
 
-        {/* En md+ va todo en UNA sola fila: ficha+colegio, los controles de carga de talles
+        {/* En xl+ va todo en UNA sola fila: ficha+colegio, los controles de carga de talles
             alineados con la columna "Talles" de las filas de abajo, y el estado del pedido.
             Con flexbox no hay forma de que el título "salte" varias columnas y siga alineado
             con precisión (ya lo intenté dos veces y el cálculo de flex-1 se rompe apenas falta
             un elemento) — con CSS Grid sí, usando los mismos anchos de columna que
             EncabezadoColumnas/FilaProducto: el título ocupa las columnas de
             imagen+prenda+cant+tela+colores+diseño (1 a 6), los íconos de talles la columna 7 y
-            el estado la columna 8. */}
+            el estado la columna 8. Columnas flexibles (minmax con 1fr) para que se repartan el
+            ancho disponible en vez de dejar espacio muerto — mismo criterio que las filas. */}
         <div
-          className="hidden items-center gap-3 md:grid"
-          style={{ gridTemplateColumns: '56px 112px 64px 80px minmax(0,1fr) 112px 128px 160px' }}
+          className="hidden items-center gap-3 overflow-x-auto xl:grid"
+          style={{
+            gridTemplateColumns:
+              '56px minmax(112px,1fr) minmax(64px,1fr) minmax(96px,1fr) minmax(224px,1fr) minmax(112px,1fr) minmax(128px,1fr) minmax(160px,1fr)',
+          }}
         >
           <div className="min-w-0" style={{ gridColumn: '1 / 7' }}>
             <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">

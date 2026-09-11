@@ -72,19 +72,21 @@ interface Filtros {
   completitud: FiltroCompletitud;
 }
 
-/** Encabezados de columna de la lista de prendas — mismos anchos y breakpoints que
- *  FilaProducto en FichaPedidoCard.tsx, para que quede alineado como una tabla real. */
+/** Encabezados de columna de la lista de prendas — mismos anchos y breakpoint que
+ *  FilaProducto en FichaPedidoCard.tsx, para que quede alineado como una tabla real. Todas las
+ *  columnas aparecen juntas recién en xl (por debajo, Tela/Colores/Diseño/Talles no se ven en
+ *  las filas, así que un encabezado suelto no aportaría nada). */
 function EncabezadoColumnas() {
   return (
-    <div className="hidden items-center gap-3 px-3 text-[11px] font-bold uppercase tracking-wide text-wc-text-muted sm:flex">
+    <div className="hidden items-center gap-3 overflow-x-auto px-3 text-[11px] font-bold uppercase tracking-wide text-wc-text-muted xl:flex">
       <div className="w-14 shrink-0" />
-      <div className="w-28 shrink-0">Prenda</div>
-      <div className="w-16 shrink-0 text-center">Cant.</div>
-      <div className="w-20 shrink-0">Tela</div>
-      <div className="hidden min-w-0 flex-1 truncate md:block">Colores</div>
-      <div className="w-28 shrink-0">Diseño</div>
-      <div className="hidden w-32 shrink-0 md:block">Talles</div>
-      <div className="w-36 shrink-0 sm:w-40">Estado</div>
+      <div className="min-w-28 flex-1">Prenda</div>
+      <div className="min-w-16 flex-1 text-center">Cant.</div>
+      <div className="min-w-24 flex-1">Tela</div>
+      <div className="min-w-56 flex-1 truncate">Colores</div>
+      <div className="min-w-28 flex-1">Diseño</div>
+      <div className="min-w-32 flex-1">Talles</div>
+      <div className="min-w-36 flex-1">Estado</div>
     </div>
   );
 }
