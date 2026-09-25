@@ -46,9 +46,6 @@ function productoCumpleCompletitud(
 /** Roles habilitados para cargar/reemplazar la imagen de diseño (debe coincidir con ProductoService.java). */
 const ROLES_CARGA_DISENIO = ['ROLE_ADMINISTRATIVO', 'ROLE_VENDEDOR', 'ROLE_DISENADOR'];
 
-/** Roles habilitados para cambiar el estado de producción de una prenda (debe coincidir con ProductoService.java). */
-const ROLES_CAMBIO_ESTADO = ['ROLE_ADMINISTRATIVO', 'ROLE_PLANTA'];
-
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <circle cx="11" cy="11" r="7" />
@@ -105,7 +102,6 @@ const filtrosIniciales: Filtros = {
 export default function FichasTecnicasView() {
   const { usuario } = useAuth();
   const puedeCargar = Boolean(usuario && ROLES_CARGA_DISENIO.includes(usuario.rol));
-  const puedeCambiarEstado = Boolean(usuario && ROLES_CAMBIO_ESTADO.includes(usuario.rol));
 
   const [pedidos, setPedidos] = useState<PedidoResponse[]>([]);
   const [estadoCarga, setEstadoCarga] = useState<'cargando' | 'listo' | 'error'>('cargando');
@@ -387,7 +383,6 @@ export default function FichasTecnicasView() {
                     key={pedido.id}
                     pedido={pedido}
                     puedeCargar={puedeCargar}
-                    puedeCambiarEstado={puedeCambiarEstado}
                     coloresCierre={coloresCierre}
                     tiposTela={tiposTela}
                     onActualizado={(actualizado) => actualizarProducto(pedido.id, actualizado)}

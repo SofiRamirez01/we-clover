@@ -1,5 +1,6 @@
 import api from './api';
 import type { RolOption, UsuarioCreateRequest, UsuarioResponse, UsuarioUpdateRequest } from '../types/usuario';
+import type { UsuarioResumen } from '../types/produccion';
 
 export async function crearUsuario(payload: UsuarioCreateRequest): Promise<UsuarioResponse> {
   const { data } = await api.post<UsuarioResponse>('/usuarios', payload);
@@ -23,4 +24,11 @@ export async function actualizarUsuario(id: number, payload: UsuarioUpdateReques
 
 export async function eliminarUsuario(id: number): Promise<void> {
   await api.delete(`/usuarios/${id}`);
+}
+
+/** Solo id+nombre — para poblar el selector de empleado de la Pantalla de Producción
+ *  (ej. rol='ROLE_PLANTA'). */
+export async function listarUsuariosPorRol(rol: string): Promise<UsuarioResumen[]> {
+  const { data } = await api.get<UsuarioResumen[]>('/usuarios', { params: { rol } });
+  return data;
 }

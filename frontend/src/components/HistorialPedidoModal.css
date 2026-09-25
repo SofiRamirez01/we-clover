@@ -95,3 +95,9 @@
   color: var(--wc-text);
   vertical-align: top;
 }
+
+.historial-modal-detalle-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--wc-text-muted);
+}

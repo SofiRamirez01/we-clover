@@ -1,5 +1,6 @@
 package com.weclover.backend.service;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +18,13 @@ import org.springframework.web.multipart.MultipartFile;
 import com.weclover.backend.dto.producto.ActualizarColorCierreRequest;
 import com.weclover.backend.dto.producto.ActualizarPatronCorteRequest;
 import com.weclover.backend.dto.producto.ActualizarTipoTelaRequest;
-import com.weclover.backend.dto.producto.CambioEstadoProductoRequest;
+import com.weclover.backend.dto.producto.MarcarEstadoBanderaRequest;
 import com.weclover.backend.dto.producto.ProductoColorItemRequest;
 import com.weclover.backend.dto.producto.ProductoColoresRequest;
 import com.weclover.backend.dto.producto.ProductoInsumoSecundarioItemRequest;
 import com.weclover.backend.dto.producto.ProductoInsumosSecundariosRequest;
 import com.weclover.backend.dto.producto.ProductoResponse;
+import com.weclover.backend.entity.EstadoBandera;
 import com.weclover.backend.entity.MetodoDeteccionColor;
 import com.weclover.backend.entity.PaletaColores;
 import com.weclover.backend.entity.PatronCorte;
@@ -38,6 +40,7 @@ import com.weclover.backend.repository.PaletaColoresRepository;
 import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.ProductoRepository;
 import com.weclover.backend.repository.TipoTelaRepository;
+import com.weclover.backend.service.ProductoDisenoValidador.InsumoSugerido;
 
 import lombok.RequiredArgsConstructor;
 
@@ -54,10 +57,9 @@ public class ProductoService {
         "ROLE_ADMINISTRATIVO", "ROLE_VENDEDOR", "ROLE_DISENADOR"
     );
 
-    /** Roles habilitados para cambiar el estado de producción de una prenda. */
-    private static final Set<String> ROLES_CAMBIO_ESTADO = Set.of(
-        "ROLE_ADMINISTRATIVO", "ROLE_PLANTA"
-    );
+    /** Roles habilitados para marcar el estado de la Bandera (mismo set que habilitaba el
+     *  viejo cambio de estado de producto, reusado — ver ProductoEtapaProduccionService). */
+    private static final Set<String> ROLES_BANDERA = Set.of("ROLE_ADMINISTRATIVO", "ROLE_PLANTA");
 
     /** Único tipo de prenda que tiene cierre (ver actualizarColorCierre y el default en asignarColores). */
     private static final String TIPO_PRENDA_CAMPERA = "Campera";
@@ -69,26 +71,6 @@ public class ProductoService {
      *  identidad real de la fila, no el tipo de tela). */
     private static final String DESCRIPCION_CIERRE = "Cierre";
 
-    /** Tipo de tela + descripción sugeridos para un insumo secundario automático (ver CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA). */
-    private record InsumoSugerido(String codigoTipoTela, String descripcion) {}
-
-    /**
-     * Insumos secundarios sugeridos automáticamente al confirmar los colores del gotero
-     * (ver asignarColores → sugerirInsumoSecundario), según el tipo de prenda. Son solo un
-     * punto de partida editable: nunca pisan una elección manual ya guardada (se matchea por
-     * descripcion, no por tipo de tela — ver ProductoInsumoSecundario). Si el negocio agrega
-     * una prenda nueva con insumos sugeridos propios, este es el único lugar a tocar (los
-     * tipos de tela en sí ya son 100% de datos, ver TipoTela).
-     */
-    private static final Map<String, List<InsumoSugerido>> CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA = Map.of(
-        "Buzo", List.of(new InsumoSugerido("JERSEY", "Capucha"), new InsumoSugerido("RIBB", "Puños y cintura")),
-        "Campera", List.of(
-            new InsumoSugerido(CODIGO_TIPO_TELA_CIERRE, DESCRIPCION_CIERRE),
-            new InsumoSugerido("JERSEY", "Capucha"),
-            new InsumoSugerido("RIBB", "Puños y cintura")
-        )
-    );
-
     private final ProductoRepository productoRepository;
     private final PaletaColoresRepository paletaColoresRepository;
     private final TipoTelaRepository tipoTelaRepository;
@@ -96,6 +78,7 @@ public class ProductoService {
     private final ProductoMapper productoMapper;
     private final AutorizacionService autorizacionService;
     private final AlmacenamientoImagenService almacenamientoImagenService;
+    private final EstadoPedidoService estadoPedidoService;
 
     @Value("${app.uploads.fichas-tecnicas-dir}")
     private String directorioUploads;
@@ -112,8 +95,10 @@ public class ProductoService {
 
         String url = almacenamientoImagenService.guardar(imagen, directorioUploads, urlBase);
         producto.setImagenDisenoUrl(url);
+        Producto guardado = productoRepository.save(producto);
+        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
 
-        return construirRespuesta(productoRepository.save(producto));
+        return construirRespuesta(guardado);
     }
 
     /**
@@ -133,14 +118,39 @@ public class ProductoService {
         return construirRespuesta(productoRepository.save(producto));
     }
 
+    /**
+     * Estado de la Bandera (ver EstadoBandera) — solo aplica a productos con tipoPrenda
+     * Bandera. No dispara recalcularEstadoPedido: Bandera no afecta TERMINADO, pero el nuevo
+     * valor sí queda disponible para la validación de ENTREGADO (ver PedidoService).
+     */
     @Transactional
-    public ProductoResponse cambiarEstado(Long idProducto, CambioEstadoProductoRequest request, Long idUsuarioActor) {
-        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_CAMBIO_ESTADO);
+    public ProductoResponse marcarEstadoBandera(Long idProducto, MarcarEstadoBanderaRequest request, Long idUsuarioActor) {
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_BANDERA);
 
         Producto producto = productoRepository.findById(idProducto)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el producto con id " + idProducto));
 
-        producto.setEstadoActual(request.estado());
+        if (!EtapaProduccionAplicabilidad.esBandera(producto)) {
+            throw new BusinessRuleException("Este producto no es Bandera");
+        }
+
+        // Se limpian las fechas que ya no corresponden al retroceder de estado (ej. volver a
+        // PENDIENTE después de un PEDIDO cargado por error) — sin esto, la Pantalla de
+        // Producción mostraba una fecha de "pedido al proveedor" al lado de un estado
+        // "Pendiente", inconsistente entre sí.
+        EstadoBandera nuevoEstado = request.estadoBandera();
+        producto.setEstadoBandera(nuevoEstado);
+        switch (nuevoEstado) {
+            case PENDIENTE -> {
+                producto.setFechaPedidoProveedor(null);
+                producto.setFechaRecibido(null);
+            }
+            case PEDIDO -> {
+                producto.setFechaPedidoProveedor(LocalDate.now());
+                producto.setFechaRecibido(null);
+            }
+            case RECIBIDO -> producto.setFechaRecibido(LocalDate.now());
+        }
 
         return construirRespuesta(productoRepository.save(producto));
     }
@@ -220,14 +230,16 @@ public class ProductoService {
         // exacto en esa categoría, ese insumo queda sin sugerir y hay que completarlo a mano
         // (ver actualizarInsumosSecundarios). Nunca pisa una elección manual ya guardada.
         if (colorPosicionUno != null && producto.getTipoPrenda() != null) {
-            List<InsumoSugerido> sugeridos = CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA
+            List<InsumoSugerido> sugeridos = ProductoDisenoValidador.CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA
                 .getOrDefault(producto.getTipoPrenda().getNombre(), List.of());
             for (InsumoSugerido sugerido : sugeridos) {
                 sugerirInsumoSecundario(producto, colorPosicionUno, sugerido.codigoTipoTela(), sugerido.descripcion());
             }
         }
 
-        return construirRespuesta(productoRepository.save(producto));
+        Producto guardado = productoRepository.save(producto);
+        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
+        return construirRespuesta(guardado);
     }
 
     /**
@@ -266,7 +278,9 @@ public class ProductoService {
 
         producto.setPatronCorte(nuevoPatronCorte);
 
-        return construirRespuesta(productoRepository.save(producto));
+        Producto guardado = productoRepository.save(producto);
+        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
+        return construirRespuesta(guardado);
     }
 
     /**
@@ -291,7 +305,9 @@ public class ProductoService {
 
         producto.setTipoTela(tipoTela);
 
-        return construirRespuesta(productoRepository.save(producto));
+        Producto guardado = productoRepository.save(producto);
+        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
+        return construirRespuesta(guardado);
     }
 
     /** Solo aplica a Camperas (ver TIPO_PRENDA_CAMPERA); el color debe ser de la categoría CIERRE. */
@@ -317,7 +333,9 @@ public class ProductoService {
 
         upsertInsumoSecundario(producto, cierre, DESCRIPCION_CIERRE, color, 1f);
 
-        return construirRespuesta(productoRepository.save(producto));
+        Producto guardado = productoRepository.save(producto);
+        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
+        return construirRespuesta(guardado);
     }
 
     /**
@@ -372,49 +390,19 @@ public class ProductoService {
                 .build());
         }
 
-        return construirRespuesta(productoRepository.save(producto));
+        Producto guardado = productoRepository.save(producto);
+        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
+        return construirRespuesta(guardado);
     }
 
     /**
-     * Elegibilidad de un producto para el Planificador de Compras (Fase 3): vacío si el
-     * "diseño" está completo, o el motivo (primero que falle, no la lista completa) si falta
-     * algo. Reusa CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA como la lista de insumos "esperados"
-     * por tipo de prenda — hoy esa constante solo se usaba para sugerir un default al
-     * confirmar colores (ver asignarColores/sugerirInsumoSecundario), pero es exactamente la
-     * misma información que hace falta acá, así que no se duplica en una entidad nueva.
-     * Público porque PlanificacionCompraService lo usa tanto para filtrar la lista de
-     * elegibles como para revalidar al confirmar (por si el frontend quedó desactualizado
-     * entre que se abrió la pantalla y se confirmó la selección).
+     * Elegibilidad de un producto para el Planificador de Compras (Fase 3): delega en
+     * ProductoDisenoValidador (ver esa clase para el detalle del chequeo). Método público
+     * mantenido acá porque PlanificacionCompraService ya depende de este servicio para
+     * construirRespuesta — evita agregar una dependencia nueva solo para esto.
      */
     public Optional<String> motivoDisenoIncompleto(Producto producto) {
-        if (producto.getTipoTela() == null) {
-            return Optional.of("Falta asignar la tela de esta prenda");
-        }
-        if (producto.getPatronCorte() == null) {
-            return Optional.of("Falta asignar la moldería (patrón de corte)");
-        }
-
-        int posiciones = producto.getPatronCorte().getColores().size();
-        if (producto.getColores().size() != posiciones) {
-            return Optional.of(
-                "Faltan colores por marcar (" + producto.getColores().size() + " de " + posiciones + " posiciones)");
-        }
-
-        if (producto.getTipoPrenda() != null) {
-            List<String> faltantes = CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA
-                .getOrDefault(producto.getTipoPrenda().getNombre(), List.of())
-                .stream()
-                .map(InsumoSugerido::descripcion)
-                .filter(descripcion -> producto.getInsumosSecundarios().stream()
-                    .noneMatch(insumo -> descripcion.equals(insumo.getDescripcion())))
-                .toList();
-
-            if (!faltantes.isEmpty()) {
-                return Optional.of("Faltan insumos secundarios: " + String.join(", ", faltantes));
-            }
-        }
-
-        return Optional.empty();
+        return ProductoDisenoValidador.motivoDisenoIncompleto(producto);
     }
 
     private boolean esCampera(Producto producto) {
@@ -515,7 +503,9 @@ public class ProductoService {
             base.subtotal(),
             base.observaciones(),
             base.imagenDisenoUrl(),
-            base.estadoActual(),
+            base.estadoBandera(),
+            base.fechaPedidoProveedor(),
+            base.fechaRecibido(),
             base.colores(),
             base.insumosSecundarios()
         );

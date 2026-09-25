@@ -1,7 +1,7 @@
 import api from './api';
 import type {
   CambioEstadoRequest,
-  HistorialEstadoPedidoResponse,
+  HistorialCambioResponse,
   ImportacionPedidosExcelResponse,
   PedidoCreateRequest,
   PedidoResponse,
@@ -32,8 +32,8 @@ export async function cambiarEstadoPedido(
   return data;
 }
 
-export async function obtenerHistorialPedido(id: number): Promise<HistorialEstadoPedidoResponse[]> {
-  const { data } = await api.get<HistorialEstadoPedidoResponse[]>(`/pedidos/${id}/historial`);
+export async function obtenerHistorialPedido(id: number): Promise<HistorialCambioResponse[]> {
+  const { data } = await api.get<HistorialCambioResponse[]>(`/pedidos/${id}/historial`);
   return data;
 }
 
@@ -54,4 +54,15 @@ export async function importarPedidosExcel(archivo: File): Promise<ImportacionPe
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return data;
+}
+
+/** Fija la prioridad manual del pedido (ver Pantalla de Producción) — pisa la automática hasta
+ *  que se quite con quitarPrioridadManualPedido. */
+export async function asignarPrioridadManualPedido(id: number, prioridad: number): Promise<void> {
+  await api.put(`/pedidos/${id}/prioridad`, { prioridad });
+}
+
+/** Vuelve a prioridad automática (rank por % de pago). */
+export async function quitarPrioridadManualPedido(id: number): Promise<void> {
+  await api.delete(`/pedidos/${id}/prioridad`);
 }

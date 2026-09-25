@@ -1,6 +1,7 @@
 package com.weclover.backend.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -14,13 +15,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.weclover.backend.dto.pedido.CambioEstadoRequest;
-import com.weclover.backend.dto.pedido.HistorialEstadoPedidoResponse;
+import com.weclover.backend.dto.pedido.HistorialCambioResponse;
 import com.weclover.backend.dto.pedido.PedidoCreateRequest;
 import com.weclover.backend.dto.pedido.PedidoResponse;
 import com.weclover.backend.dto.pedido.PedidoUpdateRequest;
+import com.weclover.backend.dto.pedido.TipoEventoHistorial;
 import com.weclover.backend.dto.producto.ProductoCreateRequest;
 import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.entity.Colegio;
+import com.weclover.backend.entity.EstadoBandera;
+import com.weclover.backend.entity.EstadoPedido;
 import com.weclover.backend.entity.HistorialEstadoPedido;
 import com.weclover.backend.entity.Pedido;
 import com.weclover.backend.entity.PatronCorte;
@@ -34,6 +38,7 @@ import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PedidoMapper;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.HistorialEstadoPedidoRepository;
+import com.weclover.backend.repository.HistorialEtapaProduccionRepository;
 import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.RolRepository;
@@ -48,6 +53,12 @@ import lombok.RequiredArgsConstructor;
 public class PedidoService {
 
     private static final String ROL_CLIENTE = "ROLE_CLIENTE";
+
+    /** Ampliado a ROLE_PLANTA en la entrega de la Pantalla de Producción: esa pantalla es
+     *  accesible para ROLE_ADMINISTRATIVO y ROLE_PLANTA, y deja editar la prioridad manual
+     *  inline — restringirlo solo a ROLE_ADMINISTRATIVO hubiera hecho fallar esa acción con
+     *  403 para la mitad de los usuarios de la pantalla. */
+    private static final Set<String> ROLES_PRIORIDAD = Set.of("ROLE_ADMINISTRATIVO", "ROLE_PLANTA");
 
     /**
      * Código de tela por defecto según el nombre del tipo de prenda (ver TipoTela.codigo),
@@ -72,10 +83,14 @@ public class PedidoService {
     private final PatronCorteRepository patronCorteRepository;
     private final TipoTelaRepository tipoTelaRepository;
     private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
+    private final HistorialEtapaProduccionRepository historialEtapaProduccionRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
     private final ProductoService productoService;
     private final CargaTallesService cargaTallesService;
+    private final ProductoEtapaProduccionService productoEtapaProduccionService;
+    private final EstadoPedidoService estadoPedidoService;
+    private final AutorizacionService autorizacionService;
 
     @Transactional
     public PedidoResponse crearPedido(PedidoCreateRequest request) {
@@ -85,6 +100,8 @@ public class PedidoService {
         if (!vendedor.isHabilitado()) {
             throw new BusinessRuleException("El usuario vendedor indicado no se encuentra habilitado");
         }
+
+        validarEstadoManual(request.estado());
 
         if (pedidoRepository.existsByCodigoInterno(request.codigoInterno())) {
             throw new BusinessRuleException(
@@ -155,13 +172,18 @@ public class PedidoService {
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())
                 .imagenDisenoUrl(productoRequest.imagenDisenoUrl())
-                .estadoActual(request.estado())
                 .build();
+            if (EtapaProduccionAplicabilidad.esBandera(producto)) {
+                producto.setEstadoBandera(EstadoBandera.PENDIENTE);
+            }
             pedido.getProductos().add(producto);
         }
 
         Pedido guardado = pedidoRepository.save(pedido);
         cargaTallesService.generarLinkParaPedidoNuevo(guardado);
+        guardado.getProductos().stream()
+            .filter(producto -> !EtapaProduccionAplicabilidad.esBandera(producto))
+            .forEach(productoEtapaProduccionService::sincronizarEtapas);
         return construirRespuesta(guardado);
     }
 
@@ -170,6 +192,42 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(idPedido)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el pedido con id " + idPedido));
 
+        aplicarCambioEstadoManual(pedido, request.estado(), request.fechaCambio(), request.observaciones(), idUsuarioActor);
+
+        Pedido actualizado = pedidoRepository.save(pedido);
+        return construirRespuesta(actualizado);
+    }
+
+    /**
+     * PRESUPUESTADO, SENADO, ENTREGADO y CANCELADO los sigue seteando una persona;
+     * LISTO_PARA_PRODUCCION/EN_PRODUCCION/TERMINADO los calcula el sistema (ver
+     * EstadoPedidoService.recalcularEstadoPedido) — se rechaza acá cualquier intento de
+     * setearlos a mano, para que nadie salte los requisitos reales (diseño completo, talles,
+     * %pago) editando el estado directamente. Compartido entre cambiarEstado y
+     * actualizarPedido para no duplicar esta validación (existían dos copias casi idénticas
+     * de esta lógica antes de esta entrega).
+     */
+    private void aplicarCambioEstadoManual(
+            Pedido pedido, EstadoPedido nuevoEstado, LocalDateTime fechaCambio, String observaciones, Long idUsuarioActor) {
+        validarEstadoManual(nuevoEstado);
+
+        if (nuevoEstado == EstadoPedido.CANCELADO && pedido.getEstadoActual() == EstadoPedido.ENTREGADO) {
+            throw new BusinessRuleException("No se puede cancelar un pedido que ya fue entregado");
+        }
+
+        if (nuevoEstado == EstadoPedido.ENTREGADO) {
+            List<String> banderasPendientes = pedido.getProductos().stream()
+                .filter(EtapaProduccionAplicabilidad::esBandera)
+                .filter(producto -> producto.getEstadoBandera() != EstadoBandera.RECIBIDO)
+                .map(producto -> producto.getTipoPrenda().getNombre() + " #" + producto.getId())
+                .toList();
+            if (!banderasPendientes.isEmpty()) {
+                throw new BusinessRuleException(
+                    "No se puede marcar el pedido como ENTREGADO: todavía falta recibir la bandera del proveedor ("
+                        + String.join(", ", banderasPendientes) + ")");
+            }
+        }
+
         if (idUsuarioActor == null) {
             throw new BusinessRuleException("No se pudo identificar al usuario que realiza el cambio de estado");
         }
@@ -177,25 +235,34 @@ public class PedidoService {
             .orElseThrow(() -> new ResourceNotFoundException(
                 "No existe el usuario que realiza el cambio de estado"));
 
-        HistorialEstadoPedido historial = HistorialEstadoPedido.builder()
+        pedido.getHistorial().add(HistorialEstadoPedido.builder()
             .pedido(pedido)
-            .estado(request.estado())
-            .fechaCambio(request.fechaCambio())
+            .estado(nuevoEstado)
+            .fechaCambio(fechaCambio)
             .modificadoPor(actor)
-            .observaciones(request.observaciones())
-            .build();
-        pedido.getHistorial().add(historial);
-        pedido.setEstadoActual(request.estado());
+            .observaciones(observaciones)
+            .build());
+        pedido.setEstadoActual(nuevoEstado);
+    }
 
-        Pedido actualizado = pedidoRepository.save(pedido);
-        return construirRespuesta(actualizado);
+    /** LISTO_PARA_PRODUCCION/EN_PRODUCCION/TERMINADO son 100% automáticos (ver
+     *  EstadoPedidoService) — ni siquiera se pueden indicar como estado inicial al crear un
+     *  pedido a mano. */
+    private void validarEstadoManual(EstadoPedido estado) {
+        if (estado == EstadoPedido.LISTO_PARA_PRODUCCION
+                || estado == EstadoPedido.EN_PRODUCCION
+                || estado == EstadoPedido.TERMINADO) {
+            throw new BusinessRuleException(
+                "El estado " + estado + " lo calcula el sistema automáticamente, no se puede indicar a mano");
+        }
     }
 
     @Transactional(readOnly = true)
     public List<PedidoResponse> listarPedidos() {
+        Map<Long, Integer> prioridadesAutomaticas = estadoPedidoService.calcularPrioridadesAutomaticas();
         return pedidoRepository.findAll().stream()
             .sorted(Comparator.comparing(Pedido::getFechaCreacion).reversed())
-            .map(this::construirRespuesta)
+            .map(pedido -> construirRespuesta(pedido, prioridadesAutomaticas))
             .toList();
     }
 
@@ -206,20 +273,68 @@ public class PedidoService {
         return construirRespuesta(pedido);
     }
 
+    /** null = vuelve a prioridad automática (rank por % de pago). */
+    @Transactional
+    public PedidoResponse asignarPrioridadManual(Long idPedido, Integer prioridad, Long idUsuarioActor) {
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_PRIORIDAD);
+        Pedido pedido = pedidoRepository.findById(idPedido)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el pedido con id " + idPedido));
+        pedido.setPrioridadManual(prioridad);
+        return construirRespuesta(pedidoRepository.save(pedido));
+    }
+
+    @Transactional
+    public PedidoResponse quitarPrioridadManual(Long idPedido, Long idUsuarioActor) {
+        return asignarPrioridadManual(idPedido, null, idUsuarioActor);
+    }
+
+    /**
+     * Historial unificado del pedido — combina HistorialEstadoPedido (cambios de EstadoPedido)
+     * con HistorialEtapaProduccion (cada marcado/desmarcado de etapa de producción de cualquier
+     * prenda del pedido, ver ProductoEtapaProduccionService.aplicarMarcado), ordenado por fecha
+     * descendente. Es el mismo "Historial de cambios" que se ve desde los 3 puntos de Base de
+     * Ventas — a pedido del negocio, todo cambio de producción tiene que quedar registrado ahí.
+     */
     @Transactional(readOnly = true)
-    public List<HistorialEstadoPedidoResponse> listarHistorial(Long idPedido) {
+    public List<HistorialCambioResponse> listarHistorial(Long idPedido) {
         if (!pedidoRepository.existsById(idPedido)) {
             throw new ResourceNotFoundException("No existe el pedido con id " + idPedido);
         }
-        return historialEstadoPedidoRepository.findByPedidoIdOrderByFechaCambioDesc(idPedido).stream()
-            .map(h -> new HistorialEstadoPedidoResponse(
+
+        List<HistorialCambioResponse> eventos = new ArrayList<>();
+
+        historialEstadoPedidoRepository.findByPedidoIdOrderByFechaCambioDesc(idPedido).forEach(h ->
+            eventos.add(new HistorialCambioResponse(
                 h.getId(),
-                h.getEstado(),
                 h.getFechaCambio(),
+                TipoEventoHistorial.ESTADO_PEDIDO,
+                h.getEstado(),
                 h.getObservaciones(),
+                null,
+                null,
+                null,
+                null,
+                h.getModificadoPor() != null ? h.getModificadoPor().getNombre() : null,
+                h.getModificadoPor() != null ? h.getModificadoPor().getEmail() : null
+            )));
+
+        historialEtapaProduccionRepository.findByProducto_Pedido_IdOrderByFechaCambioDesc(idPedido).forEach(h ->
+            eventos.add(new HistorialCambioResponse(
+                h.getId(),
+                h.getFechaCambio(),
+                TipoEventoHistorial.ETAPA_PRODUCCION,
+                null,
+                null,
+                h.getProducto().getTipoPrenda() != null ? h.getProducto().getTipoPrenda().getNombre() : null,
+                h.getEtapa(),
+                h.isCompletado(),
+                h.getEmpleado() != null ? h.getEmpleado().getNombre() : null,
                 h.getModificadoPor().getNombre(),
                 h.getModificadoPor().getEmail()
-            ))
+            )));
+
+        return eventos.stream()
+            .sorted(Comparator.comparing(HistorialCambioResponse::fechaCambio).reversed())
             .toList();
     }
 
@@ -271,23 +386,8 @@ public class PedidoService {
         pedido.setCantidadCuotas(request.cantidadCuotas());
 
         if (request.estado() != pedido.getEstadoActual()) {
-            if (idUsuarioActor == null) {
-                throw new BusinessRuleException(
-                    "No se pudo identificar al usuario que realiza el cambio de estado");
-            }
-            Usuario actor = usuarioRepository.findById(idUsuarioActor)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    "No existe el usuario que realiza el cambio de estado"));
-
-            HistorialEstadoPedido historial = HistorialEstadoPedido.builder()
-                .pedido(pedido)
-                .estado(request.estado())
-                .fechaCambio(LocalDateTime.now())
-                .modificadoPor(actor)
-                .observaciones("Modificado desde la edición del pedido")
-                .build();
-            pedido.getHistorial().add(historial);
-            pedido.setEstadoActual(request.estado());
+            aplicarCambioEstadoManual(
+                pedido, request.estado(), LocalDateTime.now(), "Modificado desde la edición del pedido", idUsuarioActor);
         }
 
         // Se matchea por id en vez de recrear todo (clear()+alta de cero), que borraba en cada
@@ -332,13 +432,19 @@ public class PedidoService {
                     .costo(productoRequest.costo())
                     .observaciones(productoRequest.observaciones())
                     .imagenDisenoUrl(productoRequest.imagenDisenoUrl())
-                    .estadoActual(request.estado())
                     .build();
+                if (EtapaProduccionAplicabilidad.esBandera(nuevo)) {
+                    nuevo.setEstadoBandera(EstadoBandera.PENDIENTE);
+                }
                 pedido.getProductos().add(nuevo);
             }
         }
 
         Pedido actualizado = pedidoRepository.save(pedido);
+        actualizado.getProductos().stream()
+            .filter(producto -> !EtapaProduccionAplicabilidad.esBandera(producto))
+            .forEach(productoEtapaProduccionService::sincronizarEtapas);
+        estadoPedidoService.recalcularEstadoPedido(actualizado.getId());
         return construirRespuesta(actualizado);
     }
 
@@ -392,6 +498,10 @@ public class PedidoService {
     }
 
     private PedidoResponse construirRespuesta(Pedido pedido) {
+        return construirRespuesta(pedido, estadoPedidoService.calcularPrioridadesAutomaticas());
+    }
+
+    private PedidoResponse construirRespuesta(Pedido pedido, Map<Long, Integer> prioridadesAutomaticas) {
         PedidoResponse base = pedidoMapper.toResponse(pedido);
 
         // PedidoMapper arma base.productos() vía ProductoMapper directo (MapStruct), que no
@@ -403,16 +513,11 @@ public class PedidoService {
             .map(productoService::construirRespuesta)
             .toList();
 
-        float precioProductos = productos.stream()
-            .map(ProductoResponse::subtotal)
-            .reduce(0f, Float::sum);
-        // Respaldo para pedidos importados de Excel con más de un tipo de prenda, donde
-        // Producto.costo queda en 0 por no poder desglosarse sin inventar datos (ver
-        // Pedido.montoReferenciaImportado). Deja de usarse solo en cuanto se cargan costos
-        // reales por prenda (precioProductos > 0).
-        float precioTotal = precioProductos > 0
-            ? precioProductos
-            : (pedido.getMontoReferenciaImportado() != null ? pedido.getMontoReferenciaImportado() : 0f);
+        // precioTotal/porcentajePagado: misma fórmula que EstadoPedidoService usa para decidir
+        // LISTO_PARA_PRODUCCION — extraída a ese servicio para no mantener dos copias (antes
+        // este cálculo estaba solo acá, duplicado si algún otro lugar lo necesitaba).
+        float precioTotal = estadoPedidoService.calcularPrecioTotalPedido(pedido);
+        float porcentajePagado = estadoPedidoService.calcularPorcentajePagado(pedido);
 
         // Precio del "combo": suma de Producto.costo de cada tipo de prenda (no ponderado por
         // cantidad, a diferencia de precioTotal) — ver PedidoResponse.precioUnitario. Mismo
@@ -425,7 +530,6 @@ public class PedidoService {
             : (pedido.getPrecioUnitarioReferenciaImportado() != null ? pedido.getPrecioUnitarioReferenciaImportado() : 0f);
 
         float saldo = precioTotal - base.pagoInicial();
-        float porcentajePagado = precioTotal > 0 ? (base.pagoInicial() / precioTotal) * 100 : 0f;
 
         return new PedidoResponse(
             base.id(),
@@ -458,7 +562,9 @@ public class PedidoService {
             porcentajePagado,
             base.responsableCurso(),
             base.contratoFirmado(),
-            base.cantidadCuotas()
+            base.cantidadCuotas(),
+            prioridadesAutomaticas.get(pedido.getId()),
+            pedido.getPrioridadManual()
         );
     }
 }

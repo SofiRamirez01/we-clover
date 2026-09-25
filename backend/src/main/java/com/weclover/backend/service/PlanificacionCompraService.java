@@ -459,6 +459,12 @@ public class PlanificacionCompraService {
         }
 
         for (ProductoInsumoSecundario insumo : producto.getInsumosSecundarios()) {
+            // Filas-flag puras (ej. descripcion="Estampado", ver ProductoInsumoSecundario) no
+            // representan consumo de material — tipoTela/color/cantidad quedan en null y no
+            // participan del cálculo de compras.
+            if (insumo.getTipoTela() == null || insumo.getColor() == null || insumo.getCantidad() == null) {
+                continue;
+            }
             ClaveArticulo clave = new ClaveArticulo(insumo.getTipoTela(), insumo.getColor());
             float gramos = insumo.getCantidad() * producto.getCantidadTotal();
             acumulado.merge(clave, convertirAUnidadDeCompra(gramos, insumo.getTipoTela()), Float::sum);

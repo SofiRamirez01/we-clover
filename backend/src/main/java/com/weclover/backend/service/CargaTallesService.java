@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +65,11 @@ public class CargaTallesService {
     private final TablaTalleRepository tablaTalleRepository;
     private final AutorizacionService autorizacionService;
 
+    /** @Lazy: EstadoPedidoService también depende de este servicio (para el chequeo de talles
+     *  completos de LISTO_PARA_PRODUCCION) — ver el comentario en esa clase. */
+    @Lazy
+    private final EstadoPedidoService estadoPedidoService;
+
     // ---------- Internas ----------
 
     /** Se llama automáticamente al crear un pedido (ver PedidoService.crearPedido) para que el
@@ -81,7 +87,9 @@ public class CargaTallesService {
         carga.setEstado(EstadoCargaTalles.CERRADO);
         carga.setFechaCierre(LocalDateTime.now());
         carga.setCerradoPor(obtenerUsuario(idUsuarioActor));
-        return aLinkResponse(cargaTallesPedidoRepository.save(carga));
+        LinkCargaTallesResponse response = aLinkResponse(cargaTallesPedidoRepository.save(carga));
+        estadoPedidoService.recalcularEstadoPedido(idPedido);
+        return response;
     }
 
     @Transactional
@@ -132,6 +140,7 @@ public class CargaTallesService {
         AlumnoPedido alumno = obtenerAlumnoDeCarga(idAlumno, carga);
         alumnoProductoTalleRepository.deleteAll(alumnoProductoTalleRepository.findByAlumnoPedido(alumno));
         alumnoPedidoRepository.delete(alumno);
+        estadoPedidoService.recalcularEstadoPedido(carga.getPedido().getId());
     }
 
     /** Agrega una unidad nueva (un "combo") de un Producto para un alumno — sin medida
@@ -156,6 +165,7 @@ public class CargaTallesService {
             .producto(producto)
             .personalizado(false)
             .build());
+        estadoPedidoService.recalcularEstadoPedido(carga.getPedido().getId());
         return aComboResponse(unidad);
     }
 
@@ -173,6 +183,7 @@ public class CargaTallesService {
         carga.setFechaCierre(LocalDateTime.now());
         carga.setCerradoPor(null);
         cargaTallesPedidoRepository.save(carga);
+        estadoPedidoService.recalcularEstadoPedido(carga.getPedido().getId());
     }
 
     @Transactional
@@ -194,7 +205,9 @@ public class CargaTallesService {
             combo.setPersonalizado(false);
         }
 
-        return aComboResponse(alumnoProductoTalleRepository.save(combo));
+        ComboResponse response = aComboResponse(alumnoProductoTalleRepository.save(combo));
+        estadoPedidoService.recalcularEstadoPedido(carga.getPedido().getId());
+        return response;
     }
 
     // ---------- Cálculo de talle (CAMBIO 4) ----------
@@ -278,22 +291,34 @@ public class CargaTallesService {
      *  ya tienen ancho/largo cargados. `cantidadCargada` del resumen cuenta unidades asignadas
      *  sin importar si están medidas, así que acá hace falta mirar los combos uno por uno. */
     private void validarTallesCompletos(CargaTallesPedido carga) {
-        List<AlumnoProductoTalle> todosLosCombos = alumnoProductoTalleRepository.findByAlumnoPedido_CargaTalles(carga);
-        Map<Long, List<AlumnoProductoTalle>> combosPorProducto = todosLosCombos.stream()
-            .collect(Collectors.groupingBy(c -> c.getProducto().getId()));
-
         for (Producto producto : carga.getPedido().getProductos()) {
-            if (producto.getTipoPrenda() == null || producto.getTipoPrenda().getGrupoTalle() == null) {
-                continue;
-            }
-            List<AlumnoProductoTalle> combos = combosPorProducto.getOrDefault(producto.getId(), List.of());
-            boolean completo = combos.size() == producto.getCantidadTotal()
-                && combos.stream().allMatch(c -> c.getAnchoCm() != null && c.getLargoCm() != null);
-            if (!completo) {
+            if (!estaCompletoElProducto(carga, producto)) {
                 throw new BusinessRuleException(
                     "Todavía faltan medidas de \"" + producto.getTipoPrenda().getNombre() + "\" para poder finalizar");
             }
         }
+    }
+
+    private boolean estaCompletoElProducto(CargaTallesPedido carga, Producto producto) {
+        if (producto.getTipoPrenda() == null || producto.getTipoPrenda().getGrupoTalle() == null) {
+            return true;
+        }
+        List<AlumnoProductoTalle> combos = alumnoProductoTalleRepository.findByAlumnoPedido_CargaTalles(carga).stream()
+            .filter(c -> c.getProducto().getId().equals(producto.getId()))
+            .toList();
+        return combos.size() == producto.getCantidadTotal()
+            && combos.stream().allMatch(c -> c.getAnchoCm() != null && c.getLargoCm() != null);
+    }
+
+    /** Expuesto para EstadoPedidoService (condición de LISTO_PARA_PRODUCCION, ver 3.2): true si
+     *  el pedido no tiene carga de talles generada, o si la tiene y todos sus productos con
+     *  talle ya están completos (mismo criterio que validarTallesCompletos, sin lanzar). */
+    @Transactional(readOnly = true)
+    public boolean tallesCompletos(Pedido pedido) {
+        return cargaTallesPedidoRepository.findByPedido(pedido)
+            .map(carga -> carga.getPedido().getProductos().stream()
+                .allMatch(producto -> estaCompletoElProducto(carga, producto)))
+            .orElse(false);
     }
 
     // ---------- Armado de respuestas ----------

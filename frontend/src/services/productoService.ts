@@ -1,6 +1,8 @@
 import api from './api';
-import type { EstadoPedido, ProductoResponse } from '../types/pedido';
+import type { ProductoResponse } from '../types/pedido';
+import type { EstadoBandera } from '../types/pedido';
 import type { ProductoColorItemRequest, ProductoInsumoSecundarioItemRequest, TipoTela } from '../types/paletaColores';
+import type { EtapaProduccion } from '../types/produccion';
 
 export async function subirImagenDisenoProducto(idProducto: number, imagen: File): Promise<ProductoResponse> {
   const formData = new FormData();
@@ -12,11 +14,6 @@ export async function subirImagenDisenoProducto(idProducto: number, imagen: File
 
 export async function eliminarImagenDisenoProducto(idProducto: number): Promise<ProductoResponse> {
   const { data } = await api.delete<ProductoResponse>(`/productos/${idProducto}/imagen`);
-  return data;
-}
-
-export async function cambiarEstadoProducto(idProducto: number, estado: EstadoPedido): Promise<ProductoResponse> {
-  const { data } = await api.patch<ProductoResponse>(`/productos/${idProducto}/estado`, { estado });
   return data;
 }
 
@@ -51,4 +48,35 @@ export async function actualizarInsumosSecundariosProducto(
 ): Promise<ProductoResponse> {
   const { data } = await api.put<ProductoResponse>(`/productos/${idProducto}/insumos-secundarios`, { insumos });
   return data;
+}
+
+/** Marca/revierte una etapa de producción (ver Pantalla de Producción). No se tipa ni se usa
+ *  el body de la respuesta: la pantalla que llama a esto ya actualiza optimistamente su propio
+ *  estado local y, si el pedido cambió de estado (ej. se disparó EN_PRODUCCION), vuelve a pedir
+ *  la grilla completa en vez de parsear esta respuesta puntual. */
+export async function marcarEtapaProducto(
+  idProducto: number,
+  etapa: EtapaProduccion,
+  completado: boolean,
+  idEmpleado?: number | null,
+): Promise<void> {
+  await api.put(`/productos/${idProducto}/etapas/${etapa}`, { completado, idEmpleado: idEmpleado ?? null });
+}
+
+export interface EtapaBulkItem {
+  idProducto: number;
+  etapa: EtapaProduccion;
+  completado: boolean;
+  idEmpleado?: number | null;
+}
+
+/** Carga masiva (ver modal de la Pantalla de Producción) — un solo request para todo el lote. */
+export async function marcarEtapasBulk(etapas: EtapaBulkItem[]): Promise<void> {
+  await api.put('/productos/etapas/bulk', { etapas });
+}
+
+/** Cambia el estado del flujo de Bandera (PENDIENTE/PEDIDO/RECIBIDO) — las fechas
+ *  correspondientes se completan solas del lado del backend. */
+export async function marcarEstadoBanderaProducto(idProducto: number, estadoBandera: EstadoBandera): Promise<void> {
+  await api.put(`/productos/${idProducto}/bandera/estado`, { estadoBandera });
 }

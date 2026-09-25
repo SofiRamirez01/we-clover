@@ -1,9 +1,10 @@
 package com.weclover.backend.dto.producto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.weclover.backend.dto.patroncorte.PatronCorteColorResponse;
-import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.EstadoBandera;
 
 public record ProductoResponse(
     Long id,
@@ -20,7 +21,10 @@ public record ProductoResponse(
     float subtotal,
     String observaciones,
     String imagenDisenoUrl,
-    EstadoPedido estadoActual,
+    /** Solo se usan si tipoPrenda es Bandera (ver EstadoBandera) — null para el resto. */
+    EstadoBandera estadoBandera,
+    LocalDate fechaPedidoProveedor,
+    LocalDate fechaRecibido,
     List<ProductoColorResponse> colores,
     List<ProductoInsumoSecundarioResponse> insumosSecundarios
 ) {

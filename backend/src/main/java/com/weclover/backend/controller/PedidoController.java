@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,11 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.weclover.backend.dto.pedido.CambioEstadoRequest;
-import com.weclover.backend.dto.pedido.HistorialEstadoPedidoResponse;
+import com.weclover.backend.dto.pedido.HistorialCambioResponse;
 import com.weclover.backend.dto.pedido.ImportacionPedidosExcelResponse;
 import com.weclover.backend.dto.pedido.PedidoCreateRequest;
 import com.weclover.backend.dto.pedido.PedidoResponse;
 import com.weclover.backend.dto.pedido.PedidoUpdateRequest;
+import com.weclover.backend.dto.pedido.PrioridadManualRequest;
 import com.weclover.backend.service.PedidoImportService;
 import com.weclover.backend.service.PedidoService;
 
@@ -69,12 +71,27 @@ public class PedidoController {
     }
 
     @GetMapping("/{id}/historial")
-    public List<HistorialEstadoPedidoResponse> obtenerHistorial(@PathVariable Long id) {
+    public List<HistorialCambioResponse> obtenerHistorial(@PathVariable Long id) {
         return pedidoService.listarHistorial(id);
     }
 
     @PostMapping("/importar-excel")
     public ImportacionPedidosExcelResponse importarExcel(@RequestParam("archivo") MultipartFile archivo) {
         return pedidoImportService.importarDesdeExcel(archivo);
+    }
+
+    @PutMapping("/{id}/prioridad")
+    public PedidoResponse asignarPrioridadManual(
+            @PathVariable Long id,
+            @Valid @RequestBody PrioridadManualRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return pedidoService.asignarPrioridadManual(id, request.prioridad(), idUsuarioActor);
+    }
+
+    @DeleteMapping("/{id}/prioridad")
+    public PedidoResponse quitarPrioridadManual(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return pedidoService.quitarPrioridadManual(id, idUsuarioActor);
     }
 }

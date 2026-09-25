@@ -47,6 +47,12 @@ public record PedidoResponse(
     float porcentajePagado,
     ResponsableCurso responsableCurso,
     boolean contratoFirmado,
-    Integer cantidadCuotas
+    Integer cantidadCuotas,
+    /** Rank (1 = más prioritario) entre los pedidos activos (no ENTREGADO/CANCELADO) por
+     *  porcentajePagado descendente, calculado al vuelo. Null si el pedido no está activo. */
+    Integer prioridadAutomatica,
+    /** Si no es null, es la prioridad "oficial" por sobre prioridadAutomatica (ver
+     *  Pedido.prioridadManual). */
+    Integer prioridadManual
 ) {
 }

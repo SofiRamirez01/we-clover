@@ -1,6 +1,7 @@
 package com.weclover.backend.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.weclover.backend.dto.rol.RolResponse;
 import com.weclover.backend.dto.usuario.UsuarioCreateRequest;
 import com.weclover.backend.dto.usuario.UsuarioResponse;
+import com.weclover.backend.dto.usuario.UsuarioResumenResponse;
 import com.weclover.backend.dto.usuario.UsuarioUpdateRequest;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.Usuario;
@@ -34,6 +36,10 @@ public class UsuarioService {
     /** Contraseña provisoria hasta que exista el flujo de invitación por mail (ver doc/pantallas-pendientes.md). */
     private static final String PASSWORD_PROVISORIA = "123";
 
+    /** Roles habilitados para llamar a listarPorRol (mismo criterio que la Pantalla de
+     *  Producción, que es hoy el único consumidor — ver ProduccionService). */
+    private static final Set<String> ROLES_PRODUCCION = Set.of("ROLE_ADMINISTRATIVO", "ROLE_PLANTA");
+
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
@@ -54,6 +60,17 @@ public class UsuarioService {
 
         return usuarioRepository.findByRolNombreNotAndHabilitadoTrueOrderByNombreAsc(ROL_CLIENTE).stream()
             .map(usuarioMapper::toResponse)
+            .toList();
+    }
+
+    /** Solo id+nombre, para poblar selectores (ej. empleado que completa una etapa de
+     *  producción) — no expone el resto de UsuarioResponse a roles no administrativos. */
+    @Transactional(readOnly = true)
+    public List<UsuarioResumenResponse> listarPorRol(String rol, Long idUsuarioActor) {
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_PRODUCCION);
+
+        return usuarioRepository.findByRolNombreAndHabilitadoTrueOrderByNombreAsc(rol).stream()
+            .map(usuario -> new UsuarioResumenResponse(usuario.getId(), usuario.getNombre()))
             .toList();
     }
 

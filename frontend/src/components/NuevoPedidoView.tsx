@@ -5,7 +5,7 @@ import AppHeader from './AppHeader';
 import { actualizarPedido, crearPedido, listarTiposPrenda } from '../services/pedidoService';
 import { useAuth } from '../context/AuthContext';
 import { extraerMensajeError } from '../utils/errores';
-import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS, RESPONSABLE_CURSO_LABELS } from '../types/pedido';
+import { ESTADOS_PEDIDO_MANUALES, ESTADO_PEDIDO_LABELS, RESPONSABLE_CURSO_LABELS } from '../types/pedido';
 import type {
   EstadoPedido,
   PedidoCreateRequest,
@@ -457,7 +457,18 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
                   onChange={(e) => actualizarInfoGeneral('estado', e.target.value as EstadoPedido)}
                 >
                   {esEdicion
-                    ? ESTADOS_PEDIDO.map((valor) => (
+                    ? // Solo estados manuales — LISTO_PARA_PRODUCCION/EN_PRODUCCION/TERMINADO son
+                      // automáticos (ver EstadoPedidoService en el backend) y ese PUT los rechaza.
+                      // Si el pedido ya está en uno de esos (o en cualquier otro valor fuera de
+                      // esta lista), se agrega igual como opción para no mostrar el <select>
+                      // vacío/desincronizado — reenviarlo tal cual no dispara ningún cambio real
+                      // (el backend solo valida si el estado efectivamente cambia).
+                      Array.from(
+                        new Set([
+                          ...ESTADOS_PEDIDO_MANUALES,
+                          ...(pedidoAEditar ? [pedidoAEditar.estadoActual] : []),
+                        ]),
+                      ).map((valor) => (
                         <option key={valor} value={valor}>
                           {ESTADO_PEDIDO_LABELS[valor]}
                         </option>

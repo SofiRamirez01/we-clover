@@ -152,6 +152,11 @@
   color: var(--wc-green-dark);
 }
 
+.estado-badge--cancelado {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 @media (max-width: 960px) {
   .pedidos-stats-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -27,6 +27,7 @@ interface Contadores {
   pendiente: number;
   en_produccion: number;
   entregado: number;
+  cancelado: number;
 }
 
 function sumarUnidadesPorTipos(pedido: PedidoResponse, tipos: string[]): number {
@@ -37,7 +38,9 @@ function sumarUnidadesPorTipos(pedido: PedidoResponse, tipos: string[]): number 
 
 
 function contarPorBucket(pedidos: PedidoResponse[], valor: (p: PedidoResponse) => number): Contadores {
-  const acc: Record<BucketEstadoPedido, number> = { pendiente: 0, en_produccion: 0, entregado: 0 };
+  // "total" no suma cancelado a propósito (mismo criterio que "Total vendido": un pedido
+  // cancelado no cuenta como venta) — ver ESTADO_PEDIDO_LABELS/BUCKET_POR_ESTADO.
+  const acc: Record<BucketEstadoPedido, number> = { pendiente: 0, en_produccion: 0, entregado: 0, cancelado: 0 };
   for (const pedido of pedidos) {
     acc[BUCKET_POR_ESTADO[pedido.estadoActual]] += valor(pedido);
   }

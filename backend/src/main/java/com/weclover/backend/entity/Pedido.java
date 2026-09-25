@@ -79,6 +79,11 @@ public class Pedido {
     @Builder.Default
     private float pagoInicial = 0f;
 
+    /** null = prioridad automática (rank por % de pago, ver EstadoPedidoService). Con valor,
+     *  queda fijada a mano y no se recalcula sola hasta que se vuelva a poner en null. */
+    @Column(name = "prioridad_manual")
+    private Integer prioridadManual;
+
     /** Quién coordina la carga de talles del curso (alumno/adulto). Nullable: dato nuevo, opcional. */
     @Enumerated(EnumType.STRING)
     @Column(name = "responsable_curso", length = 20)

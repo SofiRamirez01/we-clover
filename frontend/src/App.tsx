@@ -11,6 +11,7 @@ import FichasTecnicasView from './features/fichas-tecnicas/FichasTecnicasView';
 import CartaColoresView from './features/carta-colores/CartaColoresView';
 import PlanificadorComprasView from './features/planificador-compras/PlanificadorComprasView';
 import StockView from './features/stock/StockView';
+import PantallaProduccion from './features/produccion/PantallaProduccion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { PedidoResponse } from './types/pedido';
 import './App.css';
@@ -74,6 +75,8 @@ function AppShell() {
     contenido = <PlanificadorComprasView />;
   } else if (view === 'stock') {
     contenido = <StockView />;
+  } else if (view === 'produccion') {
+    contenido = <PantallaProduccion />;
   } else {
     contenido = <FichasTecnicasView />;
   }

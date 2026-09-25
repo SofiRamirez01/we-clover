@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import './CambiarEstadoPopover.css';
 import { cambiarEstadoPedido } from '../services/pedidoService';
 import { extraerMensajeError } from '../utils/errores';
-import { BUCKET_POR_ESTADO, ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS } from '../types/pedido';
+import { BUCKET_POR_ESTADO, ESTADOS_PEDIDO_MANUALES, ESTADO_PEDIDO_LABELS } from '../types/pedido';
 import type { EstadoPedido, PedidoResponse } from '../types/pedido';
 
 function pad(n: number): string {
@@ -75,7 +75,12 @@ export default function CambiarEstadoPopover({ pedido, onCambiado }: CambiarEsta
     const rect = triggerRef.current?.getBoundingClientRect();
     setTriggerRect(rect ?? null);
     setEstilo(null);
-    setEstado(pedido.estadoActual);
+    // Si el pedido está en un estado automático (LISTO_PARA_PRODUCCION/EN_PRODUCCION/
+    // TERMINADO, ver EstadoPedidoService en el backend), ese valor no es una opción válida
+    // acá — el <select> no puede arrancar en un valor que no está en su lista de <option>.
+    setEstado(
+      ESTADOS_PEDIDO_MANUALES.includes(pedido.estadoActual) ? pedido.estadoActual : ESTADOS_PEDIDO_MANUALES[0],
+    );
     setFechaCambio(fechaHoraActualLocal());
     setObservaciones('');
     setError(null);
@@ -128,7 +133,7 @@ export default function CambiarEstadoPopover({ pedido, onCambiado }: CambiarEsta
             <label>
               Nuevo estado
               <select value={estado} onChange={(e) => setEstado(e.target.value as EstadoPedido)}>
-                {ESTADOS_PEDIDO.map((valor) => (
+                {ESTADOS_PEDIDO_MANUALES.map((valor) => (
                   <option key={valor} value={valor}>
                     {ESTADO_PEDIDO_LABELS[valor]}
                   </option>

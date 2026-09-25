@@ -8,6 +8,7 @@ export const ESTILO_POR_BUCKET: Record<string, string> = {
   pendiente: 'bg-[#fef3e2] text-[#a9660a]',
   en_produccion: 'bg-[#e8f1fb] text-[#1d5fa8]',
   entregado: 'bg-wc-green/10 text-wc-green-dark',
+  cancelado: 'bg-red-100 text-red-700',
 };
 
 export function estiloBadgeEstado(estado: EstadoPedido): string {

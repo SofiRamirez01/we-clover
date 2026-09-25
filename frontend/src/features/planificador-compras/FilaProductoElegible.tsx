@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import EstadoBadge from '../fichas-tecnicas/EstadoBadge';
 import ImagenPreviewModal from '../fichas-tecnicas/ImagenPreviewModal';
 import { urlArchivoSubido } from '../../utils/urlArchivos';
 import type { ProductoElegibleResponse } from '../../types/planificacionCompra';
@@ -76,7 +75,6 @@ export default function FilaProductoElegible({ elegible, seleccionado, onToggle 
           <span className="font-semibold text-wc-text">
             {elegible.codigoInternoPedido} · {producto.tipoPrenda ?? 'Prenda'} ({producto.cantidadTotal})
           </span>
-          <EstadoBadge estado={producto.estadoActual} />
         </div>
 
         <p className="mt-0.5 text-xs text-wc-text">

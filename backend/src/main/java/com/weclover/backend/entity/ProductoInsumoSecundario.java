@@ -52,16 +52,25 @@ public class ProductoInsumoSecundario {
     @Column(nullable = false, length = 100)
     private String descripcion;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_tipo_tela", nullable = false)
+    /**
+     * Nullable: habilita filas-flag puras (ej. descripcion="Estampado", con tipoTela/color/
+     * cantidad en null) que no representan consumo de material sino solo la marca de que la
+     * prenda "lleva" ese insumo (ver EtapaProduccionAplicabilidad, aplicabilidad de la etapa
+     * ESTAMPADO). Para un insumo cargado a mano con tela/color reales, se sigue completando
+     * igual que antes.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_tipo_tela")
     private TipoTela tipoTela;
 
-    /** Debe pertenecer al mismo tipoTela de esta fila (se valida en el service). */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_paleta_color", nullable = false)
+    /** Debe pertenecer al mismo tipoTela de esta fila (se valida en el service). Nullable por
+     *  el mismo motivo que tipoTela. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_paleta_color")
     private PaletaColores color;
 
-    /** Gramos por prenda si tipoTela.esPorPeso, o unidades por prenda si no (ej. 1 para un cierre). */
-    @Column(nullable = false)
-    private float cantidad;
+    /** Gramos por prenda si tipoTela.esPorPeso, o unidades por prenda si no (ej. 1 para un
+     *  cierre). Nullable por el mismo motivo que tipoTela (ver comentario de esa columna). */
+    @Column
+    private Float cantidad;
 }

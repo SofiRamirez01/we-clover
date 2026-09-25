@@ -6,7 +6,7 @@ detalle de lo ya construido (el "por qué" de cada decisión ya tomada) vive en
 [tareas-realizadas.md](tareas-realizadas.md). Cuando algo de acá se resuelva, mover el
 detalle a ese archivo y borrarlo de este.
 
-Última actualización: 2026-09-10.
+Última actualización: 2026-09-25 (historial unificado de cambios de producción).
 
 ## Responsive: falta verificar por debajo de 1280px y otras pantallas con tablas
 
@@ -225,8 +225,11 @@ CLAUDE.md define roles (Administrador, Operativo, Cortador, Ventas) pero falta d
 detalle qué puede hacer cada uno:
 - Rol **Gerente** (a crear) que pueda crear un pedido "en nombre de" otro vendedor, en vez de
   que el campo Vendedor quede siempre fijo al usuario logueado.
-- Qué rol(es) pueden editar el Estado de un pedido ya creado, y si hay transiciones
-  restringidas (hoy el campo Estado es 100% libre, sin reglas de transición).
+- Qué rol(es) pueden editar el Estado de un pedido ya creado. Ya hay alguna regla de
+  transición (ver "Producción (Entrega 1 de 3)" más arriba: los 3 estados automáticos no se
+  pueden setear a mano, y no se puede cancelar un pedido ya ENTREGADO), pero cualquier rol
+  logueado puede seguir setear PRESUPUESTADO/SENADO/ENTREGADO/CANCELADO sin restricción de rol
+  propia — no hay un permiso dedicado para esto todavía.
 - Módulo completo de "Carga Descentralizada": el link público sin login para que
   alumnos/clientes carguen sus medidas y apodos (mencionado en CLAUDE.md, no empezado).
 
@@ -310,10 +313,96 @@ ficha existente — hay que volver a marcarlas todas por gotero desde cero (se i
 la consigna original, literal). Si en algún momento se quiere poder corregir una sola
 posición puntual sin rehacer todo el click a click, es un cambio de UX aparte.
 
-## Estado de producción por prenda: sin historial propio
+## Producción (Entregas 1 y 2 de 3): falta el reporte semanal (Entrega 3)
 
-A diferencia del estado del pedido (que sí tiene `HistorialEstadoPedido`, con
-quién/cuándo/observaciones), el cambio de estado de una prenda no queda registrado en
-ningún lado más que el valor actual. Si el negocio necesita esa trazabilidad también a nivel
-prenda (CLAUDE.md la pide para pedidos en general), habría que agregar una tabla análoga a
-`historial_estado_pedido` pero por producto.
+**Entrega 1** (backend): `EstadoPedido` propio para `Pedido` (con `LISTO_PARA_PRODUCCION`/
+`EN_PRODUCCION`/`TERMINADO` 100% automáticos vía `EstadoPedidoService.recalcularEstadoPedido`,
+y `CANCELADO` nuevo), `ProductoEtapaProduccion` (reemplaza al viejo `Producto.estadoActual`
+compartido con Pedido), el flujo propio de Bandera (`EstadoBandera`), y prioridad de pedidos
+(automática por %pago + override manual). Se borró `EstadoProductoControl.tsx` (llamaba al
+endpoint `PATCH /productos/{id}/estado`, eliminado) y se sacaron los usos de
+`Producto.estadoActual` de `NuevaPlanificacionView.tsx`/`FilaProductoElegible.tsx` (Planificador
+de Compras) — solo parche mínimo, sin pantalla propia todavía en ese momento.
+
+**Entrega 2** (pantalla real): `PantallaProduccion` (`frontend/src/features/produccion/`),
+accesible desde el ítem "Producción" del sidebar para `ROLE_ADMINISTRATIVO`/`ROLE_PLANTA` — no
+existe un `ROLE_PRODUCCION` propio, se confirmó con el usuario que es literalmente `ROLE_PLANTA`
+(el prompt de esta pantalla lo mencionaba con ese nombre por error). Grilla agrupada por pedido
+(accordion), con checkboxes de etapa + selector de empleado inline, selector de estado de
+Bandera, prioridad manual editable inline, filtros (estado/etapa pendiente/rango de %pago), y
+un modal de carga masiva por etapa. Autoguardado optimista por acción (revierte y muestra un
+toast si falla) — se agregó `ToastContainer` (`features/produccion/Toast.tsx`), primer toast del
+proyecto (el resto de las pantallas usa un banner de error local por acción).
+
+Se agregó backend que no estaba en el prompt original de la Entrega 1 porque esta pantalla lo
+necesitaba:
+- `GET /api/produccion/pedidos` (`ProduccionController`/`ProduccionService`, filtros
+  `estado`/`etapaPendiente`/`pagoMin`/`pagoMax`) — arma la grilla completa con las 7 etapas
+  siempre presentes por producto (`aplica=false` para las que no correspondan), para que el
+  frontend no tenga que recalcular aplicabilidad.
+- `GET /api/usuarios?rol=` (`UsuarioResumenResponse`, solo id+nombre) para poblar el selector de
+  empleado — gateado igual que la pantalla (`ROLE_ADMINISTRATIVO`/`ROLE_PLANTA`), a diferencia
+  de `/api/usuarios/corporativos` que sigue siendo exclusivo de `ROLE_ADMINISTRATIVO` y expone
+  más datos.
+- `PedidoService.ROLES_PRIORIDAD` se amplió de solo `ROLE_ADMINISTRATIVO` a también
+  `ROLE_PLANTA` (la pantalla dejaba editar la prioridad manual inline para ambos roles; con el
+  gate viejo, la mitad de los usuarios de la pantalla hubiera recibido 403 al tocarla). Ya no es
+  "sin confirmar" — quedó resuelto por el propio diseño de esta pantalla.
+- Bug encontrado al construir la pantalla: `ProductoService.marcarEstadoBandera` no limpiaba
+  `fechaPedidoProveedor`/`fechaRecibido` al retroceder de estado (ej. volver a `PENDIENTE`
+  después de un `PEDIDO` cargado por error) — la pantalla mostraba esas fechas aunque el estado
+  visible dijera "Pendiente". Corregido: cada estado ahora deja solo las fechas que le
+  corresponden.
+- No hay routing por URL en el proyecto (SPA de estado interno, ver `main.tsx`) — la pantalla se
+  agregó como una vista más de `AppView`/`Sidebar`, no como una ruta `/produccion` real (el
+  prompt de esta pantalla sugería esa ruta, pero no aplica a la convención de este proyecto).
+- Ajuste posterior: toggle "Ver todos los productos" en la barra de filtros — expande la
+  subtabla de todos los pedidos de la grilla a la vez (`mostrarTodosLosProductos` hace
+  `OR` con el `Set` de expandidos individuales; al destildar vuelve al comportamiento de
+  expandir/colapsar pedido por pedido).
+
+**Historial de cambios unificado** (ajuste posterior, a pedido del negocio): cada
+marcado/desmarcado de etapa de producción (de cualquier prenda, vía checkbox individual o carga
+masiva) ahora queda registrado en el mismo "Historial de cambios" que se ve desde los 3 puntos de
+Base de Ventas — antes solo mostraba cambios de `EstadoPedido`. Se agregó `HistorialEtapaProduccion`
+(tabla nueva, append-only: a diferencia de `ProductoEtapaProduccion`, que pisa el valor actual,
+acá se inserta una fila nueva en cada llamada a `marcarEtapa`/`marcarEtapasBulk`, incluso si el
+valor no cambió — ej. solo reasignar el empleado). `PedidoService.listarHistorial` combina esa
+tabla con `HistorialEstadoPedido` en una sola lista ordenada por fecha (`HistorialCambioResponse`,
+reemplaza a `HistorialEstadoPedidoResponse`). Cada fila de etapa guarda fecha, tipo de prenda,
+etapa, si se marcó o desmarcó, empleado asignado (si había), y el usuario logueado que hizo el
+cambio (siempre hay uno — a diferencia de un cambio automático de `EstadoPedido`, que puede no
+tenerlo). De paso, `HistorialPedidoModal.tsx` ahora muestra "Sistema" en vez de dejar la columna
+Usuario en blanco para esos cambios automáticos (quedaba pendiente desde la entrega anterior).
+No se loguearon los cambios de `EstadoBandera` en este historial — no fue pedido explícitamente
+y Bandera no tiene el concepto de "etapa"; si el negocio lo quiere también, es una extensión
+aparte (`HistorialEtapaProduccion` tendría que generalizarse o convivir con una tabla análoga
+para Bandera).
+
+Fuera de alcance de esta entrega (ninguno pedido explícitamente, no se hizo): filtro por colegio
+o por rango de fecha en la pantalla; el reporte semanal derivado (Entrega 3, probablemente
+necesita datos de `ProductoEtapaProduccion`/`EstadoBandera` — revisar antes de asumir que ya
+está todo resuelto para eso).
+
+Decisiones tomadas con el usuario durante la Entrega 1 (no volver a preguntar): rechazar en el
+endpoint manual (`PATCH /pedidos/{id}/estado` y editar el pedido) cualquier intento de setear a
+mano `LISTO_PARA_PRODUCCION`/`EN_PRODUCCION`/`TERMINADO`; bloquear `CANCELADO` si el pedido ya
+está `ENTREGADO`; los cambios automáticos de estado sí se loguean en `HistorialEstadoPedido` con
+`modificadoPor = null` (esa FK pasó a ser nullable).
+
+`BUCKET_POR_ESTADO`/`ESTILO_POR_BUCKET` ganaron un bucket `cancelado` (antes solo existían
+pendiente/en_producción/entregado) — mismo criterio "interpretación propia, no confirmada con el
+negocio" que ya se aclaraba para los otros 3 buckets.
+
+Dos casos borde conocidos, no resueltos a propósito (no estaban en el pedido original y son
+infrecuentes en la práctica):
+- Si el `tipoPrenda` de un `Producto` ya creado cambia (ej. Remera → Chomba), las filas de
+  `ProductoEtapaProduccion` no se resincronizan automáticamente para agregar/quitar `OJAL` —
+  `ProductoEtapaProduccionService.sincronizarEtapas` solo agrega etapas nuevas que falten, no
+  reevalúa condiciones de aplicabilidad de forma proactiva ni quita las que dejaron de
+  aplicar.
+- Un pedido compuesto **solo** por productos Bandera nunca llega a `EN_PRODUCCION`/
+  `TERMINADO` (esos productos no generan filas de `ProductoEtapaProduccion`, que es lo único
+  que dispara esas dos transiciones) — queda indefinidamente en `LISTO_PARA_PRODUCCION`. No
+  bloquea nada del lado de Bandera en sí (su propio flujo con `EstadoBandera` funciona
+  normal), pero el estado "general" del pedido no refleja que ya está listo/entregable.

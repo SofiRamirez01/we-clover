@@ -22,11 +22,16 @@ import com.weclover.backend.dto.planificacioncompra.ProductoElegibleResponse;
 import com.weclover.backend.dto.producto.ActualizarColorCierreRequest;
 import com.weclover.backend.dto.producto.ActualizarPatronCorteRequest;
 import com.weclover.backend.dto.producto.ActualizarTipoTelaRequest;
-import com.weclover.backend.dto.producto.CambioEstadoProductoRequest;
+import com.weclover.backend.dto.producto.MarcarEstadoBanderaRequest;
+import com.weclover.backend.dto.producto.MarcarEtapaRequest;
+import com.weclover.backend.dto.producto.MarcarEtapasBulkRequest;
 import com.weclover.backend.dto.producto.ProductoColoresRequest;
+import com.weclover.backend.dto.producto.ProductoEtapasResponse;
 import com.weclover.backend.dto.producto.ProductoInsumosSecundariosRequest;
 import com.weclover.backend.dto.producto.ProductoResponse;
+import com.weclover.backend.entity.EtapaProduccion;
 import com.weclover.backend.service.PlanificacionCompraService;
+import com.weclover.backend.service.ProductoEtapaProduccionService;
 import com.weclover.backend.service.ProductoService;
 
 import jakarta.validation.Valid;
@@ -39,6 +44,7 @@ public class ProductoController {
 
     private final ProductoService productoService;
     private final PlanificacionCompraService planificacionCompraService;
+    private final ProductoEtapaProduccionService productoEtapaProduccionService;
 
     /** Productos candidatos a una PlanificacionCompra (Fase 3) — filtra por
      *  Pedido.fechaEstimadaEntrega, no por fecha de venta. Ver PlanificacionCompraService. */
@@ -64,14 +70,6 @@ public class ProductoController {
             @PathVariable Long id,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return productoService.eliminarImagenDiseno(id, idUsuarioActor);
-    }
-
-    @PatchMapping("/{id}/estado")
-    public ProductoResponse cambiarEstado(
-            @PathVariable Long id,
-            @Valid @RequestBody CambioEstadoProductoRequest request,
-            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
-        return productoService.cambiarEstado(id, request, idUsuarioActor);
     }
 
     @PostMapping("/{id}/colores")
@@ -112,5 +110,36 @@ public class ProductoController {
             @Valid @RequestBody ProductoInsumosSecundariosRequest request,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return productoService.actualizarInsumosSecundarios(id, request, idUsuarioActor);
+    }
+
+    @PutMapping("/{id}/bandera/estado")
+    public ProductoResponse marcarEstadoBandera(
+            @PathVariable Long id,
+            @Valid @RequestBody MarcarEstadoBanderaRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return productoService.marcarEstadoBandera(id, request, idUsuarioActor);
+    }
+
+    @GetMapping("/{id}/etapas")
+    public ProductoEtapasResponse listarEtapas(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return productoEtapaProduccionService.listarEtapas(id, idUsuarioActor);
+    }
+
+    @PutMapping("/{id}/etapas/{etapa}")
+    public ProductoEtapasResponse marcarEtapa(
+            @PathVariable Long id,
+            @PathVariable EtapaProduccion etapa,
+            @Valid @RequestBody MarcarEtapaRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return productoEtapaProduccionService.marcarEtapa(id, etapa, request.completado(), request.idEmpleado(), idUsuarioActor);
+    }
+
+    @PutMapping("/etapas/bulk")
+    public void marcarEtapasBulk(
+            @Valid @RequestBody MarcarEtapasBulkRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        productoEtapaProduccionService.marcarEtapasBulk(request.etapas(), idUsuarioActor);
     }
 }

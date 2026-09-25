@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.weclover.backend.entity.Colegio;
+import com.weclover.backend.entity.EstadoBandera;
 import com.weclover.backend.entity.EstadoPedido;
 import com.weclover.backend.entity.HistorialEstadoPedido;
 import com.weclover.backend.entity.Pedido;
@@ -82,6 +83,7 @@ class PedidoImportRowService {
     private final RolRepository rolRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ProductoEtapaProduccionService productoEtapaProduccionService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Pedido importarFila(FilaExcelPedido fila) {
@@ -165,7 +167,6 @@ class PedidoImportRowService {
                 .tipoPrenda(tipoPrenda)
                 .cantidadTotal(entry.getValue())
                 .costo(costoPorPrendaConocido ? precioUnitario : 0f)
-                .estadoActual(estado)
                 .build());
         }
         if (llevaBandera) {
@@ -176,11 +177,15 @@ class PedidoImportRowService {
                 .tipoPrenda(bandera)
                 .cantidadTotal(1)
                 .costo(0f)
-                .estadoActual(estado)
+                .estadoBandera(EstadoBandera.PENDIENTE)
                 .build());
         }
 
-        return pedidoRepository.save(pedido);
+        Pedido guardado = pedidoRepository.save(pedido);
+        guardado.getProductos().stream()
+            .filter(producto -> !EtapaProduccionAplicabilidad.esBandera(producto))
+            .forEach(productoEtapaProduccionService::sincronizarEtapas);
+        return guardado;
     }
 
     private String requerido(String valor, String nombreCampo) {

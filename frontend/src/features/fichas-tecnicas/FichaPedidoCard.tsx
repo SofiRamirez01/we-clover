@@ -6,7 +6,6 @@ import BarraProgresoPago from './BarraProgresoPago';
 import BarraProgresoTalles from './BarraProgresoTalles';
 import EstadoBadge from './EstadoBadge';
 import EstadoDisenoBadge from './EstadoDisenoBadge';
-import EstadoProductoControl from './EstadoProductoControl';
 import ImagenPreviewModal from './ImagenPreviewModal';
 import ModalColoresGotero from './ModalColoresGotero';
 import type { PedidoResponse, ProductoResponse } from '../../types/pedido';
@@ -46,7 +45,6 @@ function ColorChip({ etiqueta, nombre, hex }: { etiqueta?: string; nombre: strin
 interface FilaProductoProps {
   producto: ProductoResponse;
   puedeCargar: boolean;
-  puedeCambiarEstado: boolean;
   coloresCierre: PaletaColorResponse[];
   tiposTela: TipoTelaCatalogo[];
   resumenTalles: ResumenTalles | null;
@@ -61,7 +59,6 @@ interface FilaProductoProps {
 function FilaProducto({
   producto,
   puedeCargar,
-  puedeCambiarEstado,
   coloresCierre,
   tiposTela,
   resumenTalles,
@@ -177,8 +174,12 @@ function FilaProducto({
         <BarraProgresoPago porcentajePagado={porcentajePagado} />
       </div>
 
+      {/* Reemplaza al viejo control de estado por prenda (Producto.estadoActual, eliminado en
+          esta entrega junto con PATCH /productos/{id}/estado) — el seguimiento por etapa que lo
+          reemplaza (ProductoEtapaProduccion) tiene su propia pantalla en la Entrega 2, no se
+          construye acá todavía. */}
       <div className="min-w-32 flex-1">
-        <EstadoProductoControl producto={producto} puedeEditar={puedeCambiarEstado} onActualizado={onActualizado} />
+        <span className="text-xs text-wc-text-muted">—</span>
       </div>
     </div>
   );
@@ -187,7 +188,6 @@ function FilaProducto({
 interface FichaPedidoCardProps {
   pedido: PedidoResponse;
   puedeCargar: boolean;
-  puedeCambiarEstado: boolean;
   coloresCierre: PaletaColorResponse[];
   tiposTela: TipoTelaCatalogo[];
   onActualizado: (producto: ProductoResponse) => void;
@@ -196,7 +196,7 @@ interface FichaPedidoCardProps {
 /** Grupo de un pedido en Ficha Técnica: encabezado (ficha como dato principal, colegio al lado
  *  también en negrita, localidad debajo) + una fila por prenda, todo dentro de un mismo borde
  *  para que se note que son parte del mismo pedido. */
-export default function FichaPedidoCard({ pedido, puedeCargar, puedeCambiarEstado, coloresCierre, tiposTela, onActualizado }: FichaPedidoCardProps) {
+export default function FichaPedidoCard({ pedido, puedeCargar, coloresCierre, tiposTela, onActualizado }: FichaPedidoCardProps) {
   const { carga, cargando, accionando, error, cerrarOReabrir } = useCargaTallesFicha(pedido.id);
 
   const resumenPorProducto = new Map(carga?.productos.map((p) => [p.idProducto, p]) ?? []);
@@ -284,7 +284,6 @@ export default function FichaPedidoCard({ pedido, puedeCargar, puedeCambiarEstad
               key={producto.id}
               producto={producto}
               puedeCargar={puedeCargar}
-              puedeCambiarEstado={puedeCambiarEstado}
               coloresCierre={coloresCierre}
               tiposTela={tiposTela}
               resumenTalles={resumen && resumen.tieneTalle ? { cantidadCargada: resumen.cantidadCargada, cantidadTotal: resumen.cantidadTotal } : null}

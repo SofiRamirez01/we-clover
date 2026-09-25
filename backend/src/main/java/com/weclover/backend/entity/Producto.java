@@ -1,5 +1,6 @@
 package com.weclover.backend.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,17 +81,25 @@ public class Producto {
     @Column(name = "cantidad_total", nullable = false)
     private int cantidadTotal;
 
-    /**
-     * Estado de producción propio de esta prenda (mismo enum que Pedido.estadoActual, para
-     * seguimiento más fino dentro de la producción). El estado del pedido se sigue manejando
-     * aparte como el estado "general" — cambiar el de una prenda no lo modifica.
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado_actual", nullable = false, length = 30)
-    private EstadoPedido estadoActual;
-
     @Column(nullable = false)
     private float costo;
+
+    /**
+     * Campos propios del flujo de Bandera (ver EstadoBandera): se compra a un proveedor
+     * externo, no pasa por el taller. Solo se usan si tipoPrenda es Bandera — nullable porque
+     * el resto de las prendas nunca los completa. No hay FK a Proveedor ni fecha estimada de
+     * llegada (decisión tomada con el negocio); si se quiere saber si el diseño de la bandera
+     * ya está cargado, se lee directo de imagenDisenoUrl != null.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_bandera", length = 20)
+    private EstadoBandera estadoBandera;
+
+    @Column(name = "fecha_pedido_proveedor")
+    private LocalDate fechaPedidoProveedor;
+
+    @Column(name = "fecha_recibido")
+    private LocalDate fechaRecibido;
 
     @Column(length = 500)
     private String observaciones;
@@ -117,4 +126,10 @@ public class Producto {
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ProductoInsumoSecundario> insumosSecundarios = new ArrayList<>();
+
+    /** Seguimiento de producción por etapa (ver ProductoEtapaProduccion) — vacío para Bandera,
+     *  que no participa de este mecanismo (ver EtapaProduccionAplicabilidad). */
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductoEtapaProduccion> etapas = new ArrayList<>();
 }

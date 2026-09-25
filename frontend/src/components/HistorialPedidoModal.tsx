@@ -3,7 +3,8 @@ import './HistorialPedidoModal.css';
 import { obtenerHistorialPedido } from '../services/pedidoService';
 import { extraerMensajeError } from '../utils/errores';
 import { ESTADO_PEDIDO_LABELS } from '../types/pedido';
-import type { HistorialEstadoPedidoResponse, PedidoResponse } from '../types/pedido';
+import type { HistorialCambioResponse, PedidoResponse } from '../types/pedido';
+import { ETAPA_PRODUCCION_LABELS } from '../types/produccion';
 
 function formatearFechaHora(iso: string): string {
   const fecha = new Date(iso);
@@ -21,9 +22,33 @@ interface HistorialPedidoModalProps {
   onClose: () => void;
 }
 
+/** Cada fila del historial es un cambio de EstadoPedido o de etapa de producción (ver
+ *  HistorialCambioResponse en el backend) — acá se arma el texto de detalle según cuál sea. */
+function renderDetalle(h: HistorialCambioResponse) {
+  if (h.tipoEvento === 'ESTADO_PEDIDO') {
+    return (
+      <>
+        <div>Estado: {h.estadoPedido ? ESTADO_PEDIDO_LABELS[h.estadoPedido] : '—'}</div>
+        {h.observaciones && <div className="historial-modal-detalle-sub">{h.observaciones}</div>}
+      </>
+    );
+  }
+  return (
+    <>
+      <div>
+        {h.etapa ? ETAPA_PRODUCCION_LABELS[h.etapa] : '—'} {h.etapaCompletado ? 'marcada' : 'desmarcada'}
+        {h.tipoPrenda ? ` — ${h.tipoPrenda}` : ''}
+      </div>
+      {h.nombreEmpleadoAsignado && (
+        <div className="historial-modal-detalle-sub">Empleado asignado: {h.nombreEmpleadoAsignado}</div>
+      )}
+    </>
+  );
+}
+
 export default function HistorialPedidoModal({ pedido, onClose }: HistorialPedidoModalProps) {
   const [estado, setEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
-  const [historial, setHistorial] = useState<HistorialEstadoPedidoResponse[]>([]);
+  const [historial, setHistorial] = useState<HistorialCambioResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,18 +103,16 @@ export default function HistorialPedidoModal({ pedido, onClose }: HistorialPedid
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Estado</th>
-                  <th>Observación</th>
+                  <th>Cambio</th>
                   <th>Usuario</th>
                 </tr>
               </thead>
               <tbody>
                 {historial.map((h) => (
-                  <tr key={h.id}>
+                  <tr key={`${h.tipoEvento}-${h.id}`}>
                     <td>{formatearFechaHora(h.fechaCambio)}</td>
-                    <td>{ESTADO_PEDIDO_LABELS[h.estado]}</td>
-                    <td>{h.observaciones ?? '—'}</td>
-                    <td>{h.emailUsuario}</td>
+                    <td>{renderDetalle(h)}</td>
+                    <td>{h.nombreUsuario ? `${h.nombreUsuario}${h.emailUsuario ? ` (${h.emailUsuario})` : ''}` : 'Sistema'}</td>
                   </tr>
                 ))}
               </tbody>

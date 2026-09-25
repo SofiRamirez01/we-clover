@@ -45,8 +45,10 @@ public class HistorialEstadoPedido {
     @Column(name = "fecha_cambio", nullable = false)
     private LocalDateTime fechaCambio;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_usuario_modifico", nullable = false)
+    /** Null = cambio automático (ver EstadoPedidoService.recalcularEstadoPedido) — no hay un
+     *  usuario humano detrás de esa transición, así que no se inventa uno. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_usuario_modifico")
     private Usuario modificadoPor;
 
     @Column(length = 500)

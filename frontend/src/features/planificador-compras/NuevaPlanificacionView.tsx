@@ -13,8 +13,6 @@ import {
 } from '../../services/planificacionCompraService';
 import { calcularConsumoTotal } from '../../utils/consumoProducto';
 import { extraerMensajeError } from '../../utils/errores';
-import { ESTADOS_PEDIDO, ESTADO_PEDIDO_LABELS } from '../../types/pedido';
-import type { EstadoPedido } from '../../types/pedido';
 import type { PlanificacionCompraBorradorRequest, PlanificacionCompraResponse } from '../../types/planificacionCompra';
 import type { ProductoElegibleResponse } from '../../types/planificacionCompra';
 import type { TipoTelaCatalogo } from '../../types/tipoTela';
@@ -61,7 +59,6 @@ export default function NuevaPlanificacionView({
   // Filtros de la tabla: solo de UI, no se persisten en el borrador (no son parte de la
   // planificación en sí, y reiniciarlos al reabrir un borrador es un comportamiento razonable).
   const [tiposPrendaSeleccionados, setTiposPrendaSeleccionados] = useState<Set<string>>(new Set());
-  const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | ''>('');
   // Al revés de como se lee: por defecto NO se muestran los ya planificados (hay que tildar
   // para verlos) — antes era al revés (se mostraban salvo que tildaras "excluir").
   const [mostrarYaPlanificados, setMostrarYaPlanificados] = useState(false);
@@ -244,14 +241,13 @@ export default function NuevaPlanificacionView({
       if (tiposPrendaSeleccionados.size > 0 && (!e.producto.tipoPrenda || !tiposPrendaSeleccionados.has(e.producto.tipoPrenda))) {
         return false;
       }
-      if (filtroEstado && e.producto.estadoActual !== filtroEstado) return false;
       if (!mostrarYaPlanificados && e.planificacionesQueLoIncluyen.length > 0) return false;
       if (!incluirIncompletos && !e.disenoCompleto) return false;
       if (minimo != null && !Number.isNaN(minimo) && e.porcentajePagadoPedido < minimo) return false;
       if (maximo != null && !Number.isNaN(maximo) && e.porcentajePagadoPedido > maximo) return false;
       return true;
     });
-  }, [elegibles, tiposPrendaSeleccionados, filtroEstado, mostrarYaPlanificados, incluirIncompletos, pagoDesde, pagoHasta]);
+  }, [elegibles, tiposPrendaSeleccionados, mostrarYaPlanificados, incluirIncompletos, pagoDesde, pagoHasta]);
 
   function toggleProducto(idProducto: number, disenoCompleto: boolean) {
     if (!disenoCompleto) return;
@@ -355,24 +351,6 @@ export default function NuevaPlanificacionView({
                 seleccionados={tiposPrendaSeleccionados}
                 onCambiar={setTiposPrendaSeleccionados}
               />
-            )}
-
-            {elegibles && (
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-wc-text">Estado</label>
-                <select
-                  value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value as EstadoPedido | '')}
-                  className="rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
-                >
-                  <option value="">Todos</option>
-                  {ESTADOS_PEDIDO.map((estado) => (
-                    <option key={estado} value={estado}>
-                      {ESTADO_PEDIDO_LABELS[estado]}
-                    </option>
-                  ))}
-                </select>
-              </div>
             )}
 
             {elegibles && (

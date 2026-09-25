@@ -15,6 +15,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     List<Usuario> findByRolNombreNotAndHabilitadoTrueOrderByNombreAsc(String rolNombre);
 
+    /** Para poblar selectores de empleado por rol (ej. ROLE_PLANTA en la Pantalla de
+     *  Producción) — ver UsuarioService.listarPorRol. */
+    List<Usuario> findByRolNombreAndHabilitadoTrueOrderByNombreAsc(String rolNombre);
+
     /** Para resolver el vendedor por nombre al importar pedidos desde Excel (ver
      *  PedidoImportService) — la columna "Responsable" de Kommo trae un nombre corto/apodo
      *  (ej. "Sofi"), no un id ni un email. */

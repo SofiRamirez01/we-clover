@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.weclover.backend.dto.usuario.UsuarioCreateRequest;
 import com.weclover.backend.dto.usuario.UsuarioResponse;
+import com.weclover.backend.dto.usuario.UsuarioResumenResponse;
 import com.weclover.backend.dto.usuario.UsuarioUpdateRequest;
 import com.weclover.backend.service.UsuarioService;
 
@@ -41,6 +43,15 @@ public class UsuarioController {
     public List<UsuarioResponse> listarUsuariosCorporativos(
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return usuarioService.listarUsuariosCorporativos(idUsuarioActor);
+    }
+
+    /** Solo id+nombre, para poblar selectores (ej. empleado en la Pantalla de Producción) —
+     *  ver UsuarioService.listarPorRol. */
+    @GetMapping
+    public List<UsuarioResumenResponse> listarPorRol(
+            @RequestParam String rol,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return usuarioService.listarPorRol(rol, idUsuarioActor);
     }
 
     @PutMapping("/{id}")
