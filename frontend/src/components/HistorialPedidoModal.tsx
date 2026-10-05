@@ -4,7 +4,7 @@ import { obtenerHistorialPedido } from '../services/pedidoService';
 import { extraerMensajeError } from '../utils/errores';
 import { ESTADO_PEDIDO_LABELS } from '../types/pedido';
 import type { HistorialCambioResponse, PedidoResponse } from '../types/pedido';
-import { ETAPA_PRODUCCION_LABELS } from '../types/produccion';
+import { ESTADO_PRODUCCION_LABELS, ETAPA_PRODUCCION_LABELS } from '../types/produccion';
 
 function formatearFechaHora(iso: string): string {
   const fecha = new Date(iso);
@@ -33,12 +33,32 @@ function renderDetalle(h: HistorialCambioResponse) {
       </>
     );
   }
+  const cambioEstadoProduccion =
+    h.estadoProduccionNuevo && h.estadoProduccionAnterior !== h.estadoProduccionNuevo
+      ? `${h.estadoProduccionAnterior ? ESTADO_PRODUCCION_LABELS[h.estadoProduccionAnterior] : '—'} → ${ESTADO_PRODUCCION_LABELS[h.estadoProduccionNuevo]}`
+      : null;
+  if (h.tipoEvento === 'ESTADO_PRODUCCION') {
+    return (
+      <>
+        {/* Sin cambio de estado = baja de la prenda (estadoProduccionNuevo null): el detalle
+            va en observaciones. */}
+        <div>
+          {cambioEstadoProduccion ? `Producción: ${cambioEstadoProduccion}` : 'Producción'}
+          {h.tipoPrenda ? ` — ${h.tipoPrenda}` : ''}
+        </div>
+        {h.observaciones && <div className="historial-modal-detalle-sub">{h.observaciones}</div>}
+      </>
+    );
+  }
   return (
     <>
       <div>
         {h.etapa ? ETAPA_PRODUCCION_LABELS[h.etapa] : '—'} {h.etapaCompletado ? 'marcada' : 'desmarcada'}
         {h.tipoPrenda ? ` — ${h.tipoPrenda}` : ''}
       </div>
+      {cambioEstadoProduccion && (
+        <div className="historial-modal-detalle-sub">Estado de producción: {cambioEstadoProduccion}</div>
+      )}
       {h.nombreEmpleadoAsignado && (
         <div className="historial-modal-detalle-sub">Empleado asignado: {h.nombreEmpleadoAsignado}</div>
       )}

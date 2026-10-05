@@ -2,6 +2,7 @@ package com.weclover.backend.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -16,14 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.weclover.backend.dto.producto.EtapaProduccionResponse;
 import com.weclover.backend.dto.producto.EtapaUpdateDTO;
 import com.weclover.backend.dto.producto.ProductoEtapasResponse;
+import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.EstadoProduccion;
 import com.weclover.backend.entity.EtapaProduccion;
-import com.weclover.backend.entity.HistorialEtapaProduccion;
+import com.weclover.backend.entity.HistorialEstadoPedido;
+import com.weclover.backend.entity.MovimientoEstado;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.ProductoEtapaProduccion;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
-import com.weclover.backend.repository.HistorialEtapaProduccionRepository;
+import com.weclover.backend.repository.MovimientoEstadoRepository;
 import com.weclover.backend.repository.ProductoEtapaProduccionRepository;
 import com.weclover.backend.repository.ProductoRepository;
 import com.weclover.backend.repository.UsuarioRepository;
@@ -41,6 +45,10 @@ public class ProductoEtapaProduccionService {
 
     private static final Set<String> ROLES_ETAPAS = Set.of("ROLE_ADMINISTRATIVO", "ROLE_PLANTA");
 
+    static final String OBSERVACION_RECALCULO = "Recalculado por cambio en las etapas aplicables del producto";
+    static final String OBSERVACION_RETROACTIVA = "Carga retroactiva";
+    static final String OBSERVACION_BAJA = "Prenda eliminada del pedido";
+
     /** Etiqueta de la última etapa completada, en orden de pipeline (ver 3.3). CONTROL no
      *  tiene entrada propia: si está completa, ya se cubrió con "todas aplicables completas". */
     private static final Map<EtapaProduccion, String> LABEL_POR_ETAPA = new LinkedHashMap<>();
@@ -54,7 +62,7 @@ public class ProductoEtapaProduccionService {
     }
 
     private final ProductoEtapaProduccionRepository productoEtapaProduccionRepository;
-    private final HistorialEtapaProduccionRepository historialEtapaProduccionRepository;
+    private final MovimientoEstadoRepository movimientoEstadoRepository;
     private final ProductoRepository productoRepository;
     private final UsuarioRepository usuarioRepository;
     private final AutorizacionService autorizacionService;
@@ -62,18 +70,141 @@ public class ProductoEtapaProduccionService {
 
     /** Genera las filas de etapas aplicables para un producto no-Bandera recién creado, o
      *  agrega las que falten si la aplicabilidad cambió (ej. se agregó un insumo "Estampado"
-     *  después de creado el producto) — idempotente, nunca borra ni pisa una fila existente. */
+     *  después de creado el producto) — idempotente, nunca borra ni pisa una fila existente.
+     *  También recalcula Producto.estadoProduccion: cualquier cambio de aplicabilidad (tipo de
+     *  prenda, insumo "Estampado") pasa por acá, así que el estado persistido no queda viejo. */
     @Transactional
     public void sincronizarEtapas(Producto producto) {
         if (EtapaProduccionAplicabilidad.esBandera(producto)) {
+            if (producto.getEstadoProduccion() != null) {
+                // Pasó a ser Bandera: deja de participar de producción (sin movimiento, no hay
+                // un estado "nuevo" que registrar).
+                producto.setEstadoProduccion(null);
+                productoRepository.save(producto);
+            }
             return;
         }
-        List<EtapaProduccion> aplicables = EtapaProduccionAplicabilidad.etapasAplicables(producto);
+        agregarEtapasFaltantes(producto);
+        recalcularEstadoProduccion(producto, null, OBSERVACION_RECALCULO);
+        productoRepository.save(producto);
+    }
+
+    /**
+     * Único punto que escribe Producto.estadoProduccion (fuera de la carga retroactiva). Si el
+     * estado calculado cambia, registra un MovimientoEstado sin etapa en la misma transacción.
+     * La primera asignación (estado previo null = producto recién creado) no genera movimiento.
+     * Lo llaman sincronizarEtapas (cambios de aplicabilidad) y PedidoService al marcar un pedido
+     * como ENTREGADO o sacarlo de ENTREGADO (con el actor real). Los marcados de etapa no pasan
+     * por acá: registran su propio movimiento con etapa (ver aplicarMarcado).
+     */
+    @Transactional
+    public void recalcularEstadoProduccion(Producto producto, Usuario actor, String observaciones) {
+        EstadoProduccion anterior = producto.getEstadoProduccion();
+        EstadoProduccion nuevo = EstadoProduccionCalculador.calcular(producto);
+        if (Objects.equals(anterior, nuevo)) {
+            return;
+        }
+        producto.setEstadoProduccion(nuevo);
+        if (anterior == null || nuevo == null) {
+            return;
+        }
+        movimientoEstadoRepository.save(MovimientoEstado.builder()
+            .producto(producto)
+            .estadoAnterior(anterior)
+            .estadoNuevo(nuevo)
+            .fechaHora(LocalDateTime.now())
+            .usuario(actor)
+            .unidades(producto.getCantidadTotal())
+            .observaciones(observaciones)
+            .build());
+    }
+
+    /**
+     * Baja lógica de una prenda quitada del pedido: se marca habilitado=false (no se borra la
+     * fila, para conservar su historial) y se deja un MovimientoEstado sin etapa cuya fechaHora
+     * es la fecha de la baja. estadoNuevo queda null: la prenda deja de tener estado vigente
+     * (Producto.estadoProduccion se conserva como "último estado conocido").
+     */
+    @Transactional
+    public void darDeBaja(Producto producto, Usuario actor) {
+        producto.setHabilitado(false);
+        movimientoEstadoRepository.save(MovimientoEstado.builder()
+            .producto(producto)
+            .estadoAnterior(producto.getEstadoProduccion())
+            .fechaHora(LocalDateTime.now())
+            .usuario(actor)
+            .unidades(producto.getCantidadTotal())
+            .observaciones(OBSERVACION_BAJA)
+            .build());
+        productoRepository.save(producto);
+    }
+
+    /**
+     * Carga retroactiva de Producto.estadoProduccion para productos no-Bandera que todavía no lo
+     * tienen (existentes antes de esta columna). Idempotente: solo toca productos con estado
+     * null, así que después de la primera corrida no hace nada. Además de setear el estado,
+     * inserta movimientos "Carga retroactiva" (usuario null) para que el reporte "terminadas por
+     * mes" tenga historia: TERMINADO fechado con la última fechaCompletado de sus etapas, y
+     * ENTREGADO fechado con la última entrada del pedido a ENTREGADO en HistorialEstadoPedido.
+     *
+     * @return cantidad de productos inicializados
+     */
+    @Transactional
+    public int inicializarEstadosFaltantes() {
+        int inicializados = 0;
+        for (Producto producto : productoRepository.findByEstadoProduccionIsNullAndHabilitadoTrue()) {
+            if (EtapaProduccionAplicabilidad.esBandera(producto)) {
+                continue;
+            }
+            agregarEtapasFaltantes(producto);
+            EstadoProduccion estado = EstadoProduccionCalculador.calcular(producto);
+            producto.setEstadoProduccion(estado);
+            productoRepository.save(producto);
+            inicializados++;
+
+            EstadoProduccion anterior = null;
+            if (todasLasEtapasAplicablesCompletas(producto)) {
+                LocalDateTime fechaTerminado = producto.getEtapas().stream()
+                    .map(ProductoEtapaProduccion::getFechaCompletado)
+                    .filter(Objects::nonNull)
+                    .max(Comparator.naturalOrder())
+                    .map(LocalDate::atStartOfDay)
+                    .orElse(LocalDateTime.now());
+                guardarMovimientoRetroactivo(producto, null, EstadoProduccion.TERMINADO, fechaTerminado);
+                anterior = EstadoProduccion.TERMINADO;
+            }
+            if (estado == EstadoProduccion.ENTREGADO) {
+                LocalDateTime fechaEntrega = producto.getPedido().getHistorial().stream()
+                    .filter(h -> h.getEstado() == EstadoPedido.ENTREGADO)
+                    .map(HistorialEstadoPedido::getFechaCambio)
+                    .max(Comparator.naturalOrder())
+                    .orElse(LocalDateTime.now());
+                guardarMovimientoRetroactivo(producto, anterior, EstadoProduccion.ENTREGADO, fechaEntrega);
+            }
+        }
+        return inicializados;
+    }
+
+    private void guardarMovimientoRetroactivo(
+            Producto producto, EstadoProduccion anterior, EstadoProduccion nuevo, LocalDateTime fecha) {
+        movimientoEstadoRepository.save(MovimientoEstado.builder()
+            .producto(producto)
+            .estadoAnterior(anterior)
+            .estadoNuevo(nuevo)
+            .fechaHora(fecha)
+            .unidades(producto.getCantidadTotal())
+            .observaciones(OBSERVACION_RETROACTIVA)
+            .build());
+    }
+
+    /** Alta de las filas de etapas aplicables que falten. Separado de sincronizarEtapas porque la
+     *  carga retroactiva necesita las filas sin el recálculo (asigna el estado ella misma, con
+     *  movimientos fechados en el pasado, no "ahora"). */
+    private void agregarEtapasFaltantes(Producto producto) {
         Set<EtapaProduccion> yaCreadas = producto.getEtapas().stream()
             .map(ProductoEtapaProduccion::getEtapa)
             .collect(Collectors.toSet());
-
-        for (EtapaProduccion etapa : aplicables) {
+        for (EtapaProduccion etapa : EtapaProduccionAplicabilidad.etapasAplicables(producto)) {
             if (!yaCreadas.contains(etapa)) {
                 producto.getEtapas().add(ProductoEtapaProduccion.builder()
                     .producto(producto)
@@ -82,7 +213,14 @@ public class ProductoEtapaProduccionService {
                     .build());
             }
         }
-        productoRepository.save(producto);
+    }
+
+    private boolean todasLasEtapasAplicablesCompletas(Producto producto) {
+        Set<EtapaProduccion> completas = producto.getEtapas().stream()
+            .filter(ProductoEtapaProduccion::isCompletado)
+            .map(ProductoEtapaProduccion::getEtapa)
+            .collect(Collectors.toSet());
+        return completas.containsAll(EtapaProduccionAplicabilidad.etapasAplicables(producto));
     }
 
     @Transactional
@@ -156,8 +294,9 @@ public class ProductoEtapaProduccionService {
         return construirRespuesta(producto);
     }
 
-    /** Además de actualizar el valor actual (ProductoEtapaProduccion), agrega una fila nueva a
-     *  HistorialEtapaProduccion — "cada cambio en producción" queda registrado, sin importar si
+    /** Además de actualizar el valor actual (ProductoEtapaProduccion), recalcula
+     *  Producto.estadoProduccion y agrega una fila nueva a MovimientoEstado con la etapa y el
+     *  estado anterior/nuevo — "cada cambio en producción" queda registrado, sin importar si
      *  el valor efectivamente cambió (misma llamada puede reasignar el empleado sin tocar
      *  completado, por ejemplo, y eso también es un cambio que auditar). */
     private void aplicarMarcado(ProductoEtapaProduccion fila, boolean completado, Long idEmpleado, Long idUsuarioActor) {
@@ -174,13 +313,21 @@ public class ProductoEtapaProduccionService {
         Usuario actor = usuarioRepository.findById(idUsuarioActor)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario que realiza el cambio"));
 
-        historialEtapaProduccionRepository.save(HistorialEtapaProduccion.builder()
-            .producto(fila.getProducto())
+        Producto producto = fila.getProducto();
+        EstadoProduccion anterior = producto.getEstadoProduccion();
+        EstadoProduccion nuevo = EstadoProduccionCalculador.calcular(producto);
+        producto.setEstadoProduccion(nuevo);
+
+        movimientoEstadoRepository.save(MovimientoEstado.builder()
+            .producto(producto)
             .etapa(fila.getEtapa())
             .completado(completado)
-            .fechaCambio(LocalDateTime.now())
-            .modificadoPor(actor)
             .empleado(fila.getEmpleado())
+            .estadoAnterior(anterior)
+            .estadoNuevo(nuevo)
+            .fechaHora(LocalDateTime.now())
+            .usuario(actor)
+            .unidades(producto.getCantidadTotal())
             .build());
     }
 
@@ -236,8 +383,10 @@ public class ProductoEtapaProduccionService {
         return label;
     }
 
+    /** Un producto dado de baja (habilitado=false) se trata como inexistente. */
     private Producto obtenerProducto(Long idProducto) {
         return productoRepository.findById(idProducto)
+            .filter(Producto::isHabilitado)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el producto con id " + idProducto));
     }
 }

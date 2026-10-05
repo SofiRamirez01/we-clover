@@ -1,5 +1,5 @@
 import type { ProductoInsumoSecundarioResponse, TipoTela } from './paletaColores';
-import type { EtapaProduccion } from './produccion';
+import type { EstadoProduccion, EtapaProduccion } from './produccion';
 
 export interface TipoPrendaOption {
   id: number;
@@ -179,7 +179,9 @@ export interface PedidoUpdateRequest {
   cantidadCuotas?: number;
 }
 
-export type TipoEventoHistorial = 'ESTADO_PEDIDO' | 'ETAPA_PRODUCCION';
+/** ESTADO_PRODUCCION = cambio de estado de producción de una prenda que no viene de marcar una
+ *  etapa (pedido ENTREGADO, recálculo, carga retroactiva). */
+export type TipoEventoHistorial = 'ESTADO_PEDIDO' | 'ETAPA_PRODUCCION' | 'ESTADO_PRODUCCION';
 
 /**
  * Fila del historial unificado del pedido (GET /pedidos/{id}/historial) — combina cambios de
@@ -200,8 +202,13 @@ export interface HistorialCambioResponse {
   etapaCompletado: boolean | null;
   nombreEmpleadoAsignado: string | null;
 
-  /** null solo es posible para ESTADO_PEDIDO (transición automática) — un cambio de etapa
-   *  siempre tiene un actor humano. */
+  /** Estado de producción de la prenda antes/después — null en ESTADO_PEDIDO y en filas
+   *  migradas del historial viejo. */
+  estadoProduccionAnterior: EstadoProduccion | null;
+  estadoProduccionNuevo: EstadoProduccion | null;
+
+  /** null en transiciones automáticas de ESTADO_PEDIDO y en ESTADO_PRODUCCION sin actor (carga
+   *  retroactiva, recálculo) — un marcado de etapa siempre tiene un actor humano. */
   nombreUsuario: string | null;
   emailUsuario: string | null;
 }

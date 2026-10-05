@@ -144,7 +144,8 @@ export type AppView =
   | 'carta-colores'
   | 'planificador-compras'
   | 'stock'
-  | 'produccion';
+  | 'produccion'
+  | 'reportes';
 
 interface NavItem {
   label: string;
@@ -159,13 +160,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS_RAIZ: NavItem[] = [
-  { label: 'Basde Ventas', icon: PedidosIcon, view: 'pedidos' },
+  { label: 'Base Ventas', icon: PedidosIcon, view: 'pedidos' },
   { label: 'Ficha Técnica', icon: FichaTecnicaIcon, view: 'fichas-tecnicas' },
   { label: 'Producción', icon: ProduccionIcon, view: 'produccion', rolesPermitidos: ['ROLE_ADMINISTRATIVO', 'ROLE_PLANTA'] },
   { label: 'Planificador Compras', icon: ComprasIcon, view: 'planificador-compras', soloAdministrativo: true },
   { label: 'Stock', icon: StockIcon, view: 'stock', soloAdministrativo: true },
   { label: 'Motor Tizada', icon: TizadaIcon },
-  { label: 'Reportes', icon: ReportesIcon },
+  { label: 'Reportes', icon: ReportesIcon, view: 'reportes', soloAdministrativo: true },
 ];
 
 const NAV_ITEMS_CONFIG: NavItem[] = [

@@ -79,6 +79,7 @@ public class ProductoService {
     private final AutorizacionService autorizacionService;
     private final AlmacenamientoImagenService almacenamientoImagenService;
     private final EstadoPedidoService estadoPedidoService;
+    private final ProductoEtapaProduccionService productoEtapaProduccionService;
 
     @Value("${app.uploads.fichas-tecnicas-dir}")
     private String directorioUploads;
@@ -391,6 +392,9 @@ public class ProductoService {
         }
 
         Producto guardado = productoRepository.save(producto);
+        // Agregar/quitar el insumo "Estampado" cambia qué etapas aplican (ver
+        // EtapaProduccionAplicabilidad) y por lo tanto el estado de producción persistido.
+        productoEtapaProduccionService.sincronizarEtapas(guardado);
         estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
         return construirRespuesta(guardado);
     }

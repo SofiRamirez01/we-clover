@@ -38,7 +38,7 @@ import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PedidoMapper;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.HistorialEstadoPedidoRepository;
-import com.weclover.backend.repository.HistorialEtapaProduccionRepository;
+import com.weclover.backend.repository.MovimientoEstadoRepository;
 import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.RolRepository;
@@ -83,7 +83,7 @@ public class PedidoService {
     private final PatronCorteRepository patronCorteRepository;
     private final TipoTelaRepository tipoTelaRepository;
     private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
-    private final HistorialEtapaProduccionRepository historialEtapaProduccionRepository;
+    private final MovimientoEstadoRepository movimientoEstadoRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
     private final ProductoService productoService;
@@ -242,7 +242,18 @@ public class PedidoService {
             .modificadoPor(actor)
             .observaciones(observaciones)
             .build());
+        EstadoPedido estadoPrevio = pedido.getEstadoActual();
         pedido.setEstadoActual(nuevoEstado);
+
+        // Entrar o salir de ENTREGADO cambia el estado de producción de cada prenda (ver
+        // EstadoProduccionCalculador) — se registra con el actor real, en esta misma transacción.
+        if (estadoPrevio == EstadoPedido.ENTREGADO || nuevoEstado == EstadoPedido.ENTREGADO) {
+            String motivo = nuevoEstado == EstadoPedido.ENTREGADO
+                ? "Pedido marcado como ENTREGADO"
+                : "Pedido pasó de ENTREGADO a " + nuevoEstado;
+            pedido.getProductos().forEach(producto ->
+                productoEtapaProduccionService.recalcularEstadoProduccion(producto, actor, motivo));
+        }
     }
 
     /** LISTO_PARA_PRODUCCION/EN_PRODUCCION/TERMINADO son 100% automáticos (ver
@@ -290,8 +301,8 @@ public class PedidoService {
 
     /**
      * Historial unificado del pedido — combina HistorialEstadoPedido (cambios de EstadoPedido)
-     * con HistorialEtapaProduccion (cada marcado/desmarcado de etapa de producción de cualquier
-     * prenda del pedido, ver ProductoEtapaProduccionService.aplicarMarcado), ordenado por fecha
+     * con MovimientoEstado (cada marcado/desmarcado de etapa y cada cambio de estado de
+     * producción de cualquier prenda del pedido, ver ProductoEtapaProduccionService), ordenado por fecha
      * descendente. Es el mismo "Historial de cambios" que se ve desde los 3 puntos de Base de
      * Ventas — a pedido del negocio, todo cambio de producción tiene que quedar registrado ahí.
      */
@@ -314,23 +325,27 @@ public class PedidoService {
                 null,
                 null,
                 null,
+                null,
+                null,
                 h.getModificadoPor() != null ? h.getModificadoPor().getNombre() : null,
                 h.getModificadoPor() != null ? h.getModificadoPor().getEmail() : null
             )));
 
-        historialEtapaProduccionRepository.findByProducto_Pedido_IdOrderByFechaCambioDesc(idPedido).forEach(h ->
+        movimientoEstadoRepository.findByProducto_Pedido_IdOrderByFechaHoraDesc(idPedido).forEach(m ->
             eventos.add(new HistorialCambioResponse(
-                h.getId(),
-                h.getFechaCambio(),
-                TipoEventoHistorial.ETAPA_PRODUCCION,
+                m.getId(),
+                m.getFechaHora(),
+                m.getEtapa() != null ? TipoEventoHistorial.ETAPA_PRODUCCION : TipoEventoHistorial.ESTADO_PRODUCCION,
                 null,
-                null,
-                h.getProducto().getTipoPrenda() != null ? h.getProducto().getTipoPrenda().getNombre() : null,
-                h.getEtapa(),
-                h.isCompletado(),
-                h.getEmpleado() != null ? h.getEmpleado().getNombre() : null,
-                h.getModificadoPor().getNombre(),
-                h.getModificadoPor().getEmail()
+                m.getObservaciones(),
+                m.getProducto().getTipoPrenda() != null ? m.getProducto().getTipoPrenda().getNombre() : null,
+                m.getEtapa(),
+                m.getCompletado(),
+                m.getEmpleado() != null ? m.getEmpleado().getNombre() : null,
+                m.getEstadoAnterior(),
+                m.getEstadoNuevo(),
+                m.getUsuario() != null ? m.getUsuario().getNombre() : null,
+                m.getUsuario() != null ? m.getUsuario().getEmail() : null
             )));
 
         return eventos.stream()
@@ -392,13 +407,24 @@ public class PedidoService {
 
         // Se matchea por id en vez de recrear todo (clear()+alta de cero), que borraba en cada
         // edición del pedido la moldería/tela/imagen/estado/colores cargados aparte desde Ficha
-        // Técnica (ver doc/pantallas-pendientes.md). Un producto solo se borra si el usuario lo
-        // quita explícitamente del formulario (no viaja su id en el payload).
+        // Técnica (ver doc/pantallas-pendientes.md). Un producto solo se da de baja si el usuario
+        // lo quita explícitamente del formulario (no viaja su id en el payload).
         Set<Long> idsEnPayload = request.productos().stream()
             .map(ProductoCreateRequest::id)
             .filter(Objects::nonNull)
             .collect(Collectors.toSet());
-        pedido.getProductos().removeIf(producto -> !idsEnPayload.contains(producto.getId()));
+        // Baja lógica (habilitado=false + movimiento con la fecha de baja), no DELETE: se
+        // conserva el historial de la prenda. Se saca de la colección en memoria para que el
+        // resto de este método (y la respuesta) ya no la vea; al no haber orphanRemoval, eso no
+        // dispara ningún borrado.
+        List<Producto> productosQuitados = pedido.getProductos().stream()
+            .filter(producto -> !idsEnPayload.contains(producto.getId()))
+            .toList();
+        if (!productosQuitados.isEmpty()) {
+            Usuario actorBaja = idUsuarioActor != null ? usuarioRepository.findById(idUsuarioActor).orElse(null) : null;
+            productosQuitados.forEach(producto -> productoEtapaProduccionService.darDeBaja(producto, actorBaja));
+            pedido.getProductos().removeAll(productosQuitados);
+        }
 
         Map<Long, Producto> productosExistentesPorId = pedido.getProductos().stream()
             .collect(Collectors.toMap(Producto::getId, producto -> producto));

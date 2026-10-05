@@ -19,5 +19,5 @@ public interface ProductoEtapaProduccionRepository extends JpaRepository<Product
 
     /** Condición de EN_PRODUCCION (ver EstadoPedidoService): al menos una etapa completada en
      *  algún producto del pedido. */
-    boolean existsByProducto_Pedido_IdAndCompletadoTrue(Long idPedido);
+    boolean existsByProducto_Pedido_IdAndProducto_HabilitadoTrueAndCompletadoTrue(Long idPedido);
 }

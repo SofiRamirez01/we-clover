@@ -36,6 +36,7 @@ import com.weclover.backend.repository.TipoPrendaRepository;
 import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 import com.weclover.backend.service.PiezaGeometriaClient;
+import com.weclover.backend.service.ProductoEtapaProduccionService;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -62,6 +63,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PiezaGeometriaClient piezaGeometriaClient;
     private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ProductoEtapaProduccionService productoEtapaProduccionService;
 
     @Override
     @Transactional
@@ -280,6 +282,14 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println("--- MIGRACIÓN PiezaTalle: NO se pudo generar la base de Pieza id=" + pieza.getId()
                     + " (" + pieza.getNombre() + "): " + error.getMessage() + " — se reintenta en el próximo arranque ---");
             }
+        }
+
+        // Migración (Módulo 5 — Reportes): carga retroactiva de Producto.estadoProduccion y de
+        // los MovimientoEstado "Carga retroactiva" para productos anteriores a esa columna.
+        // Idempotente: solo toca productos no-Bandera con estado null (ver el servicio).
+        int productosInicializados = productoEtapaProduccionService.inicializarEstadosFaltantes();
+        if (productosInicializados > 0) {
+            System.out.println("--- MIGRACIÓN EstadoProduccion: " + productosInicializados + " producto(s) inicializado(s) ---");
         }
 
         System.out.println("--- DATOS SEMILLA CARGADOS CORRECTAMENTE ---");

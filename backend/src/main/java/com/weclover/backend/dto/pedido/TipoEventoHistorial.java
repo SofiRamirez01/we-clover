@@ -1,8 +1,11 @@
 package com.weclover.backend.dto.pedido;
 
-/** Discrimina las dos fuentes que se combinan en el historial unificado de un pedido (ver
- *  PedidoService.listarHistorial): cambios de EstadoPedido y cambios de etapa de producción. */
+/** Discrimina los tipos de fila del historial unificado de un pedido (ver
+ *  PedidoService.listarHistorial): cambios de EstadoPedido, marcados de etapa de producción, y
+ *  cambios de estado de producción de una prenda que no vienen de una etapa (pedido ENTREGADO,
+ *  recálculo, carga retroactiva). */
 public enum TipoEventoHistorial {
     ESTADO_PEDIDO,
-    ETAPA_PRODUCCION
+    ETAPA_PRODUCCION,
+    ESTADO_PRODUCCION
 }

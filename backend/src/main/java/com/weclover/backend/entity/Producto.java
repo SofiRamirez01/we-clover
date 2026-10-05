@@ -23,6 +23,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnDefault;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -94,6 +96,21 @@ public class Producto {
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_bandera", length = 20)
     private EstadoBandera estadoBandera;
+
+    /** false = prenda quitada del pedido (baja lógica): no se muestra en ninguna pantalla ni
+     *  cuenta en reportes, pero la fila y su historial (MovimientoEstado) se conservan. La fecha
+     *  de la baja queda en el MovimientoEstado que se registra al quitarla. */
+    @Column(nullable = false)
+    @ColumnDefault("1")
+    @Builder.Default
+    private boolean habilitado = true;
+
+    /** Estado de producción persistido (ver EstadoProduccion) — null solo para Bandera. Lo
+     *  mantiene ProductoEtapaProduccionService.recalcularEstadoProduccion, nunca se setea a mano;
+     *  existe como columna para poder agrupar por estado en los reportes (GROUP BY en la base). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_produccion", length = 20)
+    private EstadoProduccion estadoProduccion;
 
     @Column(name = "fecha_pedido_proveedor")
     private LocalDate fechaPedidoProveedor;

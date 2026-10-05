@@ -12,6 +12,7 @@ import CartaColoresView from './features/carta-colores/CartaColoresView';
 import PlanificadorComprasView from './features/planificador-compras/PlanificadorComprasView';
 import StockView from './features/stock/StockView';
 import PantallaProduccion from './features/produccion/PantallaProduccion';
+import ReportesView from './features/reportes/ReportesView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { PedidoResponse } from './types/pedido';
 import './App.css';
@@ -77,6 +78,8 @@ function AppShell() {
     contenido = <StockView />;
   } else if (view === 'produccion') {
     contenido = <PantallaProduccion />;
+  } else if (view === 'reportes') {
+    contenido = <ReportesView />;
   } else {
     contenido = <FichasTecnicasView />;
   }

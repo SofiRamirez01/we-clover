@@ -406,3 +406,71 @@ infrecuentes en la práctica):
   que dispara esas dos transiciones) — queda indefinidamente en `LISTO_PARA_PRODUCCION`. No
   bloquea nada del lado de Bandera en sí (su propio flujo con `EstadoBandera` funciona
   normal), pero el estado "general" del pedido no refleja que ya está listo/entregable.
+
+## Módulo 5 — Reportes (pasos 1 a 5 hechos)
+
+**Paso 1 (estado de producción persistido + historial único):** `Producto.estadoProduccion`
+(enum `EstadoProduccion`: PENDIENTE, CORTADO, ESTAMPADO, BORDADO, CONFECCION, APODO, OJAL,
+TERMINADO, ENTREGADO; null = Bandera) y `MovimientoEstado` (tabla `movimiento_estado`), que
+**reemplazó** a `HistorialEtapaProduccion` (tabla vieja migrada y borrada el 2026-10-02). El estado
+se calcula en `EstadoProduccionCalculador` (solo sobre etapas *aplicables* — una fila
+OJAL/ESTAMPADO que dejó de aplicar ya no cuenta, lo que cubre en parte el caso borde de cambio de
+tipo de prenda de la sección anterior; el estado es la etapa completada de mayor orden de
+pipeline, confirmado con el negocio) y lo escribe solo `ProductoEtapaProduccionService`. Carga
+retroactiva en `DataInitializer` (idempotente).
+
+**Cambios de reglas pedidos por el negocio junto con el paso 1:**
+- Tildar cualquier etapa de producción pasa el pedido a `EN_PRODUCCION` aunque esté en
+  `PRESUPUESTADO`/`SENADO` (antes exigía haber llegado a `LISTO_PARA_PRODUCCION`). Efecto
+  colateral aceptado: ese pedido pasa a contar como "vendido" en los reportes.
+- Quitar una prenda de un pedido es una **baja lógica** (`Producto.habilitado=false`), no un
+  DELETE: `Pedido.productos` filtra por `habilitado` (`@SQLRestriction`, sin `orphanRemoval`), y
+  queda un `MovimientoEstado` "Prenda eliminada del pedido" cuya fecha es la fecha de baja. No hay
+  pantalla para ver ni reactivar prendas dadas de baja.
+
+**Paso 2 (`GET /api/reportes/ventas`):** `ReporteController`/`ReporteService`/
+`ReporteVentasRepository` + `dto/reportes`. Filtros `desde`, `hasta`, `tipoPrenda` (id). Vendido =
+pedido desde `SENADO`; `PRESUPUESTADO` va en el bloque `presupuestados`; Bandera no cuenta.
+
+**Paso 3 (`GET /api/reportes/produccion`):** `ReporteProduccionRepository` + `ReporteService.produccion`.
+`porEstado` es la foto actual (los 9 estados, con 0 incluidos; solo la afecta `tipoPrenda`) y
+`unidadesEnPlanta` suma todo menos ENTREGADO. `terminadasPorMes` sale de `movimiento_estado`
+(entradas a TERMINADO en `[desde, hasta]`). El mes se agrupa con
+`timestampdiff(month, :inicioPrimerMes, fecha_hora)` y no con `year()/month()`: la base guarda los
+datetime en UTC (3 h corridos) y así el corte de mes queda en hora local. Solo cuenta prendas de
+pedidos vendidos (desde `SENADO`).
+
+**Paso 4 (frontend Ventas):** `frontend/src/features/reportes/` — `ReportesView` (filtros globales:
+período 3/6/12 meses o rango a medida, tipo de prenda sin Bandera, lugar reservado y deshabilitado
+para "Empleado"), `SeccionVentas`, y los reutilizables `KpiCard`, `BarChartMensual`,
+`BarChartCategorias`, `TarjetaGrafico` (alterna gráfico/tabla), `EstadoSeccion`, `useReporte`
+(carga + estados por sección) y `coloresReportes.ts`. Gráficos con Recharts (dependencia nueva).
+"Reportes" del Sidebar habilitado solo para `ROLE_ADMINISTRATIVO` (`AppView 'reportes'`).
+
+**Paso 5 (frontend Producción):** `SeccionProduccion` (una tarjeta por estado — OJAL solo con
+"Todas" o Chomba —, `DonutEstados` de unidades en planta sin ENTREGADO, y terminadas por mes) y la
+paleta fija `COLORES_ESTADO_PRODUCCION` en `coloresReportes.ts`. La sección muestra siempre el
+agregado del filtro global; no hay series por tipo de prenda. **Módulo 5 completo (pasos 1 a 5).**
+
+Pendientes:
+- **Colores por estado**: con 8 estados en planta no existe un reparto de 8 matices donde todos
+  los pares se distingan bien (un estado en 0 no tiene porción, así que cualquier par puede quedar
+  pegado en la torta). Se priorizó separar estados cercanos y se dejaron los matices más
+  conflictivos para ESTAMPADO y OJAL; la torta lleva siempre la lista con nombre y cantidad. Si se
+  agrega un estado, volver a medir (criterio documentado en `coloresReportes.ts`).
+- **Reportes de productividad por empleado y por semana**: no implementados (fuera de alcance).
+  Quedó preparado: `MovimientoEstado` guarda empleado/usuario/fecha, `ReporteFiltros` es un objeto
+  ampliable en backend y frontend, y la barra de filtros tiene el lugar de "Empleado" deshabilitado.
+- **Selector de rango a medida**: reusa `DateRangePicker` tal cual, que tiene su propio CSS y queda
+  un poco más alto que los otros filtros de la barra, con la etiqueta fija "Fecha".
+- **Una prenda cuenta en "terminadas por mes" cada vez que entra a TERMINADO**: si se desmarca una
+  etapa y se vuelve a marcar, suma dos veces (en el mismo mes o en meses distintos). No se
+  deduplicó porque no estaba pedido; revisar si el negocio prefiere contar solo la última entrada.
+- **Pedidos CANCELADO**: por ahora se excluyen de todos los reportes (ventas y producción).
+  Revisar más adelante si el negocio quiere verlos (ej. tasa de cancelación, unidades perdidas).
+- **`calcularEstadoVisual` (pantalla de Producción) sigue siendo un cálculo aparte** con labels
+  propios (CONFECCIONADO/APODADO/OJALADO) y mira todas las filas, no solo las aplicables — no se
+  unificó con `EstadoProduccion` para no tocar esa pantalla fuera de alcance.
+- **Prendas dadas de baja en otras pantallas**: lo que lee productos por `pedido.getProductos()`
+  ya no las ve; las consultas que llegan a un `Producto` por otro camino (talles cargados por
+  alumno, detalles de planificaciones de compra ya confirmadas) no se revisaron una por una.

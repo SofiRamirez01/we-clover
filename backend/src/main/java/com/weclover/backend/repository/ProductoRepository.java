@@ -13,7 +13,12 @@ import com.weclover.backend.entity.Producto;
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
-    List<Producto> findByPedidoId(Long idPedido);
+    List<Producto> findByPedidoIdAndHabilitadoTrue(Long idPedido);
+
+    /** Productos sin Producto.estadoProduccion asignado (ver
+     *  ProductoEtapaProduccionService.inicializarEstadosFaltantes). Incluye Bandera, que siempre
+     *  queda en null — el servicio la saltea. */
+    List<Producto> findByEstadoProduccionIsNullAndHabilitadoTrue();
 
     /**
      * Candidatos a incluir en una PlanificacionCompra (Fase 3): filtra por
@@ -25,7 +30,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * importar el estado del pedido.
      */
     @Query("SELECT p FROM Producto p "
-        + "WHERE p.pedido.fechaEstimadaEntrega BETWEEN :desde AND :hasta "
+        + "WHERE p.habilitado = true "
+        + "AND p.pedido.fechaEstimadaEntrega BETWEEN :desde AND :hasta "
         + "AND (:idColegio IS NULL OR p.pedido.colegio.id = :idColegio) "
         + "AND p.pedido.estadoActual IN (com.weclover.backend.entity.EstadoPedido.LISTO_PARA_PRODUCCION, "
         + "com.weclover.backend.entity.EstadoPedido.EN_PRODUCCION, com.weclover.backend.entity.EstadoPedido.TERMINADO)")

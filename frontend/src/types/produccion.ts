@@ -24,7 +24,44 @@ export const ETAPA_PRODUCCION_LABELS: Record<EtapaProduccion, string> = {
   CONTROL: 'Control',
 };
 
-export const ESTADOS_BANDERA: EstadoBandera[] = ['PENDIENTE', 'PEDIDO', 'RECIBIDO'];
+/** Estado de producción persistido de una prenda (EstadoProduccion.java), en orden de pipeline.
+ *  No hay CONTROL: completar CONTROL (con el resto) es lo que la lleva a TERMINADO. */
+export type EstadoProduccion =
+  | 'PENDIENTE'
+  | 'CORTADO'
+  | 'ESTAMPADO'
+  | 'BORDADO'
+  | 'CONFECCION'
+  | 'APODO'
+  | 'OJAL'
+  | 'TERMINADO'
+  | 'ENTREGADO';
+
+export const ESTADOS_PRODUCCION: EstadoProduccion[] = [
+  'PENDIENTE',
+  'CORTADO',
+  'ESTAMPADO',
+  'BORDADO',
+  'CONFECCION',
+  'APODO',
+  'OJAL',
+  'TERMINADO',
+  'ENTREGADO',
+];
+
+export const ESTADO_PRODUCCION_LABELS: Record<EstadoProduccion, string> = {
+  PENDIENTE: 'Pendiente',
+  CORTADO: 'Cortado',
+  ESTAMPADO: 'Estampado',
+  BORDADO: 'Bordado',
+  CONFECCION: 'Confección',
+  APODO: 'Apodo',
+  OJAL: 'Ojal',
+  TERMINADO: 'Terminado',
+  ENTREGADO: 'Entregado',
+};
+
+export const ESTADOS_BANDERA: EstadoBandera[] =['PENDIENTE', 'PEDIDO', 'RECIBIDO'];
 
 export const ESTADO_BANDERA_LABELS: Record<EstadoBandera, string> = {
   PENDIENTE: 'Pendiente',

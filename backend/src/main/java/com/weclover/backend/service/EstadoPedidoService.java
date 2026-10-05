@@ -60,7 +60,10 @@ public class EstadoPedidoService {
         if (nivel(nuevo) < 1 && cumpleListoParaProduccion(pedido)) {
             nuevo = EstadoPedido.LISTO_PARA_PRODUCCION;
         }
-        if (nivel(nuevo) >= 1 && nivel(nuevo) < 2 && cumpleEnProduccion(pedido)) {
+        // Sin exigir LISTO_PARA_PRODUCCION antes (pedido explícito del negocio): si planta ya
+        // tildó alguna etapa, el pedido está en producción en los hechos, aunque todavía figure
+        // PRESUPUESTADO/SENADO por no cumplir diseño/talles/%pago.
+        if (nivel(nuevo) < 2 && cumpleEnProduccion(pedido)) {
             nuevo = EstadoPedido.EN_PRODUCCION;
         }
         if (nivel(nuevo) >= 1 && nivel(nuevo) < 3 && cumpleTerminado(pedido)) {
@@ -101,7 +104,7 @@ public class EstadoPedidoService {
     }
 
     private boolean cumpleEnProduccion(Pedido pedido) {
-        return productoEtapaProduccionRepository.existsByProducto_Pedido_IdAndCompletadoTrue(pedido.getId());
+        return productoEtapaProduccionRepository.existsByProducto_Pedido_IdAndProducto_HabilitadoTrueAndCompletadoTrue(pedido.getId());
     }
 
     private boolean cumpleTerminado(Pedido pedido) {

@@ -23,6 +23,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.SQLRestriction;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -135,7 +137,11 @@ public class Pedido {
     @Builder.Default
     private List<HistorialEstadoPedido> historial = new ArrayList<>();
 
-    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    /** Solo las prendas habilitadas: quitar una prenda del pedido es una baja lógica
+     *  (Producto.habilitado=false, ver PedidoService.actualizarPedido), no un DELETE — por eso
+     *  no hay orphanRemoval acá — para no perder su historial (MovimientoEstado). */
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
+    @SQLRestriction("habilitado = true")
     @Builder.Default
     private List<Producto> productos = new ArrayList<>();
 }
