@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class AutorizacionService {
 
     private static final String ROL_ADMINISTRATIVO = "ROLE_ADMINISTRATIVO";
+    private static final String ROL_CLIENTE = "ROLE_CLIENTE";
 
     private final UsuarioRepository usuarioRepository;
 
@@ -32,6 +33,15 @@ public class AutorizacionService {
         if (!rolesPermitidos.contains(actor.getRol().getNombre())) {
             throw new ForbiddenException(
                 "Esta acción requiere uno de estos roles: " + String.join(", ", rolesPermitidos));
+        }
+    }
+
+    /** Cualquier usuario corporativo: todos los roles menos ROLE_CLIENTE (representantes de
+     *  curso). Para información interna que no debe llegar al cliente. */
+    public void verificarRolInterno(Long idUsuarioActor) {
+        Usuario actor = obtenerActor(idUsuarioActor);
+        if (ROL_CLIENTE.equals(actor.getRol().getNombre())) {
+            throw new ForbiddenException("Esta acción es solo para usuarios internos");
         }
     }
 

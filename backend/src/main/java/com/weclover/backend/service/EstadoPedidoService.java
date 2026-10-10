@@ -95,12 +95,26 @@ public class EstadoPedidoService {
         };
     }
 
-    private boolean cumpleListoParaProduccion(Pedido pedido) {
+    /** Los tres requisitos de LISTO_PARA_PRODUCCION por separado. */
+    public record RequisitosListo(boolean disenoCompleto, boolean tallesCompletos, boolean pagoSuficiente) {
+
+        public boolean cumpleTodos() {
+            return disenoCompleto && tallesCompletos && pagoSuficiente;
+        }
+    }
+
+    /** Público porque el historial de tandas guarda cada requisito como snapshot (ver
+     *  PriorizacionTandaService), además de usarse acá para la transición automática. */
+    public RequisitosListo evaluarRequisitosListo(Pedido pedido) {
         boolean disenoCompleto = pedido.getProductos().stream()
             .allMatch(producto -> ProductoDisenoValidador.motivoDisenoIncompleto(producto).isEmpty());
         boolean tallesCompletos = cargaTallesService.tallesCompletos(pedido);
         boolean pagoSuficiente = calcularPorcentajePagado(pedido) >= UMBRAL_PORCENTAJE_PAGADO_LISTO;
-        return disenoCompleto && tallesCompletos && pagoSuficiente;
+        return new RequisitosListo(disenoCompleto, tallesCompletos, pagoSuficiente);
+    }
+
+    private boolean cumpleListoParaProduccion(Pedido pedido) {
+        return evaluarRequisitosListo(pedido).cumpleTodos();
     }
 
     private boolean cumpleEnProduccion(Pedido pedido) {

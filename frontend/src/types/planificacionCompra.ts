@@ -1,4 +1,5 @@
-import type { ProductoResponse } from './pedido';
+import type { EstadoPedido, ProductoResponse } from './pedido';
+import type { ProduccionTanda } from './produccion';
 import type { UnidadMedida } from './proveedor';
 
 export interface PlanificacionResumenResponse {
@@ -13,6 +14,9 @@ export interface ProductoElegibleResponse {
   idPedido: number;
   codigoInternoPedido: string;
   nombreColegio: string;
+  estadoPedido: EstadoPedido;
+  /** Tanda del pedido (null = sin tanda). Se filtra por `id`, nunca por nombre. */
+  tanda: ProduccionTanda | null;
   fechaVentaPedido: string;
   fechaEstimadaEntregaPedido: string;
   porcentajePagadoPedido: number;
@@ -31,8 +35,6 @@ export type EstadoPlanificacionCompra = 'BORRADOR' | 'CONFIRMADA';
  *  confirmar). */
 export interface PlanificacionCompraBorradorRequest {
   nombre?: string;
-  fechaDesde?: string;
-  fechaHasta?: string;
   idsProductos: number[];
 }
 
@@ -40,8 +42,6 @@ export interface PlanificacionCompraBorradorRequest {
 export interface PlanificacionCompraBorradorResponse {
   id: number;
   nombre: string;
-  fechaDesde: string | null;
-  fechaHasta: string | null;
   idsProductos: number[];
 }
 
@@ -49,6 +49,8 @@ export interface PlanificacionCompraResponse {
   id: number;
   nombre: string;
   fechaCreacion: string;
+  /** Período calculado por el backend: menor y mayor fecha de entrega de los productos
+   *  elegidos (null si todavía no hay ninguno). */
   fechaDesde: string | null;
   fechaHasta: string | null;
   idCreadoPor: number;

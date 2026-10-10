@@ -81,10 +81,16 @@ public class Pedido {
     @Builder.Default
     private float pagoInicial = 0f;
 
-    /** null = prioridad automática (rank por % de pago, ver EstadoPedidoService). Con valor,
-     *  queda fijada a mano y no se recalcula sola hasta que se vuelva a poner en null. */
-    @Column(name = "prioridad_manual")
-    private Integer prioridadManual;
+    /** Tanda de producción a la que pertenece el pedido completo; null = sin tanda. Solo la
+     *  cambia TandaService (cada cambio deja un HistorialTandaPedido). */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_tanda")
+    private Tanda tanda;
+
+    /** Dónde está físicamente el pedido ("con Adrián", "en estampado externo"…), texto libre.
+     *  Cada cambio deja un HistorialUbicacionPedido. */
+    @Column(name = "ubicacion_actual", length = 255)
+    private String ubicacionActual;
 
     /** Quién coordina la carga de talles del curso (alumno/adulto). Nullable: dato nuevo, opcional. */
     @Enumerated(EnumType.STRING)

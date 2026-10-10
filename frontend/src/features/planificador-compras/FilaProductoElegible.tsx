@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ImagenPreviewModal from '../fichas-tecnicas/ImagenPreviewModal';
 import { urlArchivoSubido } from '../../utils/urlArchivos';
 import type { ProductoElegibleResponse } from '../../types/planificacionCompra';
+import { COLOR_SIN_TANDA, colorDeTanda } from '../produccion/tandaVisual';
 
 const ImagePlaceholderIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="text-wc-border">
@@ -41,6 +42,9 @@ export default function FilaProductoElegible({ elegible, seleccionado, onToggle 
   const { producto } = elegible;
   const urlImagen = producto.imagenDisenoUrl ? urlArchivoSubido(producto.imagenDisenoUrl) : null;
   const pagoDestacado = elegible.porcentajePagadoPedido >= 50;
+  const { tanda } = elegible;
+  // Un pedido puede estar en una tanda sin estar listo todavía: aparece igual, con aviso.
+  const pedidoNoListo = elegible.estadoPedido === 'PRESUPUESTADO' || elegible.estadoPedido === 'SENADO';
 
   return (
     <div
@@ -72,9 +76,23 @@ export default function FilaProductoElegible({ elegible, seleccionado, onToggle 
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
+          <span
+            className="rounded px-1.5 py-0.5 text-[11px] font-bold text-white"
+            style={{ backgroundColor: tanda ? colorDeTanda(tanda.id) : COLOR_SIN_TANDA }}
+          >
+            {tanda ? `Tanda ${tanda.nombre}` : 'Sin tanda'}
+          </span>
           <span className="font-semibold text-wc-text">
             {elegible.codigoInternoPedido} · {producto.tipoPrenda ?? 'Prenda'} ({producto.cantidadTotal})
           </span>
+          {pedidoNoListo && (
+            <span
+              className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800"
+              title="El pedido está en una tanda pero todavía no cumple los requisitos para producción"
+            >
+              ⚠ Pedido todavía no listo
+            </span>
+          )}
         </div>
 
         <p className="mt-0.5 text-xs text-wc-text">

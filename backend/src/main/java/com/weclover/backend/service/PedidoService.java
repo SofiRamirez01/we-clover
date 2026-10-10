@@ -19,6 +19,7 @@ import com.weclover.backend.dto.pedido.HistorialCambioResponse;
 import com.weclover.backend.dto.pedido.PedidoCreateRequest;
 import com.weclover.backend.dto.pedido.PedidoResponse;
 import com.weclover.backend.dto.pedido.PedidoUpdateRequest;
+import com.weclover.backend.dto.pedido.SnapshotAsignacionTandaResponse;
 import com.weclover.backend.dto.pedido.TipoEventoHistorial;
 import com.weclover.backend.dto.producto.ProductoCreateRequest;
 import com.weclover.backend.dto.producto.ProductoResponse;
@@ -38,6 +39,8 @@ import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PedidoMapper;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.HistorialEstadoPedidoRepository;
+import com.weclover.backend.repository.HistorialTandaPedidoRepository;
+import com.weclover.backend.repository.HistorialUbicacionPedidoRepository;
 import com.weclover.backend.repository.MovimientoEstadoRepository;
 import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PedidoRepository;
@@ -53,12 +56,6 @@ import lombok.RequiredArgsConstructor;
 public class PedidoService {
 
     private static final String ROL_CLIENTE = "ROLE_CLIENTE";
-
-    /** Ampliado a ROLE_PLANTA en la entrega de la Pantalla de Producción: esa pantalla es
-     *  accesible para ROLE_ADMINISTRATIVO y ROLE_PLANTA, y deja editar la prioridad manual
-     *  inline — restringirlo solo a ROLE_ADMINISTRATIVO hubiera hecho fallar esa acción con
-     *  403 para la mitad de los usuarios de la pantalla. */
-    private static final Set<String> ROLES_PRIORIDAD = Set.of("ROLE_ADMINISTRATIVO", "ROLE_PLANTA");
 
     /**
      * Código de tela por defecto según el nombre del tipo de prenda (ver TipoTela.codigo),
@@ -84,6 +81,8 @@ public class PedidoService {
     private final TipoTelaRepository tipoTelaRepository;
     private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
     private final MovimientoEstadoRepository movimientoEstadoRepository;
+    private final HistorialTandaPedidoRepository historialTandaPedidoRepository;
+    private final HistorialUbicacionPedidoRepository historialUbicacionPedidoRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
     private final ProductoService productoService;
@@ -91,6 +90,7 @@ public class PedidoService {
     private final ProductoEtapaProduccionService productoEtapaProduccionService;
     private final EstadoPedidoService estadoPedidoService;
     private final AutorizacionService autorizacionService;
+    private final PriorizacionTandaService priorizacionTandaService;
 
     @Transactional
     public PedidoResponse crearPedido(PedidoCreateRequest request) {
@@ -242,6 +242,12 @@ public class PedidoService {
             .modificadoPor(actor)
             .observaciones(observaciones)
             .build());
+        // Un pedido cancelado no se produce: sale de su tanda (queda en el historial). Se hace
+        // antes de cambiar el estado para que el snapshot conserve el estado previo.
+        if (nuevoEstado == EstadoPedido.CANCELADO) {
+            priorizacionTandaService.sacarPorCancelacion(pedido, actor);
+        }
+
         EstadoPedido estadoPrevio = pedido.getEstadoActual();
         pedido.setEstadoActual(nuevoEstado);
 
@@ -284,30 +290,20 @@ public class PedidoService {
         return construirRespuesta(pedido);
     }
 
-    /** null = vuelve a prioridad automática (rank por % de pago). */
-    @Transactional
-    public PedidoResponse asignarPrioridadManual(Long idPedido, Integer prioridad, Long idUsuarioActor) {
-        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_PRIORIDAD);
-        Pedido pedido = pedidoRepository.findById(idPedido)
-            .orElseThrow(() -> new ResourceNotFoundException("No existe el pedido con id " + idPedido));
-        pedido.setPrioridadManual(prioridad);
-        return construirRespuesta(pedidoRepository.save(pedido));
-    }
-
-    @Transactional
-    public PedidoResponse quitarPrioridadManual(Long idPedido, Long idUsuarioActor) {
-        return asignarPrioridadManual(idPedido, null, idUsuarioActor);
-    }
-
     /**
      * Historial unificado del pedido — combina HistorialEstadoPedido (cambios de EstadoPedido)
      * con MovimientoEstado (cada marcado/desmarcado de etapa y cada cambio de estado de
      * producción de cualquier prenda del pedido, ver ProductoEtapaProduccionService), ordenado por fecha
      * descendente. Es el mismo "Historial de cambios" que se ve desde los 3 puntos de Base de
      * Ventas — a pedido del negocio, todo cambio de producción tiene que quedar registrado ahí.
+     * También incluye los cambios de tanda (HistorialTandaPedido) y de ubicación
+     * (HistorialUbicacionPedido).
+     *
+     * Es información interna: se rechaza a ROLE_CLIENTE (y a quien no se identifique).
      */
     @Transactional(readOnly = true)
-    public List<HistorialCambioResponse> listarHistorial(Long idPedido) {
+    public List<HistorialCambioResponse> listarHistorial(Long idPedido, Long idUsuarioActor) {
+        autorizacionService.verificarRolInterno(idUsuarioActor);
         if (!pedidoRepository.existsById(idPedido)) {
             throw new ResourceNotFoundException("No existe el pedido con id " + idPedido);
         }
@@ -346,6 +342,50 @@ public class PedidoService {
                 m.getEstadoNuevo(),
                 m.getUsuario() != null ? m.getUsuario().getNombre() : null,
                 m.getUsuario() != null ? m.getUsuario().getEmail() : null
+            )));
+
+        historialTandaPedidoRepository.findByPedidoIdOrderByFechaDesc(idPedido).forEach(t ->
+            eventos.add(new HistorialCambioResponse(
+                t.getId(),
+                t.getFecha(),
+                TipoEventoHistorial.ASIGNACION_TANDA,
+                null,
+                t.getMotivo(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                t.getUsuario().getNombre(),
+                t.getUsuario().getEmail(),
+                t.getIdTandaAnterior(),
+                t.getNombreTandaAnterior(),
+                t.getIdTandaNueva(),
+                t.getNombreTandaNueva(),
+                t.getSesion() != null ? t.getSesion().getId() : null,
+                new SnapshotAsignacionTandaResponse(
+                    t.getSnapshotPorcentajePagado(),
+                    t.getSnapshotPrioridadAutomatica(),
+                    t.getSnapshotEstadoPedido(),
+                    t.isSnapshotDisenoCompleto(),
+                    t.isSnapshotTallesCompletos(),
+                    t.isSnapshotPagoSuficiente()),
+                null,
+                null
+            )));
+
+        historialUbicacionPedidoRepository.findByPedidoIdOrderByFechaDesc(idPedido).forEach(u ->
+            eventos.add(new HistorialCambioResponse(
+                u.getId(),
+                u.getFecha(),
+                TipoEventoHistorial.UBICACION,
+                null, null, null, null, null, null, null, null,
+                u.getUsuario().getNombre(),
+                u.getUsuario().getEmail(),
+                null, null, null, null, null, null,
+                u.getUbicacionAnterior(),
+                u.getUbicacionNueva()
             )));
 
         return eventos.stream()
@@ -589,8 +629,7 @@ public class PedidoService {
             base.responsableCurso(),
             base.contratoFirmado(),
             base.cantidadCuotas(),
-            prioridadesAutomaticas.get(pedido.getId()),
-            pedido.getPrioridadManual()
+            prioridadesAutomaticas.get(pedido.getId())
         );
     }
 }

@@ -33,6 +33,33 @@ function renderDetalle(h: HistorialCambioResponse) {
       </>
     );
   }
+  if (h.tipoEvento === 'ASIGNACION_TANDA') {
+    const snapshot = h.snapshotTanda;
+    return (
+      <>
+        <div>
+          Tanda: {h.nombreTandaAnterior ?? 'Sin tanda'} → {h.nombreTandaNueva ?? 'Sin tanda'}
+        </div>
+        {h.observaciones && <div className="historial-modal-detalle-sub">Motivo: {h.observaciones}</div>}
+        {snapshot && (
+          <div className="historial-modal-detalle-sub">
+            En ese momento: {ESTADO_PEDIDO_LABELS[snapshot.estadoPedido]}, {Math.round(snapshot.porcentajePagado)}% pago
+            {snapshot.prioridadAutomatica != null ? `, puntaje sugerido ${snapshot.prioridadAutomatica}` : ''} — diseño{' '}
+            {snapshot.disenoCompleto ? 'completo' : 'incompleto'}, talles{' '}
+            {snapshot.tallesCompletos ? 'completos' : 'incompletos'}, pago{' '}
+            {snapshot.pagoSuficiente ? 'suficiente' : 'insuficiente'}
+          </div>
+        )}
+      </>
+    );
+  }
+  if (h.tipoEvento === 'UBICACION') {
+    return (
+      <div>
+        Ubicación: {h.ubicacionAnterior ?? 'Sin ubicación'} → {h.ubicacionNueva ?? 'Sin ubicación'}
+      </div>
+    );
+  }
   const cambioEstadoProduccion =
     h.estadoProduccionNuevo && h.estadoProduccionAnterior !== h.estadoProduccionNuevo
       ? `${h.estadoProduccionAnterior ? ESTADO_PRODUCCION_LABELS[h.estadoProduccionAnterior] : '—'} → ${ESTADO_PRODUCCION_LABELS[h.estadoProduccionNuevo]}`
@@ -62,6 +89,7 @@ function renderDetalle(h: HistorialCambioResponse) {
       {h.nombreEmpleadoAsignado && (
         <div className="historial-modal-detalle-sub">Empleado asignado: {h.nombreEmpleadoAsignado}</div>
       )}
+      {h.observaciones && <div className="historial-modal-detalle-sub">Comentario: {h.observaciones}</div>}
     </>
   );
 }

@@ -101,7 +101,7 @@ class ProductoEtapaProduccionServiceTest {
     void marcarEtapa_generaMovimientoConEstadoAnteriorYNuevo() {
         Producto producto = remera();
 
-        service.marcarEtapa(producto.getId(), EtapaProduccion.CORTE, true, null, ID_ACTOR);
+        service.marcarEtapa(producto.getId(), EtapaProduccion.CORTE, true, null, null, ID_ACTOR);
 
         MovimientoEstado movimiento = ultimoMovimientoGuardado(1);
         assertThat(movimiento.getProducto()).isSameAs(producto);
@@ -116,13 +116,24 @@ class ProductoEtapaProduccionServiceTest {
     }
 
     @Test
+    void marcarEtapa_guardaElComentarioOpcionalEnElMovimiento() {
+        Producto producto = remera();
+
+        service.marcarEtapa(producto.getId(), EtapaProduccion.BORDADO, true, null, "  se repite bordado por falla ", ID_ACTOR);
+        assertThat(ultimoMovimientoGuardado(1).getObservaciones()).isEqualTo("se repite bordado por falla");
+
+        service.marcarEtapa(producto.getId(), EtapaProduccion.BORDADO, false, null, "  ", ID_ACTOR);
+        assertThat(ultimoMovimientoGuardado(2).getObservaciones()).isNull();
+    }
+
+    @Test
     void marcarEtapa_sinCambioDeEstado_igualQuedaRegistrado() {
         Producto producto = remera();
         producto.getEtapas().get(2).setCompletado(true); // CONFECCION
         producto.setEstadoProduccion(EstadoProduccion.CONFECCION);
 
         // CORTE es anterior a CONFECCION: el estado sigue siendo la etapa de mayor orden.
-        service.marcarEtapa(producto.getId(), EtapaProduccion.CORTE, true, null, ID_ACTOR);
+        service.marcarEtapa(producto.getId(), EtapaProduccion.CORTE, true, null, null, ID_ACTOR);
 
         MovimientoEstado movimiento = ultimoMovimientoGuardado(1);
         assertThat(movimiento.getEstadoAnterior()).isEqualTo(EstadoProduccion.CONFECCION);
@@ -137,7 +148,7 @@ class ProductoEtapaProduccionServiceTest {
             .forEach(f -> f.setCompletado(true));
         producto.setEstadoProduccion(EstadoProduccion.APODO);
 
-        service.marcarEtapa(producto.getId(), EtapaProduccion.CONTROL, true, null, ID_ACTOR);
+        service.marcarEtapa(producto.getId(), EtapaProduccion.CONTROL, true, null, null, ID_ACTOR);
 
         MovimientoEstado movimiento = ultimoMovimientoGuardado(1);
         assertThat(movimiento.getEstadoAnterior()).isEqualTo(EstadoProduccion.APODO);

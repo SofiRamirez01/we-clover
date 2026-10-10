@@ -181,7 +181,17 @@ export interface PedidoUpdateRequest {
 
 /** ESTADO_PRODUCCION = cambio de estado de producción de una prenda que no viene de marcar una
  *  etapa (pedido ENTREGADO, recálculo, carga retroactiva). */
-export type TipoEventoHistorial = 'ESTADO_PEDIDO' | 'ETAPA_PRODUCCION' | 'ESTADO_PRODUCCION';
+export type TipoEventoHistorial = 'ESTADO_PEDIDO' | 'ETAPA_PRODUCCION' | 'ESTADO_PRODUCCION' | 'ASIGNACION_TANDA' | 'UBICACION';
+
+/** Contexto del pedido guardado en el momento de un cambio de tanda (no se recalcula). */
+export interface SnapshotAsignacionTanda {
+  porcentajePagado: number;
+  prioridadAutomatica: number | null;
+  estadoPedido: EstadoPedido;
+  disenoCompleto: boolean;
+  tallesCompletos: boolean;
+  pagoSuficiente: boolean;
+}
 
 /**
  * Fila del historial unificado del pedido (GET /pedidos/{id}/historial) — combina cambios de
@@ -211,6 +221,19 @@ export interface HistorialCambioResponse {
    *  retroactiva, recálculo) — un marcado de etapa siempre tiene un actor humano. */
   nombreUsuario: string | null;
   emailUsuario: string | null;
+
+  /** Solo en ASIGNACION_TANDA (null en el resto). id/nombre null = "sin tanda"; el nombre es el
+   *  que tenía la tanda en ese momento. El motivo viaja en `observaciones`. */
+  idTandaAnterior: number | null;
+  nombreTandaAnterior: string | null;
+  idTandaNueva: number | null;
+  nombreTandaNueva: string | null;
+  idSesionPriorizacion: number | null;
+  snapshotTanda: SnapshotAsignacionTanda | null;
+
+  /** Solo en UBICACION (null en el resto). null = sin ubicación cargada. */
+  ubicacionAnterior: string | null;
+  ubicacionNueva: string | null;
 }
 
 export interface PedidoResponse {
@@ -251,8 +274,8 @@ export interface PedidoResponse {
   /** Rank (1 = más prioritario) entre los pedidos activos por % pagado, calculado al vuelo.
    *  Null si el pedido no está activo (ENTREGADO/CANCELADO). Sin pantalla propia todavía —
    *  Entrega 2. */
+  /** Puntaje sugerido (rank por % de pago). La prioridad real es la tanda, que no viaja acá. */
   prioridadAutomatica: number | null;
-  prioridadManual: number | null;
 }
 
 export interface PedidoImportadoResumen {

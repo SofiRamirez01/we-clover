@@ -94,6 +94,77 @@ export interface ProduccionProductoResponse {
   fechaRecibido: string | null;
 }
 
+/** Derivado de los pedidos de la tanda (ver TandaEstadoCalculador en el backend); nunca se
+ *  setea a mano. */
+export type EstadoTanda = 'PLANIFICADA' | 'EN_PRODUCCION' | 'CERRADA';
+
+export const ESTADO_TANDA_LABELS: Record<EstadoTanda, string> = {
+  PLANIFICADA: 'Planificada',
+  EN_PRODUCCION: 'En producción',
+  CERRADA: 'Cerrada',
+};
+
+/** Tanda de un pedido en la grilla. `id` es la única clave: `nombre` es una etiqueta editable y
+ *  `posicion` cambia sola al cerrarse una tanda anterior (null si está CERRADA). */
+export interface ProduccionTanda {
+  id: number;
+  nombre: string;
+  posicion: number | null;
+  estado: EstadoTanda;
+}
+
+export interface UnidadesPorTipoPrenda {
+  tipoPrenda: string;
+  unidades: number;
+}
+
+/** GET /api/tandas — totales reales de la tanda, sin importar los filtros de la grilla. */
+export interface TandaResponse extends ProduccionTanda {
+  cantidadPedidos: number;
+  unidadesPorTipoPrenda: UnidadesPorTipoPrenda[];
+  fechaCreacion: string;
+  nombreCreador: string | null;
+}
+
+/** Nota interna de un pedido: solo se agregan, no se editan. */
+export interface NotaPedido {
+  id: number;
+  texto: string;
+  nombreAutor: string;
+  fecha: string;
+}
+
+/** Aviso calculado para quien prioriza (GET /api/tandas/alertas). */
+export interface AlertaPriorizacion {
+  tipo: 'LISTO_SIN_TANDA';
+  idPedido: number;
+  codigoInterno: string;
+  colegio: string;
+  curso: string;
+}
+
+/** Referencia a una tanda dentro de una sesión de priorización: `id` si ya existe, `idTemporal`
+ *  si se crea en la misma sesión. Nunca por nombre. */
+export type TandaRef = { id: number; idTemporal?: undefined } | { id?: undefined; idTemporal: string };
+
+export interface MovimientoTanda {
+  idPedido: number;
+  /** Tanda en la que estaba el pedido al abrir el popup (null = sin tanda): si ya no coincide,
+   *  el backend rechaza toda la sesión. */
+  idTandaOrigenEsperada: number | null;
+  /** null = queda sin tanda. */
+  destino: TandaRef | null;
+  motivo: string | null;
+}
+
+/** POST /api/tandas/priorizacion — se aplica todo o nada. */
+export interface PriorizacionRequest {
+  nota: string | null;
+  tandasNuevas: { idTemporal: string; nombre: string }[];
+  ordenTandas: TandaRef[];
+  movimientos: MovimientoTanda[];
+}
+
 export interface ProduccionPedidoResponse {
   id: number;
   codigoInterno: string;
@@ -103,9 +174,14 @@ export interface ProduccionPedidoResponse {
   fechaVenta: string;
   fechaEstimadaEntrega: string;
   porcentajePagado: number;
-  /** Null si el pedido no está activo (ENTREGADO/CANCELADO). */
+  /** Puntaje sugerido (rank por % de pago): solo ordena los pedidos sin tanda. Null si el
+   *  pedido no está activo (ENTREGADO/CANCELADO). */
   prioridadAutomatica: number | null;
-  prioridadManual: number | null;
+  /** null = sin tanda. */
+  tanda: ProduccionTanda | null;
+  ubicacionActual: string | null;
+  ultimaNota: NotaPedido | null;
+  cantidadNotas: number;
   productos: ProduccionProductoResponse[];
 }
 

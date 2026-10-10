@@ -59,8 +59,13 @@ export async function marcarEtapaProducto(
   etapa: EtapaProduccion,
   completado: boolean,
   idEmpleado?: number | null,
+  comentario?: string | null,
 ): Promise<void> {
-  await api.put(`/productos/${idProducto}/etapas/${etapa}`, { completado, idEmpleado: idEmpleado ?? null });
+  await api.put(`/productos/${idProducto}/etapas/${etapa}`, {
+    completado,
+    idEmpleado: idEmpleado ?? null,
+    comentario: comentario?.trim() || null,
+  });
 }
 
 export interface EtapaBulkItem {
@@ -68,6 +73,8 @@ export interface EtapaBulkItem {
   etapa: EtapaProduccion;
   completado: boolean;
   idEmpleado?: number | null;
+  /** Opcional: aclaración libre que queda en el historial del pedido. */
+  comentario?: string | null;
 }
 
 /** Carga masiva (ver modal de la Pantalla de Producción) — un solo request para todo el lote. */

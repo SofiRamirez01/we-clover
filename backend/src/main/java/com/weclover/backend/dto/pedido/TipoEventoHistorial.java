@@ -7,5 +7,9 @@ package com.weclover.backend.dto.pedido;
 public enum TipoEventoHistorial {
     ESTADO_PEDIDO,
     ETAPA_PRODUCCION,
-    ESTADO_PRODUCCION
+    ESTADO_PRODUCCION,
+    /** El pedido entró a una tanda, cambió de tanda o salió de una (ver HistorialTandaPedido). */
+    ASIGNACION_TANDA,
+    /** Cambió Pedido.ubicacionActual (ver HistorialUbicacionPedido). */
+    UBICACION
 }

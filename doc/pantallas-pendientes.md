@@ -148,10 +148,13 @@ Cosas que quedaron explícitamente afuera de la Fase 3 (ver tareas-realizadas.md
   desde ningún lado del front — si en algún momento hace falta el filtro de vuelta, conviene
   resolverlo junto con "Reutilización de Colegios existentes" (ver más abajo) en vez de
   reagregar el que se sacó.
-- Una `PlanificacionCompra` **ya CONFIRMADA** no se puede editar ni borrar (ni
-  quitarle/agregarle productos) — si hace falta corregir una, hoy la única forma es crear una
-  nueva. Mientras está en `BORRADOR` sí se puede editar/eliminar libremente (ver la entrada de
-  borradores en base en tareas-realizadas.md).
+- Editar y eliminar ya está (lápiz y tacho en el listado). Editar una `PlanificacionCompra`
+  **CONFIRMADA** la devuelve a `BORRADOR` (`POST /api/planificaciones-compra/{id}/reabrir`):
+  se descarta el detalle calculado y se recalcula al confirmar de nuevo. Consecuencia a tener
+  presente: si se reabre y después se aprieta "Cancelar" en la pantalla de edición, se borra la
+  planificación entera (es el mismo cartel de siempre de los borradores) — no hay "descartar
+  cambios y volver a la confirmada anterior". Tampoco queda registro de quién editó o eliminó
+  una planificación.
 - Nada de esto se conecta todavía con Compras real (generar una orden de compra, marcarla
   como comprada/recibida) ni con el Motor de Nesting/Tizada (M4) — el Planificador solo
   calcula cuánto comprar, no optimiza cómo cortarlo.
@@ -218,6 +221,13 @@ Falta:
 - Definir si el representante de curso alguna vez necesita loguearse de verdad (ej. para ver
   el estado de su pedido), y si es así, un flujo real de invitación con seteo de contraseña.
 - Confirmar si además de nombre/teléfono/email hacen falta más datos del representante.
+- **Vista de cliente (cuando exista un usuario real para el cliente):** hoy lo único que se
+  le niega explícitamente a `ROLE_CLIENTE` es `GET /api/pedidos/{id}/historial` (validación
+  agregada con Tandas, `AutorizacionService.verificarRolInterno`) y todo `/api/tandas`.
+  `GET /api/pedidos` y `GET /api/pedidos/{id}` siguen sin validar rol: por eso `PedidoResponse`
+  **no** lleva tanda, notas ni ubicación (información interna). Al implementar la vista de
+  cliente hay que darle un DTO/endpoint propio y cerrar esos dos `GET` — no reusar
+  `PedidoResponse` ni el historial.
 
 ## Roles nuevos y permisos por pantalla
 
@@ -474,3 +484,31 @@ Pendientes:
 - **Prendas dadas de baja en otras pantallas**: lo que lee productos por `pedido.getProductos()`
   ya no las ve; las consultas que llegan a un `Producto` por otro camino (talles cargados por
   alumno, detalles de planificaciones de compra ya confirmadas) no se revisaron una por una.
+
+## Tandas de producción (reemplazan a la prioridad numérica)
+
+Hecho: `Tanda` (estado y posición derivados, no persistidos), sesión de priorización atómica
+(`POST /api/tandas/priorizacion`), historial unificado con `ASIGNACION_TANDA`/`UBICACION`,
+notas y ubicación del pedido, comentario opcional al marcar etapas, la Pantalla de Producción
+agrupada por tanda y el popup "Priorizar" (solo `ROLE_ADMINISTRATIVO`).
+`PUT/DELETE /api/pedidos/{id}/prioridad` responden 410.
+
+Pendiente:
+- **Alerta por cambio de % de pago** (decisión del negocio: no hacerla todavía): avisar cuando
+  un pedido ya asignado cambió su % de pago respecto del snapshot de su última asignación
+  (`HistorialTandaPedido.snapshotPorcentajePagado`, ya se guarda). Falta definir si cualquier
+  cambio dispara el aviso o hay un umbral, y si "descartar" se persiste. Hoy
+  `GET /api/tandas/alertas` solo devuelve `LISTO_SIN_TANDA`.
+- **"Descartar" un aviso es local al navegador** (`localStorage`, por id de pedido): los avisos
+  se calculan y no se persisten, así que otro usuario u otra PC lo siguen viendo. Si hace falta
+  que el descarte sea compartido hay que persistirlo.
+- **Renombrar y eliminar una tanda existente desde el popup se aplican al instante**, fuera del
+  "Guardar/Cancelar" del resto del borrador (usan `PATCH`/`DELETE /api/tandas/{id}`, no la
+  sesión atómica). Está aclarado en pantalla; si molesta, hay que sumarlos al payload de
+  `POST /api/tandas/priorizacion`.
+- **Corte/nesting (M4)**: queda listo `ProductoRepository.findByPedido_Tanda_IdAndHabilitadoTrue`
+  para tomar "todos los productos de la tanda X"; nadie lo usa todavía.
+- **Cambios de orden de la cola**: se guardan en `SesionPriorizacion` (JSON anterior/nuevo) pero
+  no hay pantalla ni endpoint para consultarlos.
+- **Dos administrativos priorizando a la vez**: si otro movió un pedido mientras el popup
+  estaba abierto, la sesión entera se rechaza (409) y hay que reabrir; no hay fusión de cambios.

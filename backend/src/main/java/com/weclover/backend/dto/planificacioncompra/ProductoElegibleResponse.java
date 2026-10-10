@@ -3,7 +3,9 @@ package com.weclover.backend.dto.planificacioncompra;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.weclover.backend.dto.produccion.ProduccionTandaResponse;
 import com.weclover.backend.dto.producto.ProductoResponse;
+import com.weclover.backend.entity.EstadoPedido;
 
 /**
  * Producto candidato a incluir en una PlanificacionCompra, con el contexto de su pedido de
@@ -16,6 +18,9 @@ public record ProductoElegibleResponse(
     Long idPedido,
     String codigoInternoPedido,
     String nombreColegio,
+    EstadoPedido estadoPedido,
+    /** Tanda del pedido (null = sin tanda). Se filtra por `id`, nunca por nombre. */
+    ProduccionTandaResponse tanda,
     LocalDate fechaVentaPedido,
     LocalDate fechaEstimadaEntregaPedido,
     float porcentajePagadoPedido,

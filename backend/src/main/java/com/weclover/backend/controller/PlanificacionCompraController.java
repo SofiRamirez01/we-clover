@@ -73,11 +73,19 @@ public class PlanificacionCompraController {
         return planificacionCompraService.confirmar(id, idUsuarioActor);
     }
 
+    /** Editar una planificación confirmada: la devuelve a borrador (ver PlanificacionCompraService.reabrir). */
+    @PostMapping("/{id}/reabrir")
+    public PlanificacionCompraResponse reabrir(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return planificacionCompraService.reabrir(id, idUsuarioActor);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(
             @PathVariable Long id,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
-        planificacionCompraService.eliminarBorrador(id, idUsuarioActor);
+        planificacionCompraService.eliminar(id, idUsuarioActor);
         return ResponseEntity.noContent().build();
     }
 

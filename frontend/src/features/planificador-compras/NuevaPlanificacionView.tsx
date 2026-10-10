@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ModalConfirmacion from '../../components/ModalConfirmacion';
 import FilaProductoElegible from './FilaProductoElegible';
 import FiltroTipoPrenda from './FiltroTipoPrenda';
+import FiltroMultiSelect from '../produccion/FiltroMultiSelect';
 import { listarTiposTela } from '../../services/tipoTelaService';
 import {
   actualizarBorradorPlanificacion,
@@ -18,6 +19,9 @@ import type { ProductoElegibleResponse } from '../../types/planificacionCompra';
 import type { TipoTelaCatalogo } from '../../types/tipoTela';
 
 const DEMORA_AUTOGUARDADO_MS = 700;
+
+/** Valor del filtro de tanda para los pedidos que no tienen tanda. */
+const SIN_TANDA = 'sin-tanda';
 
 interface NuevaPlanificacionViewProps {
   /** Id del borrador que se está editando — null si es una planificación nueva, todavía sin
@@ -48,16 +52,17 @@ export default function NuevaPlanificacionView({
   const [cargandoBorrador, setCargandoBorrador] = useState(idBorrador != null);
   const [idBorradorLocal, setIdBorradorLocal] = useState<number | null>(idBorrador);
 
-  // Vacío por defecto (no un rango precargado): la búsqueda arranca recién cuando el usuario
-  // carga ambas fechas (ver el useEffect de abajo, que la dispara solo, sin botón) — o cuando
-  // se termina de cargar un borrador existente, que puede traerlas ya puestas.
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
   const [nombre, setNombre] = useState('');
   const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set());
 
-  // Filtros de la tabla: solo de UI, no se persisten en el borrador (no son parte de la
-  // planificación en sí, y reiniciarlos al reabrir un borrador es un comportamiento razonable).
+  // Filtros de la lista: todos son solo de UI y todos opcionales (cada quien planifica con el
+  // criterio que quiera: por tanda, por pagos, por tipo de prenda o por fecha). No se
+  // persisten en el borrador ni cambian lo que ya está tildado — el período de la
+  // planificación lo calcula el backend con las fechas de entrega de los productos elegidos.
+  /** Ids de tanda (como texto) y/o SIN_TANDA. Vacío = todas. */
+  const [tandasSeleccionadas, setTandasSeleccionadas] = useState<Set<string>>(new Set());
+  const [entregaDesde, setEntregaDesde] = useState('');
+  const [entregaHasta, setEntregaHasta] = useState('');
   const [tiposPrendaSeleccionados, setTiposPrendaSeleccionados] = useState<Set<string>>(new Set());
   // Al revés de como se lee: por defecto NO se muestran los ya planificados (hay que tildar
   // para verlos) — antes era al revés (se mostraban salvo que tildaras "excluir").
@@ -94,7 +99,7 @@ export default function NuevaPlanificacionView({
       .catch(() => {});
   }, []);
 
-  // Si se abrió "continuando" un borrador existente, trae nombre/fechas/selección guardados.
+  // Si se abrió "continuando" un borrador existente, trae nombre/selección guardados.
   // OJO: deps `[]` a propósito, no `[idBorrador]` — este efecto debe correr una sola vez, con
   // el id que trajo el montaje inicial ("continuar editando" desde el listado siempre monta
   // esta pantalla de cero con el id ya puesto). Si dependiera de `idBorrador`, volvería a
@@ -102,7 +107,7 @@ export default function NuevaPlanificacionView({
   // autoguardado (ver guardarBorradorAhora → onIdBorradorCreado, que le informa el id nuevo al
   // padre y el padre se lo devuelve como prop) — y esa segunda pasada pisaría con un GET lo que
   // el usuario ya tipeó localmente después de esa primera creación (típicamente todavía sin
-  // nombre, porque el autoguardado se dispara apenas hay fechas puestas, antes de escribirlo).
+  // nombre, porque el autoguardado se dispara apenas se tilda algo, antes de escribirlo).
   useEffect(() => {
     if (idBorrador == null) return;
     let cancelado = false;
@@ -110,8 +115,6 @@ export default function NuevaPlanificacionView({
       .then((data) => {
         if (cancelado) return;
         setNombre(data.nombre);
-        setFechaDesde(data.fechaDesde ?? '');
-        setFechaHasta(data.fechaHasta ?? '');
         setSeleccionados(new Set(data.idsProductos));
       })
       .catch((err) => {
@@ -126,31 +129,14 @@ export default function NuevaPlanificacionView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Dispara la búsqueda sola apenas hay un rango de fechas válido — no hay botón "Buscar":
-  // funciona como el resto de los filtros, que reaccionan solos al cambiar. Preserva la
-  // selección ya tildada si todavía no hay resultados cargados (primera búsqueda de este
-  // montaje, incluida la restauración del borrador); cualquier búsqueda posterior a una que
-  // ya trajo resultados la limpia, porque un rango de fechas distinto puede traer productos
-  // distintos. Se usa `elegibles === null` (no un ref "consumido" en la primera pasada) a
-  // propósito: en desarrollo, StrictMode invoca este efecto dos veces seguidas al montar, y
-  // con un ref la segunda invocación ya lo encontraba en falso y borraba la selección recién
-  // restaurada — con `elegibles` la condición se recalcula sola y da el mismo resultado
-  // (todavía null) en ambas invocaciones, porque la búsqueda async ni siquiera resolvió.
+  // Trae todos los candidatos una sola vez (apenas se abre la pantalla, o cuando termina de
+  // cargarse el borrador): no depende de ningún filtro, así que filtrar nunca vuelve a pedir
+  // datos ni toca la selección.
   useEffect(() => {
     if (cargandoBorrador) return;
-    if (!fechaDesde || !fechaHasta) {
-      setElegibles(null);
-      setErrorBusqueda(null);
-      return;
-    }
-    if (fechaHasta < fechaDesde) {
-      setElegibles(null);
-      setErrorBusqueda('La fecha hasta no puede ser anterior a la fecha desde.');
-      return;
-    }
-    buscar(elegibles === null);
+    buscar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fechaDesde, fechaHasta, cargandoBorrador]);
+  }, [cargandoBorrador]);
 
   // Autoguardado contra la base, con demora corta para no mandar un request por cada tecla —
   // se salta mientras se está cargando un borrador existente (para no pisarlo con el estado
@@ -158,7 +144,7 @@ export default function NuevaPlanificacionView({
   // crear una fila vacía en la base apenas se entra a la pantalla.
   useEffect(() => {
     if (cargandoBorrador) return;
-    if (!nombre.trim() && !fechaDesde && !fechaHasta && seleccionados.size === 0) return;
+    if (!nombre.trim() && seleccionados.size === 0) return;
 
     if (timeoutAutoguardadoRef.current) window.clearTimeout(timeoutAutoguardadoRef.current);
     timeoutAutoguardadoRef.current = window.setTimeout(() => {
@@ -169,7 +155,7 @@ export default function NuevaPlanificacionView({
       if (timeoutAutoguardadoRef.current) window.clearTimeout(timeoutAutoguardadoRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nombre, fechaDesde, fechaHasta, seleccionados, cargandoBorrador]);
+  }, [nombre, seleccionados, cargandoBorrador]);
 
   /** Guarda ya mismo (sin esperar la demora del autoguardado) — usado tanto por el timer como
    *  por "Confirmar planificación", que necesita el borrador al día antes de confirmarlo. Si ya
@@ -184,8 +170,6 @@ export default function NuevaPlanificacionView({
       setEstadoGuardado('guardando');
       const payload: PlanificacionCompraBorradorRequest = {
         nombre: nombre.trim() || undefined,
-        fechaDesde: fechaDesde || undefined,
-        fechaHasta: fechaHasta || undefined,
         idsProductos: Array.from(seleccionados),
       };
       try {
@@ -212,13 +196,11 @@ export default function NuevaPlanificacionView({
     return promesa;
   }
 
-  async function buscar(preservarSeleccion: boolean) {
+  async function buscar() {
     setBuscando(true);
     setErrorBusqueda(null);
     try {
-      const data = await listarProductosElegibles(fechaDesde, fechaHasta);
-      setElegibles(data);
-      if (!preservarSeleccion) setSeleccionados(new Set());
+      setElegibles(await listarProductosElegibles());
     } catch (err) {
       setErrorBusqueda(extraerMensajeError(err, 'No se pudo buscar los productos elegibles.'));
     } finally {
@@ -233,21 +215,66 @@ export default function NuevaPlanificacionView({
     );
   }, [elegibles]);
 
+  /** Tandas presentes entre los candidatos, en orden de cola (las cerradas al final), más
+   *  "Sin tanda" si hay algún pedido sin asignar. */
+  const opcionesTanda = useMemo(() => {
+    if (!elegibles) return [];
+    const tandas = new Map<number, NonNullable<ProductoElegibleResponse['tanda']>>();
+    let haySinTanda = false;
+    for (const e of elegibles) {
+      if (e.tanda) tandas.set(e.tanda.id, e.tanda);
+      else haySinTanda = true;
+    }
+    const opciones = Array.from(tandas.values())
+      .sort((a, b) => (a.posicion ?? Infinity) - (b.posicion ?? Infinity) || a.id - b.id)
+      .map((t) => ({ value: String(t.id), label: `Tanda ${t.nombre}` }));
+    if (haySinTanda) opciones.push({ value: SIN_TANDA, label: 'Sin tanda' });
+    return opciones;
+  }, [elegibles]);
+
+  const errorFechas = entregaDesde && entregaHasta && entregaHasta < entregaDesde
+    ? 'La fecha hasta no puede ser anterior a la fecha desde.'
+    : null;
+
   const filtrados = useMemo(() => {
     if (!elegibles) return [];
     const minimo = pagoDesde.trim() ? Number(pagoDesde) : null;
     const maximo = pagoHasta.trim() ? Number(pagoHasta) : null;
     return elegibles.filter((e) => {
+      if (tandasSeleccionadas.size > 0 && !tandasSeleccionadas.has(e.tanda ? String(e.tanda.id) : SIN_TANDA)) return false;
+      // Fechas ISO (aaaa-mm-dd): se comparan como texto. Cada extremo es opcional.
+      if (entregaDesde && e.fechaEstimadaEntregaPedido < entregaDesde) return false;
+      if (entregaHasta && e.fechaEstimadaEntregaPedido > entregaHasta) return false;
       if (tiposPrendaSeleccionados.size > 0 && (!e.producto.tipoPrenda || !tiposPrendaSeleccionados.has(e.producto.tipoPrenda))) {
         return false;
       }
-      if (!mostrarYaPlanificados && e.planificacionesQueLoIncluyen.length > 0) return false;
-      if (!incluirIncompletos && !e.disenoCompleto) return false;
+      // Estos dos tildes esconden por defecto, pero nunca a un producto ya tildado: al editar
+      // una planificación, lo que ya forma parte de ella tiene que verse sin tocar nada.
+      const tildado = seleccionados.has(e.producto.id);
+      if (!mostrarYaPlanificados && !tildado && e.planificacionesQueLoIncluyen.length > 0) return false;
+      if (!incluirIncompletos && !tildado && !e.disenoCompleto) return false;
       if (minimo != null && !Number.isNaN(minimo) && e.porcentajePagadoPedido < minimo) return false;
       if (maximo != null && !Number.isNaN(maximo) && e.porcentajePagadoPedido > maximo) return false;
       return true;
     });
-  }, [elegibles, tiposPrendaSeleccionados, mostrarYaPlanificados, incluirIncompletos, pagoDesde, pagoHasta]);
+  }, [
+    elegibles,
+    tandasSeleccionadas,
+    entregaDesde,
+    entregaHasta,
+    tiposPrendaSeleccionados,
+    mostrarYaPlanificados,
+    incluirIncompletos,
+    pagoDesde,
+    pagoHasta,
+    seleccionados,
+  ]);
+
+  /** Tildados que los filtros actuales no dejan ver (siguen formando parte de la planificación). */
+  const tildadosOcultos = useMemo(() => {
+    const visibles = new Set(filtrados.map((e) => e.producto.id));
+    return Array.from(seleccionados).filter((id) => !visibles.has(id)).length;
+  }, [filtrados, seleccionados]);
 
   function toggleProducto(idProducto: number, disenoCompleto: boolean) {
     if (!disenoCompleto) return;
@@ -259,8 +286,22 @@ export default function NuevaPlanificacionView({
     });
   }
 
+  /** Suma a lo ya tildado todos los completos que se ven con los filtros actuales (no destilda
+   *  nada): así se puede armar la planificación filtrando de a una tanda por vez. */
   function marcarTodosLosCompletos() {
-    setSeleccionados(new Set(filtrados.filter((e) => e.disenoCompleto).map((e) => e.producto.id)));
+    setSeleccionados((prev) => {
+      const copia = new Set(prev);
+      filtrados.filter((e) => e.disenoCompleto).forEach((e) => copia.add(e.producto.id));
+      return copia;
+    });
+  }
+
+  function destildarVisibles() {
+    setSeleccionados((prev) => {
+      const copia = new Set(prev);
+      filtrados.forEach((e) => copia.delete(e.producto.id));
+      return copia;
+    });
   }
 
   const productosSeleccionados = useMemo(
@@ -324,65 +365,83 @@ export default function NuevaPlanificacionView({
         <p className="text-sm text-wc-text-muted">Cargando borrador…</p>
       ) : (
         <>
-          <div className="flex flex-wrap items-end gap-3 rounded-lg border border-wc-border bg-white p-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-wc-text">Entrega desde</label>
-              <input
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => setFechaDesde(e.target.value)}
-                className="rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
+          <div className="flex flex-col gap-3 rounded-lg border border-wc-border bg-white p-4">
+            <p className="text-xs text-wc-text-muted">
+              Filtrá con el criterio que prefieras: todos los filtros son opcionales y se pueden combinar. Lo que ya
+              tildaste no se pierde al cambiarlos.
+            </p>
+            <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
+              <FiltroMultiSelect
+                label="Tanda"
+                opciones={opcionesTanda}
+                seleccionados={tandasSeleccionadas}
+                onCambiar={setTandasSeleccionadas}
               />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-wc-text">Entrega hasta</label>
-              <input
-                type="date"
-                value={fechaHasta}
-                onChange={(e) => setFechaHasta(e.target.value)}
-                className="rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
-              />
-            </div>
-            {buscando && <span className="pb-1.5 text-xs text-wc-text-muted">Buscando…</span>}
 
-            {elegibles && tiposPrendaDisponibles.length > 0 && (
-              <FiltroTipoPrenda
-                opciones={tiposPrendaDisponibles}
-                seleccionados={tiposPrendaSeleccionados}
-                onCambiar={setTiposPrendaSeleccionados}
-              />
-            )}
-
-            {elegibles && (
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-wc-text">% pagado, desde</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={pagoDesde}
-                  onChange={(e) => setPagoDesde(e.target.value)}
-                  placeholder="0"
-                  className="w-20 rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
-                />
+              <div className="flex items-end gap-2">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="pagoDesde" className="text-xs font-semibold text-wc-text">
+                    % pagado, desde
+                  </label>
+                  <input
+                    id="pagoDesde"
+                    type="number"
+                    value={pagoDesde}
+                    onChange={(e) => setPagoDesde(e.target.value)}
+                    placeholder="0"
+                    className="w-20 rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="pagoHasta" className="text-xs font-semibold text-wc-text">
+                    hasta
+                  </label>
+                  <input
+                    id="pagoHasta"
+                    type="number"
+                    value={pagoHasta}
+                    onChange={(e) => setPagoHasta(e.target.value)}
+                    placeholder="100"
+                    className="w-20 rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
+                  />
+                </div>
               </div>
-            )}
-            {elegibles && (
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-wc-text">hasta</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={pagoHasta}
-                  onChange={(e) => setPagoHasta(e.target.value)}
-                  placeholder="100"
-                  className="w-20 rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
-                />
-              </div>
-            )}
 
-            {elegibles && (
+              {tiposPrendaDisponibles.length > 0 && (
+                <FiltroTipoPrenda
+                  opciones={tiposPrendaDisponibles}
+                  seleccionados={tiposPrendaSeleccionados}
+                  onCambiar={setTiposPrendaSeleccionados}
+                />
+              )}
+
+              <div className="flex items-end gap-2">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="entregaDesde" className="text-xs font-semibold text-wc-text">
+                    Entrega desde
+                  </label>
+                  <input
+                    id="entregaDesde"
+                    type="date"
+                    value={entregaDesde}
+                    onChange={(e) => setEntregaDesde(e.target.value)}
+                    className="rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="entregaHasta" className="text-xs font-semibold text-wc-text">
+                    hasta
+                  </label>
+                  <input
+                    id="entregaHasta"
+                    type="date"
+                    value={entregaHasta}
+                    onChange={(e) => setEntregaHasta(e.target.value)}
+                    className="rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text"
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-row flex-nowrap items-center gap-1.5 pb-1.5 text-sm text-wc-text">
                 <input
                   id="mostrarYaPlanificados"
@@ -395,26 +454,26 @@ export default function NuevaPlanificacionView({
                   Mostrar ya planificados
                 </label>
               </div>
-            )}
 
-            {elegibles && (
               <div className="flex flex-nowrap items-center gap-1.5 pb-1.5 text-sm text-wc-text">
                 <input
+                  id="incluirIncompletos"
                   type="checkbox"
                   checked={incluirIncompletos}
                   onChange={(e) => setIncluirIncompletos(e.target.checked)}
                   className="h-4 w-4 shrink-0 accent-wc-green"
                 />
-                <label className="whitespace-nowrap">Incluir incompletos</label>
+                <label htmlFor="incluirIncompletos" className="whitespace-nowrap cursor-pointer">
+                  Incluir incompletos
+                </label>
               </div>
-            )}
+
+              {buscando && <span className="pb-1.5 text-xs text-wc-text-muted">Buscando…</span>}
+            </div>
+            {errorFechas && <p className="text-xs font-medium text-red-600">{errorFechas}</p>}
           </div>
 
           {errorBusqueda && <p className="text-xs font-medium text-red-600">{errorBusqueda}</p>}
-
-          {!elegibles && !errorBusqueda && !buscando && (
-            <p className="text-sm text-wc-text-muted">Elegí una fecha desde y una fecha hasta para ver los productos.</p>
-          )}
 
           {elegibles && (
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr]">
@@ -423,10 +482,21 @@ export default function NuevaPlanificacionView({
                   <p className="text-xs text-wc-text-muted">
                     {filtrados.length} producto{filtrados.length === 1 ? '' : 's'} · {seleccionados.size} tildado
                     {seleccionados.size === 1 ? '' : 's'}
+                    {tildadosOcultos > 0 && (
+                      <span className="font-semibold text-wc-text">
+                        {' '}
+                        ({tildadosOcultos} no se ve{tildadosOcultos === 1 ? '' : 'n'} con estos filtros)
+                      </span>
+                    )}
                   </p>
-                  <button type="button" onClick={marcarTodosLosCompletos} className="text-xs font-semibold text-wc-green underline">
-                    Tildar todos los completos
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={destildarVisibles} className="text-xs font-semibold text-wc-text-muted underline">
+                      Destildar los visibles
+                    </button>
+                    <button type="button" onClick={marcarTodosLosCompletos} className="text-xs font-semibold text-wc-green underline">
+                      Tildar todos los completos
+                    </button>
+                  </div>
                 </div>
 
                 {filtrados.length === 0 ? (

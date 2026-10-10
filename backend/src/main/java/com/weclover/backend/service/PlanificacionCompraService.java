@@ -23,6 +23,7 @@ import com.weclover.backend.dto.planificacioncompra.PlanificacionCompraDetalleRe
 import com.weclover.backend.dto.planificacioncompra.PlanificacionCompraResponse;
 import com.weclover.backend.dto.planificacioncompra.PlanificacionResumenResponse;
 import com.weclover.backend.dto.planificacioncompra.ProductoElegibleResponse;
+import com.weclover.backend.dto.produccion.ProduccionTandaResponse;
 import com.weclover.backend.entity.ArticuloProveedor;
 import com.weclover.backend.entity.ArticuloStock;
 import com.weclover.backend.entity.EstadoPlanificacionCompra;
@@ -47,6 +48,7 @@ import com.weclover.backend.repository.PlanificacionCompraRepository;
 import com.weclover.backend.repository.ProductoRepository;
 import com.weclover.backend.repository.StockRepository;
 import com.weclover.backend.repository.UsuarioRepository;
+import com.weclover.backend.service.TandaService.TandaCalculada;
 
 import lombok.RequiredArgsConstructor;
 
@@ -71,6 +73,7 @@ public class PlanificacionCompraService {
     private final ArticuloStockRepository articuloStockRepository;
     private final StockRepository stockRepository;
     private final ProductoService productoService;
+    private final TandaService tandaService;
     private final AutorizacionService autorizacionService;
 
     /** Clave de agrupación de un detalle: qué tela+color, más allá de en qué producto/insumo se originó. */
@@ -78,15 +81,19 @@ public class PlanificacionCompraService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductoElegibleResponse> listarProductosElegibles(
-            LocalDate fechaDesde, LocalDate fechaHasta, Long idColegio, Long idUsuarioActor) {
+    public List<ProductoElegibleResponse> listarProductosElegibles(Long idColegio, Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_GESTION_COMPRAS);
 
-        if (fechaHasta.isBefore(fechaDesde)) {
-            throw new BusinessRuleException("La fecha hasta no puede ser anterior a la fecha desde");
-        }
+        List<Producto> productos = productoRepository.buscarElegiblesPlanificacion(idColegio);
 
-        List<Producto> productos = productoRepository.buscarElegiblesPlanificacion(fechaDesde, fechaHasta, idColegio);
+        // Tanda de cada pedido con su estado y posición derivados (ver TandaService), para el
+        // filtro por tanda de la pantalla.
+        Map<Long, ProduccionTandaResponse> tandaPorIdPedido = new HashMap<>();
+        for (TandaCalculada calculada : tandaService.calcularTandas()) {
+            ProduccionTandaResponse tanda = new ProduccionTandaResponse(
+                calculada.tanda().getId(), calculada.tanda().getNombre(), calculada.posicion(), calculada.estado());
+            calculada.pedidos().forEach(pedido -> tandaPorIdPedido.put(pedido.getId(), tanda));
+        }
 
         // El % pagado es sobre el pedido completo, no sobre el subconjunto de productos que
         // cayó en el rango filtrado — por eso se recorren todos los productos de cada pedido
@@ -128,6 +135,8 @@ public class PlanificacionCompraService {
                     pedido.getId(),
                     pedido.getCodigoInterno(),
                     pedido.getColegio().getNombre(),
+                    pedido.getEstadoActual(),
+                    tandaPorIdPedido.get(pedido.getId()),
                     pedido.getFechaVenta(),
                     pedido.getFechaEstimadaEntrega(),
                     porcentajePagado,
@@ -169,8 +178,6 @@ public class PlanificacionCompraService {
         }
 
         planificacion.setNombre(request.nombre() != null ? request.nombre().trim() : "");
-        planificacion.setFechaDesde(request.fechaDesde());
-        planificacion.setFechaHasta(request.fechaHasta());
 
         List<Long> idsUnicos = request.idsProductos() != null
             ? request.idsProductos().stream().distinct().toList()
@@ -205,12 +212,28 @@ public class PlanificacionCompraService {
                 .build());
         }
 
+        actualizarPeriodo(planificacion, productos);
+
         return construirRespuestaCabecera(planificacionCompraRepository.save(planificacion));
     }
 
-    /** Para "continuar editando" un borrador desde el listado: trae nombre/fechas/ids tal cual
-     *  quedaron guardados (el resto de los filtros de la pantalla, como tipo de prenda o rango
-     *  de % pagado, son solo de UI y no se persisten). */
+    /**
+     * El período de la planificación ("Entregas del X al Y") ya no lo carga nadie: es la menor
+     * y la mayor fecha estimada de entrega de los pedidos de los productos elegidos. Sin
+     * productos queda vacío.
+     */
+    private void actualizarPeriodo(PlanificacionCompra planificacion, List<Producto> productos) {
+        List<LocalDate> fechas = productos.stream()
+            .map(producto -> producto.getPedido().getFechaEstimadaEntrega())
+            .sorted()
+            .toList();
+        planificacion.setFechaDesde(fechas.isEmpty() ? null : fechas.get(0));
+        planificacion.setFechaHasta(fechas.isEmpty() ? null : fechas.get(fechas.size() - 1));
+    }
+
+    /** Para "continuar editando" un borrador desde el listado: trae nombre/ids tal cual
+     *  quedaron guardados (los filtros de la pantalla — tanda, pagos, tipo de prenda, fecha —
+     *  son solo de UI y no se persisten). */
     @Transactional(readOnly = true)
     public PlanificacionCompraBorradorResponse obtenerBorrador(Long id, Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_GESTION_COMPRAS);
@@ -223,15 +246,13 @@ public class PlanificacionCompraService {
         return new PlanificacionCompraBorradorResponse(
             planificacion.getId(),
             planificacion.getNombre(),
-            planificacion.getFechaDesde(),
-            planificacion.getFechaHasta(),
             idsProductos
         );
     }
 
     /**
      * Convierte un BORRADOR en CONFIRMADA: acá sí se exige todo lo que guardarBorrador dejaba
-     * pasar (nombre, fechas, al menos un producto, todos con diseño completo — revalida server-
+     * pasar (nombre, al menos un producto, todos con diseño completo — revalida server-
      * side por si el front quedó desactualizado entre que se abrió la pantalla y se confirmó).
      * Calcula los PlanificacionCompraDetalle (ver calcularDetalles) y vacía productosBorrador,
      * que ya no hace falta una vez que existe el detalle calculado.
@@ -247,13 +268,6 @@ public class PlanificacionCompraService {
         if (planificacion.getNombre() == null || planificacion.getNombre().isBlank()) {
             throw new BusinessRuleException("Ingresá un nombre para la planificación antes de confirmar");
         }
-        if (planificacion.getFechaDesde() == null || planificacion.getFechaHasta() == null) {
-            throw new BusinessRuleException("Elegí un rango de fechas antes de confirmar");
-        }
-        if (planificacion.getFechaHasta().isBefore(planificacion.getFechaDesde())) {
-            throw new BusinessRuleException("La fecha hasta no puede ser anterior a la fecha desde");
-        }
-
         List<Producto> productos = planificacion.getProductosBorrador().stream()
             .map(PlanificacionCompraProductoBorrador::getProducto)
             .toList();
@@ -274,23 +288,58 @@ public class PlanificacionCompraService {
             detalles.addAll(calcularDetalles(planificacion, producto));
         }
         planificacion.getDetalles().addAll(detalles);
+        actualizarPeriodo(planificacion, productos);
         planificacion.getProductosBorrador().clear();
         planificacion.setEstado(EstadoPlanificacionCompra.CONFIRMADA);
 
         return construirRespuestaCabecera(planificacionCompraRepository.save(planificacion));
     }
 
-    /** Solo mientras está en BORRADOR — una vez CONFIRMADA no se puede eliminar (ver
-     *  doc/pantallas-pendientes.md: tampoco se puede editar, ninguna de las dos cosas cambia acá). */
+    /**
+     * "Editar" una planificación CONFIRMADA: vuelve a BORRADOR con los mismos productos
+     * tildados y se descarta la foto calculada (PlanificacionCompraDetalle), que se vuelve a
+     * calcular al confirmar de nuevo — así la edición reusa todo el flujo de borradores
+     * (guardarBorrador/confirmar) en vez de tener un segundo camino para modificar detalles.
+     * Mientras está reabierta sus productos dejan de figurar como "ya planificados".
+     */
     @Transactional
-    public void eliminarBorrador(Long id, Long idUsuarioActor) {
+    public PlanificacionCompraResponse reabrir(Long id, Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_GESTION_COMPRAS);
 
         PlanificacionCompra planificacion = obtenerPlanificacion(id);
-        if (planificacion.getEstado() != EstadoPlanificacionCompra.BORRADOR) {
-            throw new BusinessRuleException("Solo se puede eliminar una planificación mientras está en borrador");
+        if (planificacion.getEstado() != EstadoPlanificacionCompra.CONFIRMADA) {
+            throw new BusinessRuleException("Esta planificación ya está en borrador");
         }
-        planificacionCompraRepository.delete(planificacion);
+
+        // Un detalle por (producto, tela, color): se deduplica por producto. Las prendas dadas
+        // de baja después de confirmar no vuelven al borrador.
+        Map<Long, Producto> productosPorId = new LinkedHashMap<>();
+        for (PlanificacionCompraDetalle detalle : planificacion.getDetalles()) {
+            Producto producto = detalle.getProducto();
+            if (producto.isHabilitado()) {
+                productosPorId.putIfAbsent(producto.getId(), producto);
+            }
+        }
+        for (Producto producto : productosPorId.values()) {
+            planificacion.getProductosBorrador().add(PlanificacionCompraProductoBorrador.builder()
+                .planificacionCompra(planificacion)
+                .producto(producto)
+                .build());
+        }
+        planificacion.getDetalles().clear();
+        planificacion.setEstado(EstadoPlanificacionCompra.BORRADOR);
+
+        return construirRespuestaCabecera(planificacionCompraRepository.save(planificacion));
+    }
+
+    /** En cualquier estado: una CONFIRMADA también se puede eliminar (se borra con su detalle
+     *  calculado). Nada más depende de una planificación — todavía no se conecta con compras
+     *  reales ni con stock. */
+    @Transactional
+    public void eliminar(Long id, Long idUsuarioActor) {
+        autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_GESTION_COMPRAS);
+
+        planificacionCompraRepository.delete(obtenerPlanificacion(id));
     }
 
     @Transactional(readOnly = true)

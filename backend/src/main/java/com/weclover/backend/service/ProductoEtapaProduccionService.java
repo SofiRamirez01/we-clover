@@ -225,7 +225,8 @@ public class ProductoEtapaProduccionService {
 
     @Transactional
     public ProductoEtapasResponse marcarEtapa(
-            Long idProducto, EtapaProduccion etapa, boolean completado, Long idEmpleado, Long idUsuarioActor) {
+            Long idProducto, EtapaProduccion etapa, boolean completado, Long idEmpleado, String comentario,
+            Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_ETAPAS);
 
         Producto producto = obtenerProducto(idProducto);
@@ -241,7 +242,7 @@ public class ProductoEtapaProduccionService {
         ProductoEtapaProduccion fila = productoEtapaProduccionRepository.findByProductoAndEtapa(producto, etapa)
             .orElseThrow(() -> new ResourceNotFoundException("No existe la etapa " + etapa + " para este producto"));
 
-        aplicarMarcado(fila, completado, idEmpleado, idUsuarioActor);
+        aplicarMarcado(fila, completado, idEmpleado, comentario, idUsuarioActor);
         productoEtapaProduccionRepository.save(fila);
 
         estadoPedidoService.recalcularEstadoPedido(producto.getPedido().getId());
@@ -273,7 +274,7 @@ public class ProductoEtapaProduccionService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "No existe la etapa " + item.etapa() + " para el producto #" + producto.getId()));
 
-            aplicarMarcado(fila, item.completado(), item.idEmpleado(), idUsuarioActor);
+            aplicarMarcado(fila, item.completado(), item.idEmpleado(), item.comentario(), idUsuarioActor);
             productoEtapaProduccionRepository.save(fila);
             idsPedidosAfectados.add(producto.getPedido().getId());
         }
@@ -298,8 +299,10 @@ public class ProductoEtapaProduccionService {
      *  Producto.estadoProduccion y agrega una fila nueva a MovimientoEstado con la etapa y el
      *  estado anterior/nuevo — "cada cambio en producción" queda registrado, sin importar si
      *  el valor efectivamente cambió (misma llamada puede reasignar el empleado sin tocar
-     *  completado, por ejemplo, y eso también es un cambio que auditar). */
-    private void aplicarMarcado(ProductoEtapaProduccion fila, boolean completado, Long idEmpleado, Long idUsuarioActor) {
+     *  completado, por ejemplo, y eso también es un cambio que auditar). El comentario
+     *  opcional de quien marca queda en MovimientoEstado.observaciones. */
+    private void aplicarMarcado(
+            ProductoEtapaProduccion fila, boolean completado, Long idEmpleado, String comentario, Long idUsuarioActor) {
         fila.setCompletado(completado);
         fila.setFechaCompletado(completado ? LocalDate.now() : null);
         if (idEmpleado != null) {
@@ -328,6 +331,7 @@ public class ProductoEtapaProduccionService {
             .fechaHora(LocalDateTime.now())
             .usuario(actor)
             .unidades(producto.getCantidadTotal())
+            .observaciones(comentario == null || comentario.isBlank() ? null : comentario.trim())
             .build());
     }
 

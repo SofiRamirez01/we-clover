@@ -8,11 +8,10 @@ import type {
   ProductoElegibleResponse,
 } from '../types/planificacionCompra';
 
-/** Filtra por Pedido.fechaEstimadaEntrega (no fecha de venta) — ver backend, CAMBIO 4. */
-export async function listarProductosElegibles(fechaDesde: string, fechaHasta: string): Promise<ProductoElegibleResponse[]> {
-  const { data } = await api.get<ProductoElegibleResponse[]>('/productos/elegibles-planificacion', {
-    params: { fechaDesde, fechaHasta },
-  });
+/** Trae todos los productos candidatos; la pantalla filtra por tanda, pagos, tipo de prenda y
+ *  fecha de entrega del lado del cliente. */
+export async function listarProductosElegibles(): Promise<ProductoElegibleResponse[]> {
+  const { data } = await api.get<ProductoElegibleResponse[]>('/productos/elegibles-planificacion');
   return data;
 }
 
@@ -39,6 +38,14 @@ export async function confirmarPlanificacion(id: number): Promise<PlanificacionC
   return data;
 }
 
+/** Editar una planificación confirmada: vuelve a borrador con sus productos tildados (el
+ *  consumo se recalcula al confirmar de nuevo). */
+export async function reabrirPlanificacion(id: number): Promise<PlanificacionCompraResponse> {
+  const { data } = await api.post<PlanificacionCompraResponse>(`/planificaciones-compra/${id}/reabrir`);
+  return data;
+}
+
+/** Sirve para cualquier estado: borrador o confirmada. */
 export async function eliminarPlanificacion(id: number): Promise<void> {
   await api.delete(`/planificaciones-compra/${id}`);
 }

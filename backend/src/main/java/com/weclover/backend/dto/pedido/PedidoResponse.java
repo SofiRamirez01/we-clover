@@ -48,11 +48,10 @@ public record PedidoResponse(
     ResponsableCurso responsableCurso,
     boolean contratoFirmado,
     Integer cantidadCuotas,
-    /** Rank (1 = más prioritario) entre los pedidos activos (no ENTREGADO/CANCELADO) por
-     *  porcentajePagado descendente, calculado al vuelo. Null si el pedido no está activo. */
-    Integer prioridadAutomatica,
-    /** Si no es null, es la prioridad "oficial" por sobre prioridadAutomatica (ver
-     *  Pedido.prioridadManual). */
-    Integer prioridadManual
+    /** Puntaje sugerido: rank (1 = primero) entre los pedidos activos (no ENTREGADO/CANCELADO)
+     *  por porcentajePagado descendente, calculado al vuelo. Es solo una referencia: la
+     *  prioridad real la define la tanda, que es información interna y no viaja en este DTO.
+     *  Null si el pedido no está activo. */
+    Integer prioridadAutomatica
 ) {
 }

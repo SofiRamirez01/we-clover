@@ -33,6 +33,7 @@ interface ModalCargaMasivaProps {
 export default function ModalCargaMasiva({ empleados, onCerrar, onConfirmado }: ModalCargaMasivaProps) {
   const [etapa, setEtapa] = useState<EtapaProduccion | ''>('');
   const [idEmpleado, setIdEmpleado] = useState<number | ''>('');
+  const [comentario, setComentario] = useState('');
   const [pedidos, setPedidos] = useState<ProduccionPedidoResponse[] | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +123,7 @@ export default function ModalCargaMasiva({ empleados, onCerrar, onConfirmado }: 
           etapa,
           completado: true,
           idEmpleado: idEmpleado === '' ? null : idEmpleado,
+          comentario: comentario.trim() || null,
         })),
       );
       onConfirmado();
@@ -176,6 +178,19 @@ export default function ModalCargaMasiva({ empleados, onCerrar, onConfirmado }: 
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="flex min-w-[12rem] flex-1 flex-col gap-1">
+            <label className="text-xs font-semibold text-wc-text">Comentario (opcional, todo el lote)</label>
+            <input
+              type="text"
+              value={comentario}
+              maxLength={255}
+              disabled={!etapa}
+              onChange={(e) => setComentario(e.target.value)}
+              placeholder="Ej.: se repite bordado por falla"
+              className="rounded-lg border border-wc-border bg-white px-2 py-1.5 text-sm text-wc-text disabled:opacity-50"
+            />
           </div>
         </div>
 

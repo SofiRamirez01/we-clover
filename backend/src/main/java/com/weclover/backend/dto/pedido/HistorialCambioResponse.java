@@ -37,6 +37,32 @@ public record HistorialCambioResponse(
      *  EstadoPedidoService) y en ESTADO_PRODUCCION sin actor (carga retroactiva, recálculo por
      *  cambio de etapas aplicables) — un marcado de etapa siempre tiene un actor humano. */
     String nombreUsuario,
-    String emailUsuario
+    String emailUsuario,
+
+    /** Solo para ASIGNACION_TANDA (null en el resto). id/nombre null = "sin tanda"; el nombre
+     *  es el que tenía la tanda en ese momento. El motivo viaja en `observaciones`. */
+    Long idTandaAnterior,
+    String nombreTandaAnterior,
+    Long idTandaNueva,
+    String nombreTandaNueva,
+    /** Null si el cambio no vino del popup de priorización (salida por cancelación). */
+    Long idSesionPriorizacion,
+    SnapshotAsignacionTandaResponse snapshotTanda,
+
+    /** Solo para UBICACION (null en el resto). null = sin ubicación cargada. */
+    String ubicacionAnterior,
+    String ubicacionNueva
 ) {
+
+    /** Fila de cualquier tipo que no sea ASIGNACION_TANDA ni UBICACION: esos campos van null. */
+    public HistorialCambioResponse(
+            Long id, LocalDateTime fechaCambio, TipoEventoHistorial tipoEvento,
+            EstadoPedido estadoPedido, String observaciones,
+            String tipoPrenda, EtapaProduccion etapa, Boolean etapaCompletado, String nombreEmpleadoAsignado,
+            EstadoProduccion estadoProduccionAnterior, EstadoProduccion estadoProduccionNuevo,
+            String nombreUsuario, String emailUsuario) {
+        this(id, fechaCambio, tipoEvento, estadoPedido, observaciones, tipoPrenda, etapa, etapaCompletado,
+            nombreEmpleadoAsignado, estadoProduccionAnterior, estadoProduccionNuevo, nombreUsuario, emailUsuario,
+            null, null, null, null, null, null, null, null);
+    }
 }

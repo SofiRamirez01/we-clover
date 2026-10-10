@@ -7,7 +7,13 @@ interface FilaProductoProduccionProps {
   producto: ProduccionProductoResponse;
   empleados: UsuarioResumen[];
   guardandoClave: string | null;
-  onMarcarEtapa: (idProducto: number, etapa: (typeof ETAPAS_PRODUCCION)[number], completado: boolean, idEmpleado: number | null) => void;
+  onMarcarEtapa: (
+    idProducto: number,
+    etapa: (typeof ETAPAS_PRODUCCION)[number],
+    completado: boolean,
+    idEmpleado: number | null,
+    comentario?: string,
+  ) => void;
   onMarcarBandera: (idProducto: number, estadoBandera: EstadoBandera) => void;
 }
 
@@ -58,7 +64,9 @@ export default function FilaProductoProduccion({
                 etapa={etapa}
                 empleados={empleados}
                 guardando={guardandoClave === `etapa-${producto.id}-${etapaNombre}`}
-                onCambiar={(completado, idEmpleado) => onMarcarEtapa(producto.id, etapaNombre, completado, idEmpleado)}
+                onCambiar={(completado, idEmpleado, comentario) =>
+                  onMarcarEtapa(producto.id, etapaNombre, completado, idEmpleado, comentario)
+                }
               />
             </td>
           );

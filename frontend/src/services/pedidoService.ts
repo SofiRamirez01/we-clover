@@ -55,14 +55,3 @@ export async function importarPedidosExcel(archivo: File): Promise<ImportacionPe
   });
   return data;
 }
-
-/** Fija la prioridad manual del pedido (ver Pantalla de Producción) — pisa la automática hasta
- *  que se quite con quitarPrioridadManualPedido. */
-export async function asignarPrioridadManualPedido(id: number, prioridad: number): Promise<void> {
-  await api.put(`/pedidos/${id}/prioridad`, { prioridad });
-}
-
-/** Vuelve a prioridad automática (rank por % de pago). */
-export async function quitarPrioridadManualPedido(id: number): Promise<void> {
-  await api.delete(`/pedidos/${id}/prioridad`);
-}
