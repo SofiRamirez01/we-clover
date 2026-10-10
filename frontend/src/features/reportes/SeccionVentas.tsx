@@ -126,8 +126,7 @@ export default function SeccionVentas({ filtros }: SeccionVentasProps) {
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="m-0 text-lg font-semibold text-wc-text">Ventas</h2>
+    <section aria-label="Ventas" className="flex flex-col gap-3">
       {contenido}
     </section>
   );

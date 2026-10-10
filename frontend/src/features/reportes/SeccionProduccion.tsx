@@ -51,13 +51,14 @@ export default function SeccionProduccion({ filtros, mostrarOjal }: SeccionProdu
 
       contenido = (
         <div className={`flex flex-col gap-4 transition-opacity ${cargando ? 'opacity-60' : ''}`} aria-busy={cargando}>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 min-[30rem]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             {estados.map((fila) => (
               <KpiCard
                 key={fila.estado}
                 label={ESTADO_PRODUCCION_LABELS[fila.estado]}
                 valor={formatoEntero(fila.unidades)}
                 color={COLORES_ESTADO_PRODUCCION[fila.estado]}
+                disposicion="en-linea"
                 detalle={fila.estado === 'ENTREGADO' ? 'Ya salió de planta.' : fila.estado === 'TERMINADO' ? 'Lista, todavía en planta.' : undefined}
               />
             ))}
@@ -105,8 +106,7 @@ export default function SeccionProduccion({ filtros, mostrarOjal }: SeccionProdu
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="m-0 text-lg font-semibold text-wc-text">Producción</h2>
+    <section aria-label="Producción" className="flex flex-col gap-3">
       {contenido}
     </section>
   );
