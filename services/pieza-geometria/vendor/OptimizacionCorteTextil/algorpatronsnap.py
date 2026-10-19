@@ -794,7 +794,7 @@ def genetic_algorithm_margin_placement(margin_polygons,
                                        stagnation_limit=40,
                                        restart_rate=0.3,
                                        doblez=None,
-                                       mutation_rate_modo=0.0,
+                                       mutation_rate_modo=0.1,
                                        on_generation=None,
                                        cancelado=None,
                                        verbose=True):
