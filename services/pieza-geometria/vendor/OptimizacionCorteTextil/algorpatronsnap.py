@@ -358,12 +358,13 @@ def _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez, attempts, e
 
 
 def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_individual_attempts=500,
-                             max_placement_attempts=200, doblez=None):
+                             max_placement_attempts=200, doblez=None, cancelado=None):
     """Create a population of valid individuals with non-overlapping in-bounds margin polygons."""
     doblez = doblez or x_bounds
     plantillas = _preparar_entradas(margin_polygons)
     population = []
     for _ in range(size):
+        _revisar_cancelacion(cancelado)
         for _ in range(max_individual_attempts):
             individual = []
             placed_data = []
@@ -806,15 +807,15 @@ def genetic_algorithm_margin_placement(margin_polygons,
     - doblez: (x_izquierdo, x_derecho) donde va el eje de las mitades; por defecto x_bounds.
     - mutation_rate_modo: probabilidad de alternar una ranura entre 1 entera y 2 mitades.
     - on_generation(gen, total, mejor_fitness, mejor_largo): se llama en cada generación.
-    - cancelado: threading.Event; si está activo al inicio de una generación se lanza
-      CorteCancelado.
+    - cancelado: threading.Event; si está activo al inicio de una generación (o mientras se
+      arma la población inicial) se lanza CorteCancelado.
     - verbose: si es False no imprime la línea por generación.
     Los genes de best_individual llevan modo, rotacion, activo e indice_entrada.
     """
     doblez = doblez or x_bounds
     plantillas = _preparar_entradas(margin_polygons)
     population = create_margin_population(population_size, plantillas, x_bounds, y_bounds,
-                                          doblez=doblez)
+                                          doblez=doblez, cancelado=cancelado)
 
     best_individual = None
     best_fitness = float('-inf')
