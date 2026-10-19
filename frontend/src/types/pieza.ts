@@ -48,6 +48,9 @@ export interface PiezaResponse {
   anchoBaseCm: number;
   largoBaseCm: number;
   activo: boolean;
+  /** "Tela de la pieza": tipo de insumo en el que se corta; los dos en null si es del cuerpo. */
+  idTipoInsumo: number | null;
+  nombreTipoInsumo: string | null;
 }
 
 /** Detalle completo (incluye los segmentos originales), para reabrir el editor al editar/duplicar. */
@@ -63,6 +66,9 @@ export interface PiezaDetalleResponse {
   anchoBaseCm: number;
   largoBaseCm: number;
   activo: boolean;
+  /** "Tela de la pieza": tipo de insumo en el que se corta; los dos en null si es del cuerpo. */
+  idTipoInsumo: number | null;
+  nombreTipoInsumo: string | null;
 }
 
 export interface GrupoTalleOption {

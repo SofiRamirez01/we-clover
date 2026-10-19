@@ -53,13 +53,6 @@ function renderDetalle(h: HistorialCambioResponse) {
       </>
     );
   }
-  if (h.tipoEvento === 'UBICACION') {
-    return (
-      <div>
-        Ubicación: {h.ubicacionAnterior ?? 'Sin ubicación'} → {h.ubicacionNueva ?? 'Sin ubicación'}
-      </div>
-    );
-  }
   const cambioEstadoProduccion =
     h.estadoProduccionNuevo && h.estadoProduccionAnterior !== h.estadoProduccionNuevo
       ? `${h.estadoProduccionAnterior ? ESTADO_PRODUCCION_LABELS[h.estadoProduccionAnterior] : '—'} → ${ESTADO_PRODUCCION_LABELS[h.estadoProduccionNuevo]}`

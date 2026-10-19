@@ -21,7 +21,6 @@ public record ProduccionPedidoResponse(
     Integer prioridadAutomatica,
     /** Null = sin tanda. */
     ProduccionTandaResponse tanda,
-    String ubicacionActual,
     /** La nota más reciente del pedido (null si no tiene); el resto se pide aparte. */
     NotaPedidoResponse ultimaNota,
     int cantidadNotas,

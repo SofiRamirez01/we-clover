@@ -47,14 +47,10 @@ public record HistorialCambioResponse(
     String nombreTandaNueva,
     /** Null si el cambio no vino del popup de priorización (salida por cancelación). */
     Long idSesionPriorizacion,
-    SnapshotAsignacionTandaResponse snapshotTanda,
-
-    /** Solo para UBICACION (null en el resto). null = sin ubicación cargada. */
-    String ubicacionAnterior,
-    String ubicacionNueva
+    SnapshotAsignacionTandaResponse snapshotTanda
 ) {
 
-    /** Fila de cualquier tipo que no sea ASIGNACION_TANDA ni UBICACION: esos campos van null. */
+    /** Fila de cualquier tipo que no sea ASIGNACION_TANDA: los campos de tanda van null. */
     public HistorialCambioResponse(
             Long id, LocalDateTime fechaCambio, TipoEventoHistorial tipoEvento,
             EstadoPedido estadoPedido, String observaciones,
@@ -63,6 +59,6 @@ public record HistorialCambioResponse(
             String nombreUsuario, String emailUsuario) {
         this(id, fechaCambio, tipoEvento, estadoPedido, observaciones, tipoPrenda, etapa, etapaCompletado,
             nombreEmpleadoAsignado, estadoProduccionAnterior, estadoProduccionNuevo, nombreUsuario, emailUsuario,
-            null, null, null, null, null, null, null, null);
+            null, null, null, null, null, null);
     }
 }

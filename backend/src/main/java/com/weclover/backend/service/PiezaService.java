@@ -3,6 +3,7 @@ package com.weclover.backend.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -16,14 +17,18 @@ import com.weclover.backend.dto.pieza.SegmentoDto;
 import com.weclover.backend.entity.GrupoTalle;
 import com.weclover.backend.entity.Pieza;
 import com.weclover.backend.entity.PiezaTalle;
+import com.weclover.backend.entity.ProductoInsumoPieza;
 import com.weclover.backend.entity.TablaTalle;
+import com.weclover.backend.entity.TipoInsumo;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.mapper.PiezaMapper;
 import com.weclover.backend.repository.GrupoTalleRepository;
 import com.weclover.backend.repository.PiezaRepository;
 import com.weclover.backend.repository.PiezaTalleRepository;
+import com.weclover.backend.repository.ProductoInsumoPiezaRepository;
 import com.weclover.backend.repository.TablaTalleRepository;
+import com.weclover.backend.repository.TipoInsumoRepository;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -36,6 +41,8 @@ public class PiezaService {
     private final PiezaTalleRepository piezaTalleRepository;
     private final GrupoTalleRepository grupoTalleRepository;
     private final TablaTalleRepository tablaTalleRepository;
+    private final TipoInsumoRepository tipoInsumoRepository;
+    private final ProductoInsumoPiezaRepository productoInsumoPiezaRepository;
     private final PiezaMapper piezaMapper;
     private final PiezaGeometriaClient piezaGeometriaClient;
     private final AutorizacionService autorizacionService;
@@ -48,6 +55,7 @@ public class PiezaService {
             Long idTalleBase,
             List<SegmentoDto> segmentos,
             boolean simetrica,
+            Long idTipoInsumo,
             Long idUsuarioActor) {
         autorizacionService.verificarRolAdministrativo(idUsuarioActor);
 
@@ -55,6 +63,7 @@ public class PiezaService {
         TablaTalle talleBase = obtenerTalleBase(idTalleBase);
         validarTalleBasePerteneceAGrupo(talleBase, grupoTalle);
         validarNombreDisponible(idGrupoTalle, nombre, grupoTalle, null);
+        TipoInsumo tipoInsumo = obtenerTipoInsumoDePieza(idTipoInsumo, null);
 
         PiezaGeometriaCalculoResponse calculo = piezaGeometriaClient.calcularBase(segmentos, simetrica);
 
@@ -64,6 +73,7 @@ public class PiezaService {
             .talleBase(talleBase)
             .segmentosBaseJson(objectMapper.writeValueAsString(segmentos))
             .simetrica(simetrica)
+            .tipoInsumo(tipoInsumo)
             .activo(true)
             .build();
         pieza = piezaRepository.save(pieza);
@@ -81,6 +91,7 @@ public class PiezaService {
             Long idTalleBase,
             List<SegmentoDto> segmentos,
             boolean simetrica,
+            Long idTipoInsumo,
             Long idUsuarioActor) {
         autorizacionService.verificarRolAdministrativo(idUsuarioActor);
 
@@ -91,6 +102,10 @@ public class PiezaService {
         TablaTalle talleBase = obtenerTalleBase(idTalleBase);
         validarTalleBasePerteneceAGrupo(talleBase, grupoTalle);
         validarNombreDisponible(idGrupoTalle, nombre, grupoTalle, id);
+        TipoInsumo tipoInsumo = obtenerTipoInsumoDePieza(idTipoInsumo, pieza.getTipoInsumo());
+        if (!Objects.equals(pieza.getTipoInsumo(), tipoInsumo)) {
+            descartarAsignacionesInsumo(pieza);
+        }
 
         PiezaGeometriaCalculoResponse calculo = piezaGeometriaClient.calcularBase(segmentos, simetrica);
 
@@ -99,6 +114,7 @@ public class PiezaService {
         pieza.setTalleBase(talleBase);
         pieza.setSegmentosBaseJson(objectMapper.writeValueAsString(segmentos));
         pieza.setSimetrica(simetrica);
+        pieza.setTipoInsumo(tipoInsumo);
         pieza = piezaRepository.save(pieza);
 
         PiezaTalle piezaTalleBase = upsertBase(pieza, talleBase, calculo);
@@ -198,7 +214,9 @@ public class PiezaService {
             pieza.isSimetrica(),
             piezaTalleBase.getAnchoCm(),
             piezaTalleBase.getLargoCm(),
-            pieza.isActivo());
+            pieza.isActivo(),
+            pieza.getTipoInsumo() != null ? pieza.getTipoInsumo().getId() : null,
+            pieza.getTipoInsumo() != null ? pieza.getTipoInsumo().getNombre() : null);
     }
 
     /**
@@ -243,7 +261,38 @@ public class PiezaService {
         return new PiezaResponse(
             mapeada.id(), mapeada.nombre(), mapeada.idGrupoTalle(), mapeada.nombreGrupoTalle(),
             mapeada.idTalleBase(), mapeada.talleBase(), mapeada.simetrica(),
-            anchoBaseCm, largoBaseCm, mapeada.activo());
+            anchoBaseCm, largoBaseCm, mapeada.activo(), mapeada.idTipoInsumo(), mapeada.nombreTipoInsumo());
+    }
+
+    /**
+     * "Tela de la pieza": null = cuerpo. Solo se puede elegir un tipo que consume material
+     * (una marca como Estampado no es una tela) y que esté activo — salvo que sea el que la
+     * pieza ya tenía: un tipo inactivo sigue valiendo donde ya se usa.
+     */
+    private TipoInsumo obtenerTipoInsumoDePieza(Long idTipoInsumo, TipoInsumo actual) {
+        if (idTipoInsumo == null) {
+            return null;
+        }
+        TipoInsumo tipoInsumo = tipoInsumoRepository.findById(idTipoInsumo)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el tipo de insumo con id " + idTipoInsumo));
+        if (!tipoInsumo.isConsumeMaterial()) {
+            throw new BusinessRuleException(
+                "\"" + tipoInsumo.getNombre() + "\" no es una tela: no se puede elegir como tela de una pieza");
+        }
+        if (!tipoInsumo.isActivo() && !tipoInsumo.equals(actual)) {
+            throw new BusinessRuleException("El tipo de insumo \"" + tipoInsumo.getNombre() + "\" ya no está disponible");
+        }
+        return tipoInsumo;
+    }
+
+    /**
+     * Al cambiar la tela de la pieza, las fichas que tenían asignado alguno de sus pines a una
+     * fila de insumo pierden esa asignación: era de otro tipo. Se sacan de la colección de su
+     * fila (orphanRemoval), igual que en PatronCortePosicionPiezaService.
+     */
+    private void descartarAsignacionesInsumo(Pieza pieza) {
+        List<ProductoInsumoPieza> asignaciones = productoInsumoPiezaRepository.findByPosicionPieza_Pieza_Id(pieza.getId());
+        asignaciones.forEach(asignacion -> asignacion.getProductoInsumo().getAsignacionesPieza().remove(asignacion));
     }
 
     private GrupoTalle obtenerGrupoTalle(Long idGrupoTalle) {

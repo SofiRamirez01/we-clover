@@ -43,6 +43,7 @@ public class PiezaController {
             request.idTalleBase(),
             request.segmentos(),
             request.simetrica(),
+            request.idTipoInsumo(),
             idUsuarioActor);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -91,6 +92,7 @@ public class PiezaController {
             request.idTalleBase(),
             request.segmentos(),
             request.simetrica(),
+            request.idTipoInsumo(),
             idUsuarioActor);
     }
 }

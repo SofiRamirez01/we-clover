@@ -11,12 +11,3 @@ export async function agregarNotaPedido(idPedido: number, texto: string): Promis
   const { data } = await api.post<NotaPedido>(`/pedidos/${idPedido}/notas`, { texto });
   return data;
 }
-
-/** Texto vacío = el pedido queda sin ubicación. Devuelve la ubicación guardada. */
-export async function cambiarUbicacionPedido(idPedido: number, ubicacion: string): Promise<string | null> {
-  const { data } = await api.patch<{ idPedido: number; ubicacionActual: string | null }>(
-    `/pedidos/${idPedido}/ubicacion`,
-    { ubicacion: ubicacion.trim() || null },
-  );
-  return data.ubicacionActual;
-}

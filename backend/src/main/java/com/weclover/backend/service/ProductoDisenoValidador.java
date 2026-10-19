@@ -15,18 +15,24 @@ import com.weclover.backend.entity.Producto;
  */
 public final class ProductoDisenoValidador {
 
-    /** Tipo de tela + descripción sugeridos para un insumo secundario automático (ver
-     *  ProductoService.sugerirInsumoSecundario, que reusa este mismo mapa). */
-    public record InsumoSugerido(String codigoTipoTela, String descripcion) {
+    /**
+     * Insumo secundario que una prenda debe tener: se identifica por el código de su tipo (ver
+     * TipoInsumoCodigos), no por texto. `codigoTipoTela` es la tela con la que se sugiere
+     * automáticamente (ver ProductoService.sugerirInsumoSecundario, que reusa este mismo mapa)
+     * y `descripcion` el texto del mensaje de faltantes — queda acá, y no se lee del catálogo,
+     * para que este cálculo siga sin depender de ningún repositorio.
+     */
+    public record InsumoSugerido(String codigoTipoInsumo, String codigoTipoTela, String descripcion) {
     }
 
+    private static final InsumoSugerido CAPUCHA = new InsumoSugerido(TipoInsumoCodigos.CAPUCHA, "JERSEY", "Capucha");
+    private static final InsumoSugerido PUNOS_CINTURA =
+        new InsumoSugerido(TipoInsumoCodigos.PUNOS_CINTURA, "RIBB", "Puños y cintura");
+    private static final InsumoSugerido CIERRE = new InsumoSugerido(TipoInsumoCodigos.CIERRE, "CIERRE", "Cierre");
+
     public static final Map<String, List<InsumoSugerido>> CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA = Map.of(
-        "Buzo", List.of(new InsumoSugerido("JERSEY", "Capucha"), new InsumoSugerido("RIBB", "Puños y cintura")),
-        "Campera", List.of(
-            new InsumoSugerido("CIERRE", "Cierre"),
-            new InsumoSugerido("JERSEY", "Capucha"),
-            new InsumoSugerido("RIBB", "Puños y cintura")
-        )
+        "Buzo", List.of(CAPUCHA, PUNOS_CINTURA),
+        "Campera", List.of(CIERRE, CAPUCHA, PUNOS_CINTURA)
     );
 
     private ProductoDisenoValidador() {
@@ -59,9 +65,9 @@ public final class ProductoDisenoValidador {
             List<String> faltantes = CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA
                 .getOrDefault(producto.getTipoPrenda().getNombre(), List.of())
                 .stream()
+                .filter(sugerido -> producto.getInsumosSecundarios().stream()
+                    .noneMatch(insumo -> TipoInsumoCodigos.esDeTipo(insumo, sugerido.codigoTipoInsumo())))
                 .map(InsumoSugerido::descripcion)
-                .filter(descripcion -> producto.getInsumosSecundarios().stream()
-                    .noneMatch(insumo -> descripcion.equals(insumo.getDescripcion())))
                 .toList();
 
             if (!faltantes.isEmpty()) {

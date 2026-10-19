@@ -10,6 +10,9 @@ public record PiezaResponse(
     boolean simetrica,
     double anchoBaseCm,
     double largoBaseCm,
-    boolean activo
+    boolean activo,
+    /** Tipo de insumo en el que se corta la pieza; los dos en null si es del cuerpo. */
+    Long idTipoInsumo,
+    String nombreTipoInsumo
 ) {
 }

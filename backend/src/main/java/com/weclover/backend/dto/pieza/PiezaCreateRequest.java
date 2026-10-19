@@ -12,6 +12,8 @@ public record PiezaCreateRequest(
     @NotNull Long idGrupoTalle,
     @NotNull Long idTalleBase,
     @NotEmpty @Valid List<SegmentoDto> segmentos,
-    boolean simetrica
+    boolean simetrica,
+    /** "Tela de la pieza": tipo de insumo en el que se corta (ver TipoInsumo), o null = cuerpo. */
+    Long idTipoInsumo
 ) {
 }

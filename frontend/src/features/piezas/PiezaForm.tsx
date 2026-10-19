@@ -4,10 +4,12 @@ import { listarGruposTalle } from '../../services/grupoTalleService';
 import { listarTablasTalle } from '../../services/tablaTalleService';
 import { actualizarPieza, crearPieza, obtenerPieza } from '../../services/piezaService';
 import { guardarTallesPiezaEnLote, listarTallesPieza } from '../../services/piezaTalleService';
+import { listarTiposInsumo } from '../../services/tipoInsumoService';
 import { extraerMensajeError } from '../../utils/errores';
 import SegmentoEditor from './SegmentoEditor';
 import { escalarPieza, evaluarContorno } from './geometriaPieza';
 import type { GrupoTalleOption, Segmento, TablaTalleOption } from '../../types/pieza';
+import type { TipoInsumoCatalogo } from '../../types/tipoInsumo';
 
 interface FormErrors {
   nombre?: string;
@@ -65,6 +67,11 @@ export default function PiezaForm({ modo = 'crear', piezaId, idGrupoTalleFijo, o
   const [idTalleBase, setIdTalleBase] = useState('');
   const [segmentos, setSegmentos] = useState<Segmento[]>([]);
   const [simetrica, setSimetrica] = useState(false);
+  // "Tela de la pieza": '' = Cuerpo (se corta en la tela de la prenda); si no, el tipo de insumo
+  // en el que se corta (ej. Capucha, Puños y cintura).
+  const [tiposInsumo, setTiposInsumo] = useState<TipoInsumoCatalogo[]>([]);
+  const [idTipoInsumo, setIdTipoInsumo] = useState('');
+  const [nombreTipoInsumoActual, setNombreTipoInsumoActual] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [enviando, setEnviando] = useState(false);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
@@ -78,6 +85,9 @@ export default function PiezaForm({ modo = 'crear', piezaId, idGrupoTalleFijo, o
     listarGruposTalle()
       .then(setGruposTalle)
       .catch(() => setErrors((prev) => ({ ...prev, general: 'No se pudieron cargar los grupos de talle.' })));
+    listarTiposInsumo()
+      .then((tipos) => setTiposInsumo(tipos.filter((tipo) => tipo.consumeMaterial)))
+      .catch(() => setErrors((prev) => ({ ...prev, general: 'No se pudieron cargar las telas de pieza.' })));
   }, []);
 
   useEffect(() => {
@@ -92,6 +102,8 @@ export default function PiezaForm({ modo = 'crear', piezaId, idGrupoTalleFijo, o
         setIdTalleBase(String(detalle.idTalleBase));
         setSegmentos(detalle.segmentos);
         setSimetrica(detalle.simetrica);
+        setIdTipoInsumo(detalle.idTipoInsumo != null ? String(detalle.idTipoInsumo) : '');
+        setNombreTipoInsumoActual(detalle.nombreTipoInsumo ?? null);
         setCargandoDetalle(false);
       })
       .catch(() => {
@@ -127,6 +139,7 @@ export default function PiezaForm({ modo = 'crear', piezaId, idGrupoTalleFijo, o
     setIdTalleBase('');
     setSegmentos([]);
     setSimetrica(false);
+    setIdTipoInsumo('');
     setErrors({});
   }
 
@@ -181,14 +194,16 @@ export default function PiezaForm({ modo = 'crear', piezaId, idGrupoTalleFijo, o
 
     if (!validar()) return;
 
+    const idTipoInsumoElegido = idTipoInsumo === '' ? null : Number(idTipoInsumo);
+
     setEnviando(true);
     try {
       if (modo === 'editar' && piezaId) {
-        await actualizarPieza(piezaId, nombre.trim(), Number(idGrupoTalle), Number(idTalleBase), segmentos, simetrica);
+        await actualizarPieza(piezaId, nombre.trim(), Number(idGrupoTalle), Number(idTalleBase), segmentos, simetrica, idTipoInsumoElegido);
         await recalcularGraduacionAutomatica(piezaId);
         setMensajeExito('Cambios guardados correctamente.');
       } else {
-        await crearPieza(nombre.trim(), Number(idGrupoTalle), Number(idTalleBase), segmentos, simetrica);
+        await crearPieza(nombre.trim(), Number(idGrupoTalle), Number(idTalleBase), segmentos, simetrica, idTipoInsumoElegido);
         setMensajeExito('Pieza guardada correctamente.');
         limpiarFormulario();
       }
@@ -317,6 +332,33 @@ export default function PiezaForm({ modo = 'crear', piezaId, idGrupoTalleFijo, o
         />
         ¿Es simétrica?
       </label>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="tela-pieza" className="text-sm font-semibold text-wc-text">
+          Tela de la pieza
+        </label>
+        <select
+          id="tela-pieza"
+          value={idTipoInsumo}
+          onChange={(e) => setIdTipoInsumo(e.target.value)}
+          disabled={soloLectura}
+          className="w-fit min-w-[14rem] rounded-lg border border-wc-border bg-white px-3 py-2 text-sm text-wc-text outline-none disabled:cursor-not-allowed disabled:bg-wc-bg"
+        >
+          <option value="">Cuerpo</option>
+          {tiposInsumo.map((tipo) => (
+            <option key={tipo.id} value={tipo.id}>
+              {tipo.nombre}
+            </option>
+          ))}
+          {/* Un tipo dado de baja sigue valiendo en la pieza que ya lo usa: se muestra para no perderlo. */}
+          {idTipoInsumo !== '' && !tiposInsumo.some((tipo) => String(tipo.id) === idTipoInsumo) && (
+            <option value={idTipoInsumo}>{nombreTipoInsumoActual ?? 'Tipo no disponible'}</option>
+          )}
+        </select>
+        <p className="text-xs text-wc-text-muted">
+          "Cuerpo" se corta en la tela de la prenda. Las demás se cortan en el insumo de ese tipo que tenga cada ficha (su tela y su color).
+        </p>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-semibold text-wc-text">Forma del talle base</span>

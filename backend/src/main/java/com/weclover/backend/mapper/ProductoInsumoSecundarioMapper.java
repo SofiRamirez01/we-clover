@@ -16,5 +16,10 @@ public interface ProductoInsumoSecundarioMapper {
     @Mapping(source = "color.id", target = "idPaletaColor")
     @Mapping(source = "color.nombre", target = "nombreColor")
     @Mapping(source = "color.hex", target = "hexColor")
+    @Mapping(source = "tipoInsumo.id", target = "idTipoInsumo")
+    @Mapping(source = "tipoInsumo.codigo", target = "codigoTipoInsumo")
+    @Mapping(source = "tipoInsumo.nombre", target = "nombreTipoInsumo")
+    @Mapping(target = "cantidadEditadaManualmente",
+        expression = "java(Boolean.TRUE.equals(insumo.getCantidadEditadaManualmente()))")
     ProductoInsumoSecundarioResponse toResponse(ProductoInsumoSecundario insumo);
 }

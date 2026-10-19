@@ -233,9 +233,26 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
       return;
     }
 
-    const productosValidos = prendas.filter(
-      (p) => p.idTipoPrenda !== '' && aNumero(p.cantidad) > 0 && aNumero(p.precioUnitario) > 0,
-    );
+    // El precio puede ser 0 (ej. una bandera sin costo), pero hay que escribirlo: un precio
+    // vacío se toma como olvido, no como "gratis".
+    const estaCompleta = (p: PrendaRow) =>
+      p.idTipoPrenda !== '' &&
+      aNumero(p.cantidad) > 0 &&
+      p.precioUnitario.trim() !== '' &&
+      Number.isFinite(Number(p.precioUnitario)) &&
+      Number(p.precioUnitario) >= 0;
+    // Una fila a medio cargar NO se descarta en silencio: antes el pedido se guardaba "bien"
+    // sin esa prenda (y en edición, una prenda existente a la que se le borraba el precio se
+    // daba de baja sin avisar). Solo se ignoran las filas totalmente vacías.
+    const estaVacia = (p: PrendaRow) => p.idTipoPrenda === '' && p.cantidad === '' && p.precioUnitario === '';
+    if (prendas.some((p) => !estaVacia(p) && !estaCompleta(p))) {
+      setEstado('error');
+      setMensaje(
+        'Hay una prenda incompleta: cargale artículo, cantidad y precio unitario, o quitá esa fila. Si va sin costo, poné 0 en el precio.',
+      );
+      return;
+    }
+    const productosValidos = prendas.filter(estaCompleta);
     if (productosValidos.length === 0) {
       setEstado('error');
       setMensaje('Cargá al menos una prenda con artículo, cantidad y precio unitario.');

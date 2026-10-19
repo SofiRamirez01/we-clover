@@ -17,7 +17,6 @@ interface FilaPedidoProduccionProps {
   expandido: boolean;
   empleados: UsuarioResumen[];
   guardandoClave: string | null;
-  puedeEditarUbicacion: boolean;
   onToggleExpandir: () => void;
   onMarcarEtapa: (
     idProducto: number,
@@ -28,7 +27,6 @@ interface FilaPedidoProduccionProps {
   ) => void;
   onMarcarBandera: (idProducto: number, estadoBandera: EstadoBandera) => void;
   onAgregarNota: (texto: string) => Promise<NotaPedido | null>;
-  onCambiarUbicacion: (ubicacion: string) => Promise<boolean>;
 }
 
 /** Estado legible de una prenda: el visual de etapas, o el de la bandera si es Bandera. */
@@ -52,12 +50,10 @@ export default function FilaPedidoProduccion({
   expandido,
   empleados,
   guardandoClave,
-  puedeEditarUbicacion,
   onToggleExpandir,
   onMarcarEtapa,
   onMarcarBandera,
   onAgregarNota,
-  onCambiarUbicacion,
 }: FilaPedidoProduccionProps) {
   const colorTanda = pedido.tanda ? colorDeTanda(pedido.tanda.id) : COLOR_SIN_TANDA;
   // Un pedido puede entrar a una tanda antes de estar listo: no se bloquea, se avisa.
@@ -132,12 +128,6 @@ export default function FilaPedidoProduccion({
             ))}
           </div>
 
-          {pedido.ubicacionActual && (
-            <span className="text-xs text-wc-text" title="Ubicación actual">
-              📍 {pedido.ubicacionActual}
-            </span>
-          )}
-
           {pedido.ultimaNota && (
             <span className="min-w-0 max-w-full truncate text-xs italic text-wc-text-muted" title={pedido.ultimaNota.texto}>
               “{pedido.ultimaNota.texto}”
@@ -176,12 +166,7 @@ export default function FilaPedidoProduccion({
               </tbody>
             </table>
           </div>
-          <PanelSeguimientoPedido
-            pedido={pedido}
-            puedeEditarUbicacion={puedeEditarUbicacion}
-            onAgregarNota={onAgregarNota}
-            onCambiarUbicacion={onCambiarUbicacion}
-          />
+          <PanelSeguimientoPedido pedido={pedido} onAgregarNota={onAgregarNota} />
         </>
       )}
     </div>

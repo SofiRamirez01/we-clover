@@ -18,6 +18,8 @@ public interface PiezaMapper {
     @Mapping(target = "nombreGrupoTalle", source = "grupoTalle.nombre")
     @Mapping(target = "idTalleBase", source = "talleBase.id")
     @Mapping(target = "talleBase", source = "talleBase.talle")
+    @Mapping(target = "idTipoInsumo", source = "tipoInsumo.id")
+    @Mapping(target = "nombreTipoInsumo", source = "tipoInsumo.nombre")
     @Mapping(target = "anchoBaseCm", ignore = true)
     @Mapping(target = "largoBaseCm", ignore = true)
     PiezaResponse toResponse(Pieza pieza);

@@ -18,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.weclover.backend.dto.planificacioncompra.ProductoElegibleResponse;
 import com.weclover.backend.dto.producto.ActualizarColorCierreRequest;
+import com.weclover.backend.dto.producto.AsignacionesInsumoPiezaRequest;
+import com.weclover.backend.dto.producto.AsignacionesInsumoResponse;
 import com.weclover.backend.dto.producto.ActualizarPatronCorteRequest;
 import com.weclover.backend.dto.producto.ActualizarTipoTelaRequest;
 import com.weclover.backend.dto.producto.MarcarEstadoBanderaRequest;
@@ -30,6 +32,7 @@ import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.entity.EtapaProduccion;
 import com.weclover.backend.service.PlanificacionCompraService;
 import com.weclover.backend.service.ProductoEtapaProduccionService;
+import com.weclover.backend.service.ProductoInsumoPiezaService;
 import com.weclover.backend.service.ProductoService;
 
 import jakarta.validation.Valid;
@@ -41,6 +44,7 @@ import lombok.RequiredArgsConstructor;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final ProductoInsumoPiezaService productoInsumoPiezaService;
     private final PlanificacionCompraService planificacionCompraService;
     private final ProductoEtapaProduccionService productoEtapaProduccionService;
 
@@ -107,6 +111,21 @@ public class ProductoController {
             @Valid @RequestBody ProductoInsumosSecundariosRequest request,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return productoService.actualizarInsumosSecundarios(id, request, idUsuarioActor);
+    }
+
+    /** Qué fila de insumo cubre cada pin de la moldería (solo hace falta marcarlo cuando hay
+     *  dos o más filas del mismo tipo de insumo). */
+    @GetMapping("/{id}/asignaciones-insumo")
+    public AsignacionesInsumoResponse obtenerAsignacionesInsumo(@PathVariable Long id) {
+        return productoInsumoPiezaService.obtener(id);
+    }
+
+    @PutMapping("/{id}/asignaciones-insumo")
+    public AsignacionesInsumoResponse guardarAsignacionesInsumo(
+            @PathVariable Long id,
+            @Valid @RequestBody AsignacionesInsumoPiezaRequest request,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return productoInsumoPiezaService.guardar(id, request, idUsuarioActor);
     }
 
     @PutMapping("/{id}/bandera/estado")

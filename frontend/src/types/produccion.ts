@@ -179,7 +179,6 @@ export interface ProduccionPedidoResponse {
   prioridadAutomatica: number | null;
   /** null = sin tanda. */
   tanda: ProduccionTanda | null;
-  ubicacionActual: string | null;
   ultimaNota: NotaPedido | null;
   cantidadNotas: number;
   productos: ProduccionProductoResponse[];

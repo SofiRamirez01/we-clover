@@ -40,7 +40,6 @@ import com.weclover.backend.mapper.PedidoMapper;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.HistorialEstadoPedidoRepository;
 import com.weclover.backend.repository.HistorialTandaPedidoRepository;
-import com.weclover.backend.repository.HistorialUbicacionPedidoRepository;
 import com.weclover.backend.repository.MovimientoEstadoRepository;
 import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PedidoRepository;
@@ -82,7 +81,6 @@ public class PedidoService {
     private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
     private final MovimientoEstadoRepository movimientoEstadoRepository;
     private final HistorialTandaPedidoRepository historialTandaPedidoRepository;
-    private final HistorialUbicacionPedidoRepository historialUbicacionPedidoRepository;
     private final PasswordEncoder passwordEncoder;
     private final PedidoMapper pedidoMapper;
     private final ProductoService productoService;
@@ -296,8 +294,7 @@ public class PedidoService {
      * producción de cualquier prenda del pedido, ver ProductoEtapaProduccionService), ordenado por fecha
      * descendente. Es el mismo "Historial de cambios" que se ve desde los 3 puntos de Base de
      * Ventas — a pedido del negocio, todo cambio de producción tiene que quedar registrado ahí.
-     * También incluye los cambios de tanda (HistorialTandaPedido) y de ubicación
-     * (HistorialUbicacionPedido).
+     * También incluye los cambios de tanda (HistorialTandaPedido).
      *
      * Es información interna: se rechaza a ROLE_CLIENTE (y a quien no se identifique).
      */
@@ -370,22 +367,7 @@ public class PedidoService {
                     t.getSnapshotEstadoPedido(),
                     t.isSnapshotDisenoCompleto(),
                     t.isSnapshotTallesCompletos(),
-                    t.isSnapshotPagoSuficiente()),
-                null,
-                null
-            )));
-
-        historialUbicacionPedidoRepository.findByPedidoIdOrderByFechaDesc(idPedido).forEach(u ->
-            eventos.add(new HistorialCambioResponse(
-                u.getId(),
-                u.getFecha(),
-                TipoEventoHistorial.UBICACION,
-                null, null, null, null, null, null, null, null,
-                u.getUsuario().getNombre(),
-                u.getUsuario().getEmail(),
-                null, null, null, null, null, null,
-                u.getUbicacionAnterior(),
-                u.getUbicacionNueva()
+                    t.isSnapshotPagoSuficiente())
             )));
 
         return eventos.stream()

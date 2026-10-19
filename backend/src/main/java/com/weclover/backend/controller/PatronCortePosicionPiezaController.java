@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.weclover.backend.dto.patroncorte.PatronCortePosicionPiezaRequest;
 import com.weclover.backend.dto.patroncorte.PatronCortePosicionPiezaResponse;
+import com.weclover.backend.dto.patroncorte.PinEliminadoResponse;
 import com.weclover.backend.service.PatronCortePosicionPiezaService;
 
 import jakarta.validation.Valid;
@@ -47,12 +48,11 @@ public class PatronCortePosicionPiezaController {
     }
 
     @DeleteMapping("/{idPosicion}")
-    public ResponseEntity<Void> eliminar(
+    public PinEliminadoResponse eliminar(
             @PathVariable Long idPatronCorte,
             @PathVariable Long idColor,
             @PathVariable Long idPosicion,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
-        service.eliminar(idPatronCorte, idColor, idPosicion, idUsuarioActor);
-        return ResponseEntity.noContent().build();
+        return service.eliminar(idPatronCorte, idColor, idPosicion, idUsuarioActor);
     }
 }

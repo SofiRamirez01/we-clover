@@ -166,7 +166,8 @@ public class PatronCorteService {
                 posicion.getCoordenadaXPin(),
                 posicion.getCoordenadaYPin(),
                 posicion.getEtiqueta(),
-                piezaService.construirResumen(posicion.getPieza())))
+                piezaService.construirResumen(posicion.getPieza()),
+                null))
             .toList();
         return new PatronCorteColorResponse(color.getId(), color.getOrden(), color.getGramos(), piezas);
     }

@@ -3,7 +3,7 @@ import AppHeader from '../../components/AppHeader';
 import { useAuth } from '../../context/AuthContext';
 import { marcarEstadoBanderaProducto, marcarEtapaProducto } from '../../services/productoService';
 import { listarProduccionPedidos } from '../../services/produccionService';
-import { agregarNotaPedido, cambiarUbicacionPedido } from '../../services/seguimientoService';
+import { agregarNotaPedido } from '../../services/seguimientoService';
 import { listarAlertasPriorizacion, listarTandas } from '../../services/tandaService';
 import { listarUsuariosPorRol } from '../../services/usuarioService';
 import { extraerMensajeError } from '../../utils/errores';
@@ -260,17 +260,6 @@ export default function PantallaProduccion() {
     }
   }
 
-  async function handleCambiarUbicacion(idPedido: number, ubicacion: string): Promise<boolean> {
-    try {
-      const ubicacionActual = await cambiarUbicacionPedido(idPedido, ubicacion);
-      setPedidos((prev) => (prev ?? []).map((p) => (p.id === idPedido ? { ...p, ubicacionActual } : p)));
-      return true;
-    } catch (err) {
-      agregarToast('error', extraerMensajeError(err, 'No se pudo guardar la ubicación.'));
-      return false;
-    }
-  }
-
   /**
    * Grilla agrupada en orden de cola: las tandas abiertas (se muestran siempre, aunque los
    * filtros no dejen ningún pedido visible), después las cerradas que tengan algún pedido
@@ -452,12 +441,10 @@ export default function PantallaProduccion() {
                       expandido={mostrarTodosLosProductos || expandidos.has(pedido.id)}
                       empleados={empleados}
                       guardandoClave={guardandoClave}
-                      puedeEditarUbicacion={esAdministrativo}
                       onToggleExpandir={() => toggleExpandir(pedido.id)}
                       onMarcarEtapa={handleMarcarEtapa}
                       onMarcarBandera={handleMarcarBandera}
                       onAgregarNota={(texto) => handleAgregarNota(pedido.id, texto)}
-                      onCambiarUbicacion={(ubicacion) => handleCambiarUbicacion(pedido.id, ubicacion)}
                     />
                   ))
                 )}

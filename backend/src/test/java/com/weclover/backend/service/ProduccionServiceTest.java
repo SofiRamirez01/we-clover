@@ -129,9 +129,8 @@ class ProduccionServiceTest {
     }
 
     @Test
-    void traeLaUltimaNotaLaCantidadYLaUbicacion() {
+    void traeLaUltimaNotaYLaCantidad() {
         Pedido pedido = pedido(1, EstadoPedido.LISTO_PARA_PRODUCCION, false, null);
-        pedido.setUbicacionActual("con Adrián");
         Usuario autor = Usuario.builder().nombre("Adrián").build();
         notas.add(NotaPedido.builder().id(2L).pedido(pedido).texto("llega tela el lunes").autor(autor)
             .fecha(LocalDateTime.now()).build());
@@ -142,6 +141,5 @@ class ProduccionServiceTest {
 
         assertThat(respuesta.ultimaNota().texto()).isEqualTo("llega tela el lunes");
         assertThat(respuesta.cantidadNotas()).isEqualTo(2);
-        assertThat(respuesta.ubicacionActual()).isEqualTo("con Adrián");
     }
 }

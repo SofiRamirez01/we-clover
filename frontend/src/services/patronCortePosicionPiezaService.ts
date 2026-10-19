@@ -1,5 +1,5 @@
 import api from './api';
-import type { PatronCortePosicionPiezaPayload, PatronCortePosicionPiezaResponse } from '../types/patronCorte';
+import type { PatronCortePosicionPiezaPayload, PatronCortePosicionPiezaResponse, PinEliminadoResponse } from '../types/patronCorte';
 
 export async function agregarPosicionPieza(
   idPatronCorte: number,
@@ -26,6 +26,10 @@ export async function actualizarPosicionPieza(
   return data;
 }
 
-export async function eliminarPosicionPieza(idPatronCorte: number, idColor: number, idPosicion: number): Promise<void> {
-  await api.delete(`/patrones-corte/${idPatronCorte}/colores/${idColor}/piezas/${idPosicion}`);
+/** Devuelve cuántas asignaciones de insumo de fichas se descartaron junto con el pin. */
+export async function eliminarPosicionPieza(idPatronCorte: number, idColor: number, idPosicion: number): Promise<number> {
+  const { data } = await api.delete<PinEliminadoResponse | undefined>(
+    `/patrones-corte/${idPatronCorte}/colores/${idColor}/piezas/${idPosicion}`,
+  );
+  return data?.asignacionesDescartadas ?? 0;
 }

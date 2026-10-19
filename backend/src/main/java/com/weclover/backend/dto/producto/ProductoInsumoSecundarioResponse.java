@@ -12,6 +12,12 @@ public record ProductoInsumoSecundarioResponse(
     Long idPaletaColor,
     String nombreColor,
     String hexColor,
-    Float cantidad
+    Float cantidad,
+    /** Tipo del catálogo (ver TipoInsumo); los tres en null para un insumo libre. */
+    Long idTipoInsumo,
+    String codigoTipoInsumo,
+    String nombreTipoInsumo,
+    /** true si `cantidad` fue escrita a mano; false si es la sugerida por el reparto. */
+    boolean cantidadEditadaManualmente
 ) {
 }

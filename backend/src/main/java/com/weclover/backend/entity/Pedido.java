@@ -87,11 +87,6 @@ public class Pedido {
     @JoinColumn(name = "id_tanda")
     private Tanda tanda;
 
-    /** Dónde está físicamente el pedido ("con Adrián", "en estampado externo"…), texto libre.
-     *  Cada cambio deja un HistorialUbicacionPedido. */
-    @Column(name = "ubicacion_actual", length = 255)
-    private String ubicacionActual;
-
     /** Quién coordina la carga de talles del curso (alumno/adulto). Nullable: dato nuevo, opcional. */
     @Enumerated(EnumType.STRING)
     @Column(name = "responsable_curso", length = 20)

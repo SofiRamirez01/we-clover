@@ -14,6 +14,8 @@ export async function crearPieza(
   idTalleBase: number,
   segmentos: Segmento[],
   simetrica: boolean,
+  /** "Tela de la pieza": tipo de insumo en el que se corta, o null si es del cuerpo. */
+  idTipoInsumo: number | null,
 ): Promise<PiezaResponse> {
   const { data } = await api.post<PiezaResponse>('/piezas', {
     nombre,
@@ -21,6 +23,7 @@ export async function crearPieza(
     idTalleBase,
     segmentos,
     simetrica,
+    idTipoInsumo,
   });
   return data;
 }
@@ -53,6 +56,8 @@ export async function actualizarPieza(
   idTalleBase: number,
   segmentos: Segmento[],
   simetrica: boolean,
+  /** "Tela de la pieza": tipo de insumo en el que se corta, o null si es del cuerpo. */
+  idTipoInsumo: number | null,
 ): Promise<PiezaResponse> {
   const { data } = await api.put<PiezaResponse>(`/piezas/${id}`, {
     nombre,
@@ -60,6 +65,7 @@ export async function actualizarPieza(
     idTalleBase,
     segmentos,
     simetrica,
+    idTipoInsumo,
   });
   return data;
 }

@@ -20,17 +20,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.weclover.backend.dto.pedido.NotaPedidoResponse;
-import com.weclover.backend.entity.HistorialUbicacionPedido;
 import com.weclover.backend.entity.NotaPedido;
 import com.weclover.backend.entity.Pedido;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.ForbiddenException;
-import com.weclover.backend.repository.HistorialUbicacionPedidoRepository;
 import com.weclover.backend.repository.NotaPedidoRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 
-/** Notas y ubicación del pedido (paso 4 de Tandas). */
+/** Notas del pedido (paso 4 de Tandas). */
 @ExtendWith(MockitoExtension.class)
 class PedidoSeguimientoServiceTest {
 
@@ -40,7 +38,6 @@ class PedidoSeguimientoServiceTest {
     @Mock private PedidoRepository pedidoRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private NotaPedidoRepository notaPedidoRepository;
-    @Mock private HistorialUbicacionPedidoRepository historialUbicacionPedidoRepository;
     @Mock private AutorizacionService autorizacionService;
 
     @InjectMocks
@@ -78,51 +75,5 @@ class PedidoSeguimientoServiceTest {
         assertThatThrownBy(() -> service.agregarNota(ID_PEDIDO, "nota", ID_ACTOR)).isInstanceOf(ForbiddenException.class);
         assertThatThrownBy(() -> service.listarNotas(ID_PEDIDO, ID_ACTOR)).isInstanceOf(ForbiddenException.class);
         verify(notaPedidoRepository, never()).save(any());
-    }
-
-    @Test
-    void cambiarUbicacionRegistraAnteriorYNueva() {
-        pedido.setUbicacionActual("con Adrián");
-
-        service.cambiarUbicacion(ID_PEDIDO, " en estampado externo ", ID_ACTOR);
-
-        assertThat(pedido.getUbicacionActual()).isEqualTo("en estampado externo");
-        ArgumentCaptor<HistorialUbicacionPedido> captor = ArgumentCaptor.forClass(HistorialUbicacionPedido.class);
-        verify(historialUbicacionPedidoRepository).save(captor.capture());
-        assertThat(captor.getValue().getUbicacionAnterior()).isEqualTo("con Adrián");
-        assertThat(captor.getValue().getUbicacionNueva()).isEqualTo("en estampado externo");
-        assertThat(captor.getValue().getUsuario()).isSameAs(actor);
-        verify(pedidoRepository).save(pedido);
-    }
-
-    @Test
-    void ubicacionEnBlancoLaBorra() {
-        pedido.setUbicacionActual("con Adrián");
-
-        service.cambiarUbicacion(ID_PEDIDO, "   ", ID_ACTOR);
-
-        assertThat(pedido.getUbicacionActual()).isNull();
-        verify(historialUbicacionPedidoRepository).save(any());
-    }
-
-    @Test
-    void siLaUbicacionNoCambiaNoSeRegistraNada() {
-        pedido.setUbicacionActual("con Adrián");
-
-        service.cambiarUbicacion(ID_PEDIDO, "con Adrián", ID_ACTOR);
-
-        verify(historialUbicacionPedidoRepository, never()).save(any());
-        verify(pedidoRepository, never()).save(any());
-    }
-
-    @Test
-    void soloElAdministrativoCambiaLaUbicacion() {
-        doThrow(new ForbiddenException("sin permiso")).when(autorizacionService).verificarRolAdministrativo(ID_ACTOR);
-
-        assertThatThrownBy(() -> service.cambiarUbicacion(ID_PEDIDO, "con Adrián", ID_ACTOR))
-            .isInstanceOf(ForbiddenException.class);
-
-        assertThat(pedido.getUbicacionActual()).isNull();
-        verify(historialUbicacionPedidoRepository, never()).save(any());
     }
 }

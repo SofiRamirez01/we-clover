@@ -159,7 +159,6 @@ public class ProduccionService {
             estadoPedidoService.calcularPorcentajePagado(pedido),
             prioridadesAutomaticas.get(pedido.getId()),
             tandaResponse,
-            pedido.getUbicacionActual(),
             ultimaNota,
             notas.size(),
             productos

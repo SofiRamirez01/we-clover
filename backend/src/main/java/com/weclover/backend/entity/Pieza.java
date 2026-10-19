@@ -75,6 +75,16 @@ public class Pieza {
     @Builder.Default
     private boolean simetrica = false;
 
+    /**
+     * En qué insumo secundario del producto se corta esta pieza (ej. la capucha, en el insumo
+     * Capucha). Null = pieza del cuerpo: se corta en la tela del producto y con el color de la
+     * posición donde esté su pin. Solo admite tipos con consumeMaterial=true (validado en
+     * PiezaService).
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "id_tipo_insumo")
+    private TipoInsumo tipoInsumo;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean activo = true;

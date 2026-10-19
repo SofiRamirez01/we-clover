@@ -309,7 +309,10 @@ public class ProductoEtapaProduccionService {
             Usuario empleado = usuarioRepository.findById(idEmpleado)
                 .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario empleado con id " + idEmpleado));
             fila.setEmpleado(empleado);
-        } else if (!completado) {
+        } else {
+            // Sin empleado = "sin asignar", también con la etapa completada: quien llama manda
+            // siempre el empleado vigente (ver EtapaCelda), así que null es un desasignar
+            // explícito y no "no tocar".
             fila.setEmpleado(null);
         }
 

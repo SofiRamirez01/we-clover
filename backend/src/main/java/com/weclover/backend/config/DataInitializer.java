@@ -21,6 +21,7 @@ import com.weclover.backend.entity.Pieza;
 import com.weclover.backend.entity.PiezaTalle;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.TablaTalle;
+import com.weclover.backend.entity.TipoInsumo;
 import com.weclover.backend.entity.TipoPrenda;
 import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.entity.Usuario;
@@ -32,11 +33,14 @@ import com.weclover.backend.repository.PiezaRepository;
 import com.weclover.backend.repository.PiezaTalleRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TablaTalleRepository;
+import com.weclover.backend.repository.TipoInsumoRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
 import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 import com.weclover.backend.service.PiezaGeometriaClient;
 import com.weclover.backend.service.ProductoEtapaProduccionService;
+import com.weclover.backend.service.TipoInsumoCodigos;
+import com.weclover.backend.service.TipoInsumoMigracionService;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -55,6 +59,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ColegioRepository colegioRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
     private final TipoTelaRepository tipoTelaRepository;
+    private final TipoInsumoRepository tipoInsumoRepository;
     private final PaletaColoresRepository paletaColoresRepository;
     private final GrupoTalleRepository grupoTalleRepository;
     private final TablaTalleRepository tablaTalleRepository;
@@ -64,6 +69,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
     private final ProductoEtapaProduccionService productoEtapaProduccionService;
+    private final TipoInsumoMigracionService tipoInsumoMigracionService;
 
     @Override
     @Transactional
@@ -151,6 +157,34 @@ public class DataInitializer implements CommandLineRunner {
                     .esPorPeso(def.esPorPeso())
                     .telaCuerpo(def.telaCuerpo())
                     .gramosSugerido(def.gramosSugerido())
+                    .activo(true)
+                    .build());
+            }
+        });
+
+        // Catálogo de tipos de insumo secundario (ver TipoInsumo): sembrado idempotente por
+        // código, después de tipos_tela porque referencia su tela sugerida. Estampado es una
+        // marca sin material: no tiene tela sugerida.
+        record DefinicionTipoInsumo(String codigo, String nombre, boolean consumeMaterial, String codigoTipoTelaSugerido) {
+        }
+
+        List<DefinicionTipoInsumo> definicionesTipoInsumo = List.of(
+            new DefinicionTipoInsumo(TipoInsumoCodigos.CAPUCHA, "Capucha", true, "JERSEY"),
+            new DefinicionTipoInsumo(TipoInsumoCodigos.PUNOS_CINTURA, "Puños y cintura", true, "RIBB"),
+            new DefinicionTipoInsumo(TipoInsumoCodigos.CIERRE, "Cierre", true, "CIERRE"),
+            new DefinicionTipoInsumo(TipoInsumoCodigos.ESTAMPADO, "Estampado", false, null)
+        );
+
+        definicionesTipoInsumo.forEach(def -> {
+            if (!tipoInsumoRepository.existsByCodigo(def.codigo())) {
+                TipoTela tipoTelaSugerido = def.codigoTipoTelaSugerido() == null
+                    ? null
+                    : tipoTelaRepository.findByCodigo(def.codigoTipoTelaSugerido()).orElseThrow();
+                tipoInsumoRepository.save(TipoInsumo.builder()
+                    .codigo(def.codigo())
+                    .nombre(def.nombre())
+                    .consumeMaterial(def.consumeMaterial())
+                    .tipoTelaSugerido(tipoTelaSugerido)
                     .activo(true)
                     .build());
             }
@@ -290,6 +324,31 @@ public class DataInitializer implements CommandLineRunner {
         int productosInicializados = productoEtapaProduccionService.inicializarEstadosFaltantes();
         if (productosInicializados > 0) {
             System.out.println("--- MIGRACIÓN EstadoProduccion: " + productosInicializados + " producto(s) inicializado(s) ---");
+        }
+
+        // Migración (tipos de insumo): asocia a su TipoInsumo las filas de insumo que se
+        // identificaban solo por el texto de la descripción. Idempotente: solo mira filas sin
+        // tipo, así que el reporte se imprime únicamente en la corrida que asocia algo.
+        TipoInsumoMigracionService.Reporte reporteInsumos = tipoInsumoMigracionService.asociarInsumosPorDescripcion();
+        if (reporteInsumos.totalAsociadas() > 0) {
+            System.out.println("--- MIGRACIÓN TipoInsumo: " + reporteInsumos.totalAsociadas() + " fila(s) asociada(s) "
+                + reporteInsumos.asociadasPorTipo() + " — " + reporteInsumos.totalLibres()
+                + " fila(s) quedan como insumo libre " + reporteInsumos.libresPorDescripcion() + " ---");
+        }
+
+        // Migración (reparto de gramos): evalúa el indicador de edición manual de las filas
+        // anteriores a esa columna, después de la asociación de tipos (el reparto es por tipo).
+        // Idempotente: solo mira filas con el indicador en null.
+        TipoInsumoMigracionService.ReporteGramos reporteGramos = tipoInsumoMigracionService.marcarCantidadesEditadasAMano();
+        if (reporteGramos.totalEvaluadas() > 0) {
+            System.out.println("--- MIGRACIÓN Gramos de insumos: " + reporteGramos.totalEvaluadas() + " fila(s) evaluada(s) — "
+                + reporteGramos.marcadasEditadas() + " marcada(s) como editada(s) a mano, "
+                + reporteGramos.marcadasSugeridas() + " con el valor sugerido ---");
+            if (reporteGramos.gruposConSumaDistinta().isEmpty()) {
+                System.out.println("--- MIGRACIÓN Gramos de insumos: ningún grupo de varias filas suma distinto al sugerido ---");
+            }
+            reporteGramos.gruposConSumaDistinta().forEach(grupo ->
+                System.out.println("--- MIGRACIÓN Gramos de insumos: suma distinta al sugerido en " + grupo + " ---"));
         }
 
         System.out.println("--- DATOS SEMILLA CARGADOS CORRECTAMENTE ---");

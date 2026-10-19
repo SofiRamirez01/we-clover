@@ -35,24 +35,36 @@ export interface ProductoColorItemRequest {
  *  cualquier otro agregado a mano — ver ProductoInsumoSecundario en el backend. */
 export interface ProductoInsumoSecundarioResponse {
   id: number;
-  /** Identifica de qué insumo se trata (ej. "Capucha", "Puños y cintura", "Cierre", o texto
-   *  libre) — es la clave real de la fila, no idTipoTela: dos insumos distintos de un mismo
-   *  producto pueden compartir la misma tela. */
+  /** Texto visible de la fila. Qué insumo es lo dice `codigoTipoInsumo`; la descripción solo
+   *  identifica a los insumos libres (sin tipo). */
   descripcion: string;
-  idTipoTela: number;
+  /** Tela, color y cantidad son null para una marca sin material (ej. Estampado). */
+  idTipoTela: number | null;
   /** Código estable del tipo de tela (ej. "JERSEY", "RIBB", "CIERRE"), no el nombre humano. */
-  tipoTela: string;
-  nombreTipoTela: string;
-  esPorPeso: boolean;
-  idPaletaColor: number;
-  nombreColor: string;
-  hexColor: string;
-  cantidad: number;
+  tipoTela: string | null;
+  nombreTipoTela: string | null;
+  esPorPeso: boolean | null;
+  idPaletaColor: number | null;
+  nombreColor: string | null;
+  hexColor: string | null;
+  cantidad: number | null;
+  /** Tipo del catálogo (ver TipoInsumoCatalogo); los tres en null para un insumo libre. */
+  idTipoInsumo: number | null;
+  codigoTipoInsumo: string | null;
+  nombreTipoInsumo: string | null;
+  /** true si la cantidad fue escrita a mano; false si es la sugerida por el reparto. */
+  cantidadEditadaManualmente: boolean;
 }
 
 export interface ProductoInsumoSecundarioItemRequest {
-  descripcion: string;
-  idTipoTela: number;
-  idPaletaColor: number;
-  cantidad: number;
+  /** Id de la fila ya guardada, o null si es nueva. Las filas que no viajan se borran. */
+  id: number | null;
+  /** null = insumo libre, identificado por `descripcion`. */
+  idTipoInsumo: number | null;
+  descripcion: string | null;
+  /** Tela, color y cantidad van en null solo para una marca sin material (Estampado). */
+  idTipoTela: number | null;
+  idPaletaColor: number | null;
+  cantidad: number | null;
+  cantidadEditadaManualmente: boolean;
 }

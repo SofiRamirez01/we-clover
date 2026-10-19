@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ChangeEvent, Dispatch, MouseEvent, SetStateAction } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
 import ComboboxColor from '../../components/ComboboxColor';
 import { crearColorPaleta, listarPaletaColores } from '../../services/paletaColoresService';
 import { listarPatronesCorte } from '../../services/patronCorteService';
 import { listarTiposTela } from '../../services/tipoTelaService';
+import { listarTiposInsumo } from '../../services/tipoInsumoService';
 import {
   actualizarInsumosSecundariosProducto,
   actualizarPatronCorteProducto,
   actualizarTipoTelaProducto,
   asignarColoresProducto,
+  guardarAsignacionesInsumo,
+  obtenerAsignacionesInsumo,
   subirImagenDisenoProducto,
 } from '../../services/productoService';
 import { colorMasCercano, rgbAHex } from '../../utils/colorMatch';
@@ -16,16 +19,15 @@ import type { ColorRgb } from '../../utils/colorMatch';
 import { extraerMensajeError } from '../../utils/errores';
 import { urlArchivoSubido } from '../../utils/urlArchivos';
 import { TIPOS_TELA_PRENDA } from '../../types/paletaColores';
-import type {
-  PaletaColorResponse,
-  ProductoColorItemRequest,
-  ProductoInsumoSecundarioItemRequest,
-  ProductoInsumoSecundarioResponse,
-  TipoTela,
-} from '../../types/paletaColores';
+import type { PaletaColorResponse, ProductoColorItemRequest, TipoTela } from '../../types/paletaColores';
 import type { ProductoResponse } from '../../types/pedido';
 import type { PatronCorteResponse } from '../../types/patronCorte';
+import type { AsignacionInsumoPiezaItemRequest, GrupoAsignacionInsumoResponse, TipoInsumoCatalogo } from '../../types/tipoInsumo';
+import { CODIGO_TIPO_INSUMO_CIERRE, CODIGO_TIPO_INSUMO_ESTAMPADO } from '../../types/tipoInsumo';
 import type { TipoTelaCatalogo } from '../../types/tipoTela';
+import SeccionInsumosSecundarios from './SeccionInsumosSecundarios';
+import { construirItemsDeFilas, filasDesdeInsumos, idsPorClave, insumoCierre, insumoEstampado } from './insumosFicha';
+import type { AsignacionesPin, FilaInsumoFicha, ItemConOrigen } from './insumosFicha';
 import { TIPO_PRENDA_BUZO, TIPO_PRENDA_CAMPERA, nombreTela, telaEfectiva } from './telaUtils';
 
 const TIPOS_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png'];
@@ -33,162 +35,8 @@ const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 3;
 const ZOOM_PASO = 0.1;
 
-/**
- * Descripciones fijas (ver ProductoInsumoSecundario.descripcion en el backend: es la
- * identidad real de la fila, no el tipo de tela — dos insumos distintos, ej. Capucha y
- * Cuello, pueden compartir la misma tela). Cierre sigue con su propio selector y estado
- * dedicado (sin cambios de UX), pero su descripcion también viaja por acá al guardar.
- */
-const DESCRIPCION_CAPUCHA = 'Capucha';
-const DESCRIPCION_PUNOS = 'Puños y cintura';
-const DESCRIPCION_CIERRE = 'Cierre';
-/** Códigos estables en tipos_tela (ver TipoTela.codigo en el backend). Jersey/Ribb son solo
- *  el tipo de tela por defecto al agregar un color nuevo en Capucha/Puños — el usuario lo
- *  puede cambiar libremente (ej. por Corderito o estampado) desde el mismo selector. */
+/** Código estable de la fila "Cierre" en tipos_tela (ver TipoTela.codigo en el backend). */
 const CODIGO_TIPO_TELA_CIERRE = 'CIERRE';
-const CODIGO_TIPO_TELA_JERSEY = 'JERSEY';
-const CODIGO_TIPO_TELA_RIBB = 'RIBB';
-
-interface FilaInsumo {
-  idTipoTela: number | '';
-  idPaletaColor: number | '';
-  /** String crudo del input numérico; se valida y convierte recién al guardar. */
-  cantidad: string;
-}
-
-interface FilaInsumoLibre extends FilaInsumo {
-  id: string;
-  /**
-   * Qué es este insumo. Para Capucha/Puños queda fija (no se expone un input, ya se ve en
-   * el título de la sección); para una fila agregada a mano el usuario la escribe. No hay
-   * restricción de unicidad: puede haber más de una fila con la misma descripcion (ej. dos
-   * "Puños y cintura" de distinto color, uno por puño) — lo que identifica a cada fila es el
-   * conjunto completo (descripcion, tipo de tela, color), no un campo por sí solo.
-   */
-  descripcion: string;
-}
-
-function filaInsumoVacia(): FilaInsumo {
-  return { idTipoTela: '', idPaletaColor: '', cantidad: '' };
-}
-
-/** Arma las filas iniciales de una sección (Capucha/Puños/libres) a partir de lo que ya
- *  guardó el backend con esa descripcion — puede haber 0, 1 o varias. */
-function filasDesdeInsumo(insumos: ProductoInsumoSecundarioResponse[], descripcion: string): FilaInsumoLibre[] {
-  return insumos
-    .filter((i) => i.descripcion === descripcion)
-    .map((i) => ({
-      id: crypto.randomUUID(),
-      idTipoTela: i.idTipoTela,
-      idPaletaColor: i.idPaletaColor,
-      cantidad: String(i.cantidad),
-      descripcion,
-    }));
-}
-
-/** Insumos "libres": cualquier fila que no sea Capucha/Puños (con su propia sección fija) ni
- *  Cierre (que tiene su propio selector y estado, sin cambios de UX). */
-function filasLibresDesdeInsumos(insumos: ProductoInsumoSecundarioResponse[]): FilaInsumoLibre[] {
-  const descripcionesConSeccionPropia = new Set([DESCRIPCION_CAPUCHA, DESCRIPCION_PUNOS, DESCRIPCION_CIERRE]);
-  return insumos
-    .filter((i) => !descripcionesConSeccionPropia.has(i.descripcion))
-    .map((i) => ({
-      id: crypto.randomUUID(),
-      idTipoTela: i.idTipoTela,
-      idPaletaColor: i.idPaletaColor,
-      cantidad: String(i.cantidad),
-      descripcion: i.descripcion,
-    }));
-}
-
-/** Al elegir un tipo de tela para un insumo, se resetea el color (la paleta cambia) y se
- *  precarga una cantidad sugerida con el mismo criterio que el backend (gramos si es por
- *  peso, 1 si es por unidad) — el usuario puede corregirla igual. */
-function filaConTipoTela(valor: string, tiposTela: TipoTelaCatalogo[]): FilaInsumo {
-  if (valor === '') return filaInsumoVacia();
-  const idTipoTela = Number(valor);
-  const tipo = tiposTela.find((t) => t.id === idTipoTela);
-  const cantidad = tipo ? (tipo.esPorPeso ? (tipo.gramosSugerido != null ? String(tipo.gramosSugerido) : '') : '1') : '';
-  return { idTipoTela, idPaletaColor: '', cantidad };
-}
-
-const inputSelectClase =
-  'rounded-lg border border-wc-border bg-white px-2 py-1.5 text-xs text-wc-text outline-none disabled:bg-wc-bg disabled:text-wc-text-muted';
-
-/** Selector de tipo de tela + color + cantidad para un insumo secundario, reutilizado por
- *  Capucha, Puños y cintura, y las filas libres agregadas a mano. */
-function FilaInsumoEditor({
-  fila,
-  tiposTela,
-  colores,
-  descripcion,
-  onCambiarTipo,
-  onCambiarColor,
-  onCambiarCantidad,
-  onEliminar,
-}: {
-  fila: FilaInsumo;
-  tiposTela: TipoTelaCatalogo[];
-  colores: PaletaColorResponse[];
-  /** Solo para filas libres: campo de texto editable con lo que identifica al insumo (para
-   *  Capucha/Puños, esa etiqueta ya es fija y se ve en el título de la sección, así que se omite). */
-  descripcion?: { valor: string; onCambiar: (valor: string) => void };
-  onCambiarTipo: (valor: string) => void;
-  onCambiarColor: (idPaletaColor: number | '') => void;
-  onCambiarCantidad: (valor: string) => void;
-  onEliminar: () => void;
-}) {
-  const tieneContenido = fila.idTipoTela !== '' || fila.idPaletaColor !== '' || fila.cantidad !== '' || !!descripcion?.valor;
-
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {descripcion && (
-        <input
-          value={descripcion.valor}
-          onChange={(e) => descripcion.onCambiar(e.target.value)}
-          placeholder="¿Para qué es? (ej: Cuello)"
-          className={`${inputSelectClase} min-w-[9rem] flex-[2]`}
-        />
-      )}
-      <select value={fila.idTipoTela} onChange={(e) => onCambiarTipo(e.target.value)} className={`${inputSelectClase} flex-1 min-w-[7rem]`}>
-        <option value="">Elegir tela…</option>
-        {tiposTela.map((tipo) => (
-          <option key={tipo.id} value={tipo.id}>
-            {tipo.nombre}
-          </option>
-        ))}
-      </select>
-      <ComboboxColor
-        colores={colores}
-        value={fila.idPaletaColor}
-        onChange={onCambiarColor}
-        placeholder="Color…"
-        disabled={fila.idTipoTela === ''}
-        compacto
-        className="flex-1 min-w-[7rem]"
-      />
-      <input
-        type="number"
-        min={0}
-        step="0.01"
-        value={fila.cantidad}
-        onChange={(e) => onCambiarCantidad(e.target.value)}
-        disabled={fila.idTipoTela === ''}
-        placeholder="Cant."
-        className={`${inputSelectClase} w-16`}
-      />
-      <button
-        type="button"
-        onClick={onEliminar}
-        disabled={!descripcion && !tieneContenido}
-        aria-label="Eliminar insumo"
-        className="h-6 w-6 shrink-0 rounded text-sm font-bold text-wc-text-muted transition hover:bg-wc-bg hover:text-red-600 disabled:opacity-30"
-      >
-        ×
-      </button>
-    </div>
-  );
-}
 
 interface ModalColoresGoteroProps {
   /** Siempre la versión más actualizada del producto (el modal no mantiene su propia copia). */
@@ -235,22 +83,19 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
   const [guardandoMolderia, setGuardandoMolderia] = useState(false);
   const [errorMolderia, setErrorMolderia] = useState<string | null>(null);
 
-  // Insumos secundarios (Capucha=Jersey, Puños y cintura=Ribb, y filas libres): igual que
+  // Insumos secundarios (Capucha, Puños y cintura, libres y el tilde de Estampado): igual que
   // Tela/Cierre, quedan como borrador hasta el Guardar general del modal — ahí viajan todos
-  // juntos (más el Cierre) en un solo PUT al endpoint genérico (ver handleGuardarCambios).
-  // Capucha y Puños son listas, no una fila única: puede hacer falta más de un color por
-  // sección (ej. un puño de un color y el otro de otro).
+  // juntos (más el Cierre) en un solo PUT, y después las asignaciones de pines en otro (ver
+  // handleGuardarCambios). Cada fila se identifica por su tipo de insumo, no por un texto.
   const [tiposTela, setTiposTela] = useState<TipoTelaCatalogo[]>([]);
+  const [tiposInsumo, setTiposInsumo] = useState<TipoInsumoCatalogo[]>([]);
+  const [errorTiposInsumo, setErrorTiposInsumo] = useState<string | null>(null);
   const [todaLaPaleta, setTodaLaPaleta] = useState<PaletaColorResponse[]>([]);
-  const [capuchaFilas, setCapuchaFilas] = useState<FilaInsumoLibre[]>(() =>
-    filasDesdeInsumo(producto.insumosSecundarios, DESCRIPCION_CAPUCHA),
-  );
-  const [punosFilas, setPunosFilas] = useState<FilaInsumoLibre[]>(() =>
-    filasDesdeInsumo(producto.insumosSecundarios, DESCRIPCION_PUNOS),
-  );
-  const [filasLibres, setFilasLibres] = useState<FilaInsumoLibre[]>(() =>
-    filasLibresDesdeInsumos(producto.insumosSecundarios),
-  );
+  const [filasInsumo, setFilasInsumo] = useState<FilaInsumoFicha[]>(() => filasDesdeInsumos(producto.insumosSecundarios));
+  const [llevaEstampado, setLlevaEstampado] = useState(() => insumoEstampado(producto.insumosSecundarios) != null);
+  // Pines de la moldería cuya pieza se corta en un insumo, y a qué fila está asignado cada uno.
+  const [gruposPines, setGruposPines] = useState<GrupoAsignacionInsumoResponse[]>([]);
+  const [asignacionesPin, setAsignacionesPin] = useState<AsignacionesPin>({});
 
   const [paleta, setPaleta] = useState<PaletaColorResponse[]>([]);
   const [cargandoPaleta, setCargandoPaleta] = useState(false);
@@ -312,6 +157,13 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
     };
   }, []);
 
+  // Pines de la moldería al abrir el modal (después se recargan al cambiar la moldería o al
+  // confirmar los colores, que es cuando pueden cambiar).
+  useEffect(() => {
+    void cargarPines(filasInsumo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [producto.id]);
+
   useEffect(() => {
     let cancelado = false;
     listarTiposTela()
@@ -320,6 +172,13 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
       })
       .catch(() => {
         /* si falla, los selectores de insumos secundarios quedan vacíos pero el resto del modal funciona igual */
+      });
+    listarTiposInsumo()
+      .then((data) => {
+        if (!cancelado) setTiposInsumo(data);
+      })
+      .catch(() => {
+        if (!cancelado) setErrorTiposInsumo('No se pudieron cargar los tipos de insumo. Recargá la página antes de editar los insumos.');
       });
     // Sin filtro: trae los colores de todas las telas, para poder armar la paleta de
     // cualquier insumo secundario sin depender de la tela elegida para el gotero (telaDraft).
@@ -406,6 +265,7 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
     try {
       const actualizado = await actualizarPatronCorteProducto(producto.id, idPatronCorte);
       onActualizado(actualizado);
+      void cargarPines(filasInsumo);
       setEditandoColores(false);
       setPasoActual(0);
       setAsignaciones([]);
@@ -426,7 +286,6 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
     setPendiente(null);
   }
 
-  /** Tela y cierre son borrador hasta este punto; se persisten juntos con un click. */
   function coloresParaTipoTela(idTipoTela: number | ''): PaletaColorResponse[] {
     if (idTipoTela === '') return [];
     const tipo = tiposTela.find((t) => t.id === idTipoTela);
@@ -435,63 +294,100 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
   }
 
   /**
-   * Capucha, Puños y las filas libres son todas listas del mismo tipo (FilaInsumoLibre): no
-   * hay restricción de unicidad, así que agregar/editar/quitar funciona igual en las tres —
-   * lo único que cambia es qué setter reciben y si arrancan con una descripcion fija.
+   * Trae los pines de la moldería que se cortan en un insumo y deja marcados los que ya están
+   * asignados, traduciendo el id de fila del backend a la clave local de `filas`. Si falla (o
+   * el producto no tiene moldería) simplemente no se ofrece asignar pines.
    */
-  /** codigoTipoTelaDefault precarga el tipo de tela más usual de esa sección (Jersey en
-   *  Capucha, Ribb en Puños) — el usuario lo puede cambiar en el selector igual, no queda fijo. */
-  function agregarFila(setFilas: Dispatch<SetStateAction<FilaInsumoLibre[]>>, descripcionFija: string, codigoTipoTelaDefault?: string) {
-    const tipoDefault = codigoTipoTelaDefault ? tiposTela.find((t) => t.codigo === codigoTipoTelaDefault) : undefined;
-    const base = tipoDefault ? filaConTipoTela(String(tipoDefault.id), tiposTela) : filaInsumoVacia();
-    setFilas((prev) => [...prev, { id: crypto.randomUUID(), ...base, descripcion: descripcionFija }]);
-  }
-
-  function eliminarFila(setFilas: Dispatch<SetStateAction<FilaInsumoLibre[]>>, id: string) {
-    setFilas((prev) => prev.filter((f) => f.id !== id));
-  }
-
-  function actualizarFila(setFilas: Dispatch<SetStateAction<FilaInsumoLibre[]>>, id: string, cambio: Partial<Omit<FilaInsumoLibre, 'id'>>) {
-    setFilas((prev) => prev.map((f) => (f.id === id ? { ...f, ...cambio } : f)));
+  async function cargarPines(filas: FilaInsumoFicha[]) {
+    try {
+      const data = await obtenerAsignacionesInsumo(producto.id);
+      const clavePorId = new Map(filas.filter((f) => f.idInsumo != null).map((f) => [f.idInsumo as number, f.clave]));
+      const asignadas: AsignacionesPin = {};
+      for (const grupo of data.grupos) {
+        for (const pin of grupo.pines) {
+          const clave = pin.idProductoInsumo != null ? clavePorId.get(pin.idProductoInsumo) : undefined;
+          if (clave) asignadas[pin.idPosicionPieza] = clave;
+        }
+      }
+      setGruposPines(data.grupos);
+      setAsignacionesPin(asignadas);
+    } catch {
+      setGruposPines([]);
+      setAsignacionesPin({});
+    }
   }
 
   /**
-   * Junta Capucha + Puños + libres + Cierre (si aplica) en un solo array para el PUT
-   * genérico, cada uno con su descripcion (identidad real de la fila, ver
-   * ProductoInsumoSecundario — no hay problema en que se repita entre filas, ej. dos "Puños
-   * y cintura" de distinto color). Valida que toda fila con algo cargado tenga descripcion,
-   * tipo de tela, color y cantidad completos — una fila totalmente vacía simplemente no se
-   * manda (el usuario la agregó y se arrepintió, o todavía no la completó).
+   * Junta las filas de insumos + Cierre (si es Campera) + Estampado (si está tildado) en un
+   * solo array para el PUT. Cada item lleva el id de su fila si ya existía, para que el
+   * backend la actualice en su lugar y no pierda los pines asignados.
    */
-  function construirInsumosParaGuardar(): { items: ProductoInsumoSecundarioItemRequest[] } | { error: string } {
-    const items: ProductoInsumoSecundarioItemRequest[] = [];
-
-    for (const fila of [...capuchaFilas, ...punosFilas, ...filasLibres]) {
-      const vacia = fila.idTipoTela === '' && fila.idPaletaColor === '' && !fila.cantidad && !fila.descripcion.trim();
-      if (vacia) continue;
-
-      if (!fila.descripcion.trim()) {
-        return { error: 'Escribí para qué es cada insumo agregado a mano.' };
-      }
-      if (fila.idTipoTela === '' || fila.idPaletaColor === '') {
-        return { error: `Elegí tipo de tela y color para "${fila.descripcion.trim()}".` };
-      }
-      const cantidad = Number(fila.cantidad);
-      if (!fila.cantidad || !Number.isFinite(cantidad) || cantidad <= 0) {
-        return { error: `Ingresá una cantidad válida para "${fila.descripcion.trim()}".` };
-      }
-      items.push({ descripcion: fila.descripcion.trim(), idTipoTela: fila.idTipoTela, idPaletaColor: fila.idPaletaColor, cantidad });
+  function construirInsumosParaGuardar(): { items: ItemConOrigen[] } | { error: string } {
+    if (tiposInsumo.length === 0) {
+      return { error: 'Todavía no se cargaron los tipos de insumo. Reintentá en unos segundos.' };
     }
+    const resultado = construirItemsDeFilas(filasInsumo, tiposInsumo);
+    if ('error' in resultado) return resultado;
+    const items = [...resultado.items];
 
     if (esCampera && cierreDraft != null) {
-      const tipoCierre = tiposTela.find((t) => t.codigo === CODIGO_TIPO_TELA_CIERRE);
-      if (!tipoCierre) {
+      const tipoTelaCierre = tiposTela.find((t) => t.codigo === CODIGO_TIPO_TELA_CIERRE);
+      const tipoCierre = tiposInsumo.find((t) => t.codigo === CODIGO_TIPO_INSUMO_CIERRE);
+      if (!tipoTelaCierre || !tipoCierre) {
         return { error: 'No se pudo determinar el tipo de tela de Cierre. Reintentá en unos segundos.' };
       }
-      items.push({ descripcion: DESCRIPCION_CIERRE, idTipoTela: tipoCierre.id, idPaletaColor: cierreDraft, cantidad: 1 });
+      items.push({
+        clave: null,
+        item: {
+          id: insumoCierre(producto.insumosSecundarios)?.id ?? null,
+          idTipoInsumo: tipoCierre.id,
+          descripcion: null,
+          idTipoTela: tipoTelaCierre.id,
+          idPaletaColor: cierreDraft,
+          cantidad: 1,
+          cantidadEditadaManualmente: false,
+        },
+      });
+    }
+
+    const tipoEstampado = tiposInsumo.find((t) => t.codigo === CODIGO_TIPO_INSUMO_ESTAMPADO);
+    if (llevaEstampado && tipoEstampado) {
+      items.push({
+        clave: null,
+        item: {
+          id: insumoEstampado(producto.insumosSecundarios)?.id ?? null,
+          idTipoInsumo: tipoEstampado.id,
+          descripcion: null,
+          idTipoTela: null,
+          idPaletaColor: null,
+          cantidad: null,
+          cantidadEditadaManualmente: false,
+        },
+      });
     }
 
     return { items };
+  }
+
+  /**
+   * Asignaciones de pines a mandar después de guardar los insumos: solo las de los tipos que
+   * quedaron con dos o más filas (con una sola no hace falta asignar nada), ya con el id que
+   * el backend le dio a cada fila.
+   */
+  function construirAsignacionesParaGuardar(idPorClave: Map<string, number>, enviados: ItemConOrigen[]): AsignacionInsumoPiezaItemRequest[] {
+    const asignaciones: AsignacionInsumoPiezaItemRequest[] = [];
+    for (const grupo of gruposPines) {
+      const clavesDelTipo = new Set(
+        enviados.filter((e) => e.clave != null && e.item.idTipoInsumo === grupo.idTipoInsumo).map((e) => e.clave as string),
+      );
+      if (clavesDelTipo.size < 2) continue;
+      for (const pin of grupo.pines) {
+        const clave = asignacionesPin[pin.idPosicionPieza];
+        const idProductoInsumo = clave && clavesDelTipo.has(clave) ? idPorClave.get(clave) : undefined;
+        if (idProductoInsumo != null) asignaciones.push({ idPosicionPieza: pin.idPosicionPieza, idProductoInsumo });
+      }
+    }
+    return asignaciones;
   }
 
   async function handleGuardarCambios() {
@@ -509,9 +405,20 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
         setGuardandoCambios(false);
         return;
       }
-      actualizado = await actualizarInsumosSecundariosProducto(producto.id, resultado.items);
-
+      actualizado = await actualizarInsumosSecundariosProducto(
+        producto.id,
+        resultado.items.map((e) => e.item),
+      );
       onActualizado(actualizado);
+
+      // Los pines se guardan después: las filas nuevas recién ahora tienen id.
+      if (gruposPines.length > 0) {
+        await guardarAsignacionesInsumo(
+          producto.id,
+          construirAsignacionesParaGuardar(idsPorClave(resultado.items, actualizado.insumosSecundarios), resultado.items),
+        );
+      }
+
       onCerrar();
     } catch (err) {
       setErrorGuardarCambios(extraerMensajeError(err, 'No se pudieron guardar los cambios.'));
@@ -635,9 +542,10 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
       // — acá solo reflejamos esa sugerencia en los borradores locales, sin otro guardado más:
       // si el usuario la corrige, esa corrección recién se persiste con el Guardar general.
       setCierreDraft(actualizado.idColorCierre ?? cierreDraft);
-      setCapuchaFilas(filasDesdeInsumo(actualizado.insumosSecundarios, DESCRIPCION_CAPUCHA));
-      setPunosFilas(filasDesdeInsumo(actualizado.insumosSecundarios, DESCRIPCION_PUNOS));
-      setFilasLibres(filasLibresDesdeInsumos(actualizado.insumosSecundarios));
+      const filasActualizadas = filasDesdeInsumos(actualizado.insumosSecundarios);
+      setFilasInsumo(filasActualizadas);
+      setLlevaEstampado(insumoEstampado(actualizado.insumosSecundarios) != null);
+      void cargarPines(filasActualizadas);
       onActualizado(actualizado);
       setEditandoColores(false);
     } catch (err) {
@@ -1003,84 +911,20 @@ export default function ModalColoresGotero({ producto, coloresCierre, onActualiz
             </div>
 
             <div className="flex flex-col gap-3 rounded-lg border border-wc-border p-3">
-              <span className="text-xs font-semibold text-wc-text">Insumos secundarios</span>
-
-                {mostrarCapuchaYPunos && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[11px] font-medium text-wc-text-muted">Capucha</span>
-                    {capuchaFilas.map((fila) => (
-                      <FilaInsumoEditor
-                        key={fila.id}
-                        fila={fila}
-                        tiposTela={tiposTela}
-                        colores={coloresParaTipoTela(fila.idTipoTela)}
-                        onCambiarTipo={(valor) => actualizarFila(setCapuchaFilas, fila.id, filaConTipoTela(valor, tiposTela))}
-                        onCambiarColor={(idPaletaColor) => actualizarFila(setCapuchaFilas, fila.id, { idPaletaColor })}
-                        onCambiarCantidad={(valor) => actualizarFila(setCapuchaFilas, fila.id, { cantidad: valor })}
-                        onEliminar={() => eliminarFila(setCapuchaFilas, fila.id)}
-                      />
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => agregarFila(setCapuchaFilas, DESCRIPCION_CAPUCHA, CODIGO_TIPO_TELA_JERSEY)}
-                      className="self-start text-[11px] font-semibold text-wc-green underline"
-                    >
-                      + Agregar color a Capucha
-                    </button>
-                  </div>
-                )}
-
-                {mostrarCapuchaYPunos && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[11px] font-medium text-wc-text-muted">Puños y cintura</span>
-                    {punosFilas.map((fila) => (
-                      <FilaInsumoEditor
-                        key={fila.id}
-                        fila={fila}
-                        tiposTela={tiposTela}
-                        colores={coloresParaTipoTela(fila.idTipoTela)}
-                        onCambiarTipo={(valor) => actualizarFila(setPunosFilas, fila.id, filaConTipoTela(valor, tiposTela))}
-                        onCambiarColor={(idPaletaColor) => actualizarFila(setPunosFilas, fila.id, { idPaletaColor })}
-                        onCambiarCantidad={(valor) => actualizarFila(setPunosFilas, fila.id, { cantidad: valor })}
-                        onEliminar={() => eliminarFila(setPunosFilas, fila.id)}
-                      />
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => agregarFila(setPunosFilas, DESCRIPCION_PUNOS, CODIGO_TIPO_TELA_RIBB)}
-                      className="self-start text-[11px] font-semibold text-wc-green underline"
-                    >
-                      + Agregar color a Puños y cintura
-                    </button>
-                  </div>
-                )}
-
-                {filasLibres.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    {mostrarCapuchaYPunos && <span className="text-[11px] font-medium text-wc-text-muted">Otros insumos</span>}
-                    {filasLibres.map((fila) => (
-                      <FilaInsumoEditor
-                        key={fila.id}
-                        fila={fila}
-                        tiposTela={tiposTela}
-                        colores={coloresParaTipoTela(fila.idTipoTela)}
-                        descripcion={{ valor: fila.descripcion, onCambiar: (valor) => actualizarFila(setFilasLibres, fila.id, { descripcion: valor }) }}
-                        onCambiarTipo={(valor) => actualizarFila(setFilasLibres, fila.id, filaConTipoTela(valor, tiposTela))}
-                        onCambiarColor={(idPaletaColor) => actualizarFila(setFilasLibres, fila.id, { idPaletaColor })}
-                        onCambiarCantidad={(valor) => actualizarFila(setFilasLibres, fila.id, { cantidad: valor })}
-                        onEliminar={() => eliminarFila(setFilasLibres, fila.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => agregarFila(setFilasLibres, '')}
-                  className="self-start text-xs font-semibold text-wc-green underline"
-                >
-                  + Agregar insumo
-                </button>
+              <SeccionInsumosSecundarios
+                filas={filasInsumo}
+                onCambiarFilas={setFilasInsumo}
+                tiposInsumo={tiposInsumo}
+                tiposTela={tiposTela}
+                coloresParaTipoTela={coloresParaTipoTela}
+                mostrarCapuchaYPunos={mostrarCapuchaYPunos}
+                gruposPines={gruposPines}
+                asignacionesPin={asignacionesPin}
+                onCambiarAsignacionesPin={setAsignacionesPin}
+                llevaEstampado={llevaEstampado}
+                onCambiarLlevaEstampado={setLlevaEstampado}
+                errorCatalogo={errorTiposInsumo}
+              />
               </div>
             </div>
           </div>

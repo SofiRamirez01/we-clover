@@ -3,6 +3,7 @@ import type { ProductoResponse } from '../types/pedido';
 import type { EstadoBandera } from '../types/pedido';
 import type { ProductoColorItemRequest, ProductoInsumoSecundarioItemRequest, TipoTela } from '../types/paletaColores';
 import type { EtapaProduccion } from '../types/produccion';
+import type { AsignacionInsumoPiezaItemRequest, AsignacionesInsumoResponse } from '../types/tipoInsumo';
 
 export async function subirImagenDisenoProducto(idProducto: number, imagen: File): Promise<ProductoResponse> {
   const formData = new FormData();
@@ -41,7 +42,23 @@ export async function actualizarColorCierreProducto(idProducto: number, idPaleta
   return data;
 }
 
-/** Reemplaza todo el set de insumos secundarios del producto (capucha, puños, cierre y libres) de una vez. */
+/** Qué fila de insumo cubre cada pin de la moldería, agrupado por tipo de insumo. */
+export async function obtenerAsignacionesInsumo(idProducto: number): Promise<AsignacionesInsumoResponse> {
+  const { data } = await api.get<AsignacionesInsumoResponse>(`/productos/${idProducto}/asignaciones-insumo`);
+  return data;
+}
+
+/** Reemplaza todas las asignaciones pin → fila de insumo del producto. */
+export async function guardarAsignacionesInsumo(
+  idProducto: number,
+  asignaciones: AsignacionInsumoPiezaItemRequest[],
+): Promise<AsignacionesInsumoResponse> {
+  const { data } = await api.put<AsignacionesInsumoResponse>(`/productos/${idProducto}/asignaciones-insumo`, { asignaciones });
+  return data;
+}
+
+/** Guarda el set completo de insumos secundarios: actualiza las filas con `id`, inserta las
+ *  nuevas y borra las que no viajan (capucha, puños, cierre, estampado y libres, de una vez). */
 export async function actualizarInsumosSecundariosProducto(
   idProducto: number,
   insumos: ProductoInsumoSecundarioItemRequest[],

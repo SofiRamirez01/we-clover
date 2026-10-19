@@ -1,22 +1,27 @@
 package com.weclover.backend.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.weclover.backend.dto.patroncorte.PatronCortePosicionPiezaRequest;
 import com.weclover.backend.dto.patroncorte.PatronCortePosicionPiezaResponse;
+import com.weclover.backend.dto.patroncorte.PinEliminadoResponse;
 import com.weclover.backend.entity.GrupoTalle;
 import com.weclover.backend.entity.PatronCorte;
 import com.weclover.backend.entity.PatronCorteColor;
 import com.weclover.backend.entity.PatronCortePosicionPieza;
 import com.weclover.backend.entity.Pieza;
+import com.weclover.backend.entity.ProductoInsumoPieza;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PatronCortePosicionPiezaRepository;
 import com.weclover.backend.repository.PiezaRepository;
+import com.weclover.backend.repository.ProductoInsumoPiezaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +43,7 @@ public class PatronCortePosicionPiezaService {
     private final PatronCorteRepository patronCorteRepository;
     private final PatronCortePosicionPiezaRepository patronCortePosicionPiezaRepository;
     private final PiezaRepository piezaRepository;
+    private final ProductoInsumoPiezaRepository productoInsumoPiezaRepository;
     private final PiezaService piezaService;
     private final AutorizacionService autorizacionService;
 
@@ -62,9 +68,14 @@ public class PatronCortePosicionPiezaService {
             .build();
         posicion = patronCortePosicionPiezaRepository.save(posicion);
 
-        return toResponse(posicion);
+        return toResponse(posicion, null);
     }
 
+    /**
+     * Si el pin pasa a una pieza de otro tipo de insumo (o deja de tenerlo), las fichas que lo
+     * tenían asignado a una fila de insumo pierden esa asignación: ya no corresponde. La
+     * respuesta informa cuántas se descartaron.
+     */
     @Transactional
     public PatronCortePosicionPiezaResponse actualizar(
             Long idPatronCorte, Long idColor, Long idPosicion, PatronCortePosicionPiezaRequest request, Long idUsuarioActor) {
@@ -77,13 +88,16 @@ public class PatronCortePosicionPiezaService {
         validarCoordenada(request.coordenadaXPin());
         validarCoordenada(request.coordenadaYPin());
 
+        boolean cambiaTipoInsumo = !Objects.equals(posicion.getPieza().getTipoInsumo(), pieza.getTipoInsumo());
+        int asignacionesDescartadas = cambiaTipoInsumo ? descartarAsignacionesInsumo(posicion) : 0;
+
         posicion.setPieza(pieza);
         posicion.setCoordenadaXPin(request.coordenadaXPin());
         posicion.setCoordenadaYPin(request.coordenadaYPin());
         posicion.setEtiqueta(request.etiqueta());
         posicion = patronCortePosicionPiezaRepository.save(posicion);
 
-        return toResponse(posicion);
+        return toResponse(posicion, asignacionesDescartadas);
     }
 
     /**
@@ -94,14 +108,35 @@ public class PatronCortePosicionPiezaService {
      * snapshot al hacer flush — si el hijo se borra por su cuenta pero sigue apareciendo en la
      * colección ya cargada del padre, Hibernate no detecta ningún cambio y el borrado se pierde
      * en silencio (sin excepción).
+     *
+     * Antes de borrar el pin se descartan las asignaciones de insumo de las fichas que lo
+     * usaban (si no, la FK de producto_insumo_pieza impediría el borrado); la respuesta informa
+     * cuántas fueron.
      */
     @Transactional
-    public void eliminar(Long idPatronCorte, Long idColor, Long idPosicion, Long idUsuarioActor) {
+    public PinEliminadoResponse eliminar(Long idPatronCorte, Long idColor, Long idPosicion, Long idUsuarioActor) {
         autorizacionService.verificarRolAdministrativo(idUsuarioActor);
 
         PatronCorteColor color = obtenerColor(idPatronCorte, idColor);
         PatronCortePosicionPieza posicion = obtenerPosicion(color, idPosicion);
+        int asignacionesDescartadas = descartarAsignacionesInsumo(posicion);
         color.getPosicionesPieza().remove(posicion);
+        return new PinEliminadoResponse(asignacionesDescartadas);
+    }
+
+    /**
+     * Quita, de todas las fichas, las asignaciones de insumo que apuntan a este pin. Se sacan
+     * de la colección de su fila de insumo (orphanRemoval, mismo cuidado que en eliminar) y se
+     * fuerza el flush para que el DELETE salga antes que cualquier cambio posterior sobre el pin.
+     */
+    private int descartarAsignacionesInsumo(PatronCortePosicionPieza posicion) {
+        List<ProductoInsumoPieza> asignaciones = productoInsumoPiezaRepository.findByPosicionPieza_Id(posicion.getId());
+        if (asignaciones.isEmpty()) {
+            return 0;
+        }
+        asignaciones.forEach(asignacion -> asignacion.getProductoInsumo().getAsignacionesPieza().remove(asignacion));
+        productoInsumoPiezaRepository.flush();
+        return asignaciones.size();
     }
 
     private PatronCorteColor obtenerColor(Long idPatronCorte, Long idColor) {
@@ -140,12 +175,13 @@ public class PatronCortePosicionPiezaService {
         }
     }
 
-    private PatronCortePosicionPiezaResponse toResponse(PatronCortePosicionPieza posicion) {
+    private PatronCortePosicionPiezaResponse toResponse(PatronCortePosicionPieza posicion, Integer asignacionesDescartadas) {
         return new PatronCortePosicionPiezaResponse(
             posicion.getId(),
             posicion.getCoordenadaXPin(),
             posicion.getCoordenadaYPin(),
             posicion.getEtiqueta(),
-            piezaService.construirResumen(posicion.getPieza()));
+            piezaService.construirResumen(posicion.getPieza()),
+            asignacionesDescartadas);
     }
 }

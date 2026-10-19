@@ -8,8 +8,8 @@ import com.weclover.backend.entity.Producto;
 /**
  * Cálculo puro (sin acceso a repositorios) de qué EtapaProduccion aplican a un Producto
  * no-Bandera (ver 3.1 de la entrega de Producción): CORTE, BORDADO, CONFECCION, APODO y CONTROL
- * siempre aplican; ESTAMPADO solo si el producto tiene un insumo secundario con
- * descripcion="Estampado"; OJAL solo si tipoPrenda es "Chomba". Bandera no participa de este
+ * siempre aplican; ESTAMPADO solo si el producto tiene un insumo secundario del tipo ESTAMPADO
+ * (ver TipoInsumoCodigos); OJAL solo si tipoPrenda es "Chomba". Bandera no participa de este
  * mecanismo en absoluto (ver Producto.estadoBandera) — no se llama a esto para un producto
  * Bandera.
  *
@@ -20,7 +20,6 @@ import com.weclover.backend.entity.Producto;
  */
 public final class EtapaProduccionAplicabilidad {
 
-    private static final String DESCRIPCION_ESTAMPADO = "Estampado";
     private static final String TIPO_PRENDA_CHOMBA = "Chomba";
     public static final String TIPO_PRENDA_BANDERA = "Bandera";
 
@@ -34,7 +33,7 @@ public final class EtapaProduccionAplicabilidad {
 
     public static List<EtapaProduccion> etapasAplicables(Producto producto) {
         boolean tieneEstampado = producto.getInsumosSecundarios().stream()
-            .anyMatch(insumo -> DESCRIPCION_ESTAMPADO.equals(insumo.getDescripcion()));
+            .anyMatch(insumo -> TipoInsumoCodigos.esDeTipo(insumo, TipoInsumoCodigos.ESTAMPADO));
         boolean esChomba = producto.getTipoPrenda() != null
             && TIPO_PRENDA_CHOMBA.equalsIgnoreCase(producto.getTipoPrenda().getNombre());
 

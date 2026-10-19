@@ -181,7 +181,7 @@ export interface PedidoUpdateRequest {
 
 /** ESTADO_PRODUCCION = cambio de estado de producción de una prenda que no viene de marcar una
  *  etapa (pedido ENTREGADO, recálculo, carga retroactiva). */
-export type TipoEventoHistorial = 'ESTADO_PEDIDO' | 'ETAPA_PRODUCCION' | 'ESTADO_PRODUCCION' | 'ASIGNACION_TANDA' | 'UBICACION';
+export type TipoEventoHistorial = 'ESTADO_PEDIDO' | 'ETAPA_PRODUCCION' | 'ESTADO_PRODUCCION' | 'ASIGNACION_TANDA';
 
 /** Contexto del pedido guardado en el momento de un cambio de tanda (no se recalcula). */
 export interface SnapshotAsignacionTanda {
@@ -230,10 +230,6 @@ export interface HistorialCambioResponse {
   nombreTandaNueva: string | null;
   idSesionPriorizacion: number | null;
   snapshotTanda: SnapshotAsignacionTanda | null;
-
-  /** Solo en UBICACION (null en el resto). null = sin ubicación cargada. */
-  ubicacionAnterior: string | null;
-  ubicacionNueva: string | null;
 }
 
 export interface PedidoResponse {

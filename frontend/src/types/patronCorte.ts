@@ -8,6 +8,13 @@ export interface PatronCortePosicionPiezaResponse {
   coordenadaYPin: number;
   etiqueta: string | null;
   pieza: PiezaResumenResponse;
+  /** Solo al editar un pin: asignaciones de insumo de fichas que se descartaron por el cambio. */
+  asignacionesDescartadas?: number | null;
+}
+
+/** Respuesta de borrar un pin. */
+export interface PinEliminadoResponse {
+  asignacionesDescartadas: number;
 }
 
 export interface PatronCortePosicionPiezaPayload {

@@ -225,7 +225,7 @@ Falta:
   le niega explícitamente a `ROLE_CLIENTE` es `GET /api/pedidos/{id}/historial` (validación
   agregada con Tandas, `AutorizacionService.verificarRolInterno`) y todo `/api/tandas`.
   `GET /api/pedidos` y `GET /api/pedidos/{id}` siguen sin validar rol: por eso `PedidoResponse`
-  **no** lleva tanda, notas ni ubicación (información interna). Al implementar la vista de
+  **no** lleva tanda ni notas (información interna). Al implementar la vista de
   cliente hay que darle un DTO/endpoint propio y cerrar esos dos `GET` — no reusar
   `PedidoResponse` ni el historial.
 
@@ -488,10 +488,13 @@ Pendientes:
 ## Tandas de producción (reemplazan a la prioridad numérica)
 
 Hecho: `Tanda` (estado y posición derivados, no persistidos), sesión de priorización atómica
-(`POST /api/tandas/priorizacion`), historial unificado con `ASIGNACION_TANDA`/`UBICACION`,
-notas y ubicación del pedido, comentario opcional al marcar etapas, la Pantalla de Producción
+(`POST /api/tandas/priorizacion`), historial unificado con `ASIGNACION_TANDA`,
+notas del pedido, comentario opcional al marcar etapas, la Pantalla de Producción
 agrupada por tanda y el popup "Priorizar" (solo `ROLE_ADMINISTRATIVO`).
 `PUT/DELETE /api/pedidos/{id}/prioridad` responden 410.
+
+La **ubicación física del pedido** se llegó a implementar y se sacó a pedido del negocio (no es
+relevante; si hace falta se anota como nota del pedido).
 
 Pendiente:
 - **Alerta por cambio de % de pago** (decisión del negocio: no hacerla todavía): avisar cuando
@@ -512,3 +515,41 @@ Pendiente:
   no hay pantalla ni endpoint para consultarlos.
 - **Dos administrativos priorizando a la vez**: si otro movió un pedido mientras el popup
   estaba abierto, la sesión entera se rechaza (409) y hay que reabrir; no hay fusión de cambios.
+
+## Formulario de pedido: los mensajes de error solo aparecen arriba
+
+En `NuevoPedidoView` (alta y edición de pedido) todos los errores de validación y de guardado
+se muestran en un único cartel al principio de la pantalla. Si el usuario está abajo (por
+ejemplo en la tabla de prendas o en el botón "Guardar"), aprieta guardar y no pasa nada
+visible: tiene que subir para enterarse de que hubo un error. Reportado por el negocio al
+editar un pedido.
+
+Falta:
+- Marcar **qué campo** es el que está mal (borde rojo y mensaje al lado del input), en vez de
+  un texto genérico arriba — en especial en la tabla de prendas, donde el mensaje "Hay una
+  prenda incompleta" no dice cuál fila.
+- Que el error sea visible desde donde se aprieta "Guardar": llevar el foco/scroll al primer
+  campo con error, o repetir el aviso junto al botón.
+- Revisar el mismo patrón en el resto de los formularios largos (cartel único arriba).
+
+## Tipos de insumo y tela de cada pieza (base del Módulo 4)
+
+Hecho (pasos 1 a 8): catálogo `tipos_insumo`, tipo en cada fila de insumo y en cada pieza
+("Tela de la pieza"), asignación de pines por fila cuando un tipo tiene dos o más filas,
+reparto de gramos con indicador de edición manual, y `ResolucionTelaPin` (tela y color de un
+pin, o motivo). Pendiente:
+
+- **`GET /api/tandas/{id}/preparacion-corte` (Módulo 4, paso 1) no está implementado.** Quedó
+  frenado hasta tener la tela de cada pieza; ahora debe usar `ResolucionTelaPin` para la tela
+  y el color de cada pin, y mandar a `pendientes` los que devuelvan un motivo.
+- **Las piezas todavía no tienen tela propia cargada.** Todas arrancan como "Cuerpo": hay que
+  editar Capucha, Cintura y Puños desde Piezas y elegirles su tela. Hoy no existe una pieza
+  "Puño" y casi ninguna pieza tiene los 7 talles graduados.
+- **El aviso de pines sin asignar solo se ve dentro del modal de la Ficha**, no en la tarjeta
+  del listado ni en Producción.
+- **Destildar "Lleva estampado" no quita la etapa ESTAMPADO del listado de etapas** del
+  producto: la fila ya creada queda (deja de contar para el estado, pero se sigue viendo).
+- **"Tela de la pieza" no se probó en navegador** (sí con tests y tipos): falta una pasada
+  manual por el formulario de Piezas.
+- **Un Buzo con Cierre** (producto 24) pierde esa fila al guardar su Ficha: el Cierre solo se
+  edita y se conserva en Camperas. Es el comportamiento previo, no se cambió.

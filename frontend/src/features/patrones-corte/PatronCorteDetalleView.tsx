@@ -37,6 +37,8 @@ export default function PatronCorteDetalleView({ patronCorteId }: PatronCorteDet
   const [accion, setAccion] = useState<AccionPanel | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [errorPin, setErrorPin] = useState<string | null>(null);
+  /** Aviso (no es un error) de que un cambio en un pin dejó fichas sin esa asignación de insumo. */
+  const [avisoPin, setAvisoPin] = useState<string | null>(null);
 
   const contenedorImagenRef = useRef<HTMLDivElement | null>(null);
 
@@ -116,12 +118,13 @@ export default function PatronCorteDetalleView({ patronCorteId }: PatronCorteDet
     setOcupado(true);
     setErrorPin(null);
     try {
-      await actualizarPosicionPieza(patronCorteId, accion.color.id, accion.posicion.id, {
+      const actualizada = await actualizarPosicionPieza(patronCorteId, accion.color.id, accion.posicion.id, {
         piezaId: pieza.id,
         coordenadaXPin: accion.posicion.coordenadaXPin,
         coordenadaYPin: accion.posicion.coordenadaYPin,
         etiqueta: accion.posicion.etiqueta,
       });
+      avisarAsignacionesDescartadas(actualizada.asignacionesDescartadas ?? 0);
       await recargar();
       setAccion(null);
     } catch (err) {
@@ -131,11 +134,19 @@ export default function PatronCorteDetalleView({ patronCorteId }: PatronCorteDet
     }
   }
 
+  function avisarAsignacionesDescartadas(cantidad: number) {
+    setAvisoPin(
+      cantidad > 0
+        ? `Se descartó la asignación de insumo de este pin en ${cantidad} ficha${cantidad === 1 ? '' : 's'} técnica${cantidad === 1 ? '' : 's'}: hay que volver a asignarlo ahí.`
+        : null,
+    );
+  }
+
   async function eliminarPosicion(color: PatronCorteColorResponse, posicion: PatronCortePosicionPiezaResponse) {
     setOcupado(true);
     setErrorPin(null);
     try {
-      await eliminarPosicionPieza(patronCorteId, color.id, posicion.id);
+      avisarAsignacionesDescartadas(await eliminarPosicionPieza(patronCorteId, color.id, posicion.id));
       await recargar();
       if (accion?.tipo === 'cambiar' && accion.posicion.id === posicion.id) setAccion(null);
     } catch (err) {
@@ -170,6 +181,12 @@ export default function PatronCorteDetalleView({ patronCorteId }: PatronCorteDet
           </p>
         )}
       </div>
+
+      {avisoPin && (
+        <div role="status" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          {avisoPin}
+        </div>
+      )}
 
       {errorPin && (
         <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{errorPin}</div>

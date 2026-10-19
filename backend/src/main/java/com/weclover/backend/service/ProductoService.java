@@ -1,7 +1,10 @@
 package com.weclover.backend.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +35,7 @@ import com.weclover.backend.entity.PatronCorteColor;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.ProductoColor;
 import com.weclover.backend.entity.ProductoInsumoSecundario;
+import com.weclover.backend.entity.TipoInsumo;
 import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
@@ -39,6 +43,7 @@ import com.weclover.backend.mapper.ProductoMapper;
 import com.weclover.backend.repository.PaletaColoresRepository;
 import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.ProductoRepository;
+import com.weclover.backend.repository.TipoInsumoRepository;
 import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.service.ProductoDisenoValidador.InsumoSugerido;
 
@@ -67,13 +72,10 @@ public class ProductoService {
     /** Código estable de la fila "Cierre" en tipos_tela (ver TipoTela.codigo). */
     private static final String CODIGO_TIPO_TELA_CIERRE = "CIERRE";
 
-    /** Descripción fija del insumo Cierre (ver ProductoInsumoSecundario.descripcion: es la
-     *  identidad real de la fila, no el tipo de tela). */
-    private static final String DESCRIPCION_CIERRE = "Cierre";
-
     private final ProductoRepository productoRepository;
     private final PaletaColoresRepository paletaColoresRepository;
     private final TipoTelaRepository tipoTelaRepository;
+    private final TipoInsumoRepository tipoInsumoRepository;
     private final PatronCorteRepository patronCorteRepository;
     private final ProductoMapper productoMapper;
     private final AutorizacionService autorizacionService;
@@ -234,7 +236,7 @@ public class ProductoService {
             List<InsumoSugerido> sugeridos = ProductoDisenoValidador.CODIGOS_INSUMOS_SUGERIDOS_POR_PRENDA
                 .getOrDefault(producto.getTipoPrenda().getNombre(), List.of());
             for (InsumoSugerido sugerido : sugeridos) {
-                sugerirInsumoSecundario(producto, colorPosicionUno, sugerido.codigoTipoTela(), sugerido.descripcion());
+                sugerirInsumoSecundario(producto, colorPosicionUno, sugerido.codigoTipoTela(), sugerido.codigoTipoInsumo());
             }
         }
 
@@ -247,9 +249,9 @@ public class ProductoService {
      * Moldería (PatronCorte, ver nombre de negocio en el frontend) de esta prenda puntual.
      * Ya no se elige en el alta del pedido (ver ProductoCreateRequest) — se completa después
      * desde Ficha Técnica. idPatronCorte puede ser null para desasignarla. Si la moldería
-     * cambia (a otra distinta o a ninguna), se descartan los colores ya marcados: quedaban
-     * atados a posiciones (PatronCorteColor) de la moldería anterior, que ya no existen para
-     * este producto.
+     * cambia (a otra distinta o a ninguna), se descartan los colores ya marcados y las
+     * asignaciones de insumo por pin: quedaban atados a posiciones (PatronCorteColor) y pines
+     * de la moldería anterior, que ya no existen para este producto.
      */
     @Transactional
     public ProductoResponse actualizarPatronCorte(Long idProducto, ActualizarPatronCorteRequest request, Long idUsuarioActor) {
@@ -275,6 +277,9 @@ public class ProductoService {
         Long idPatronCorteNuevo = nuevoPatronCorte != null ? nuevoPatronCorte.getId() : null;
         if (!Objects.equals(idPatronCorteActual, idPatronCorteNuevo)) {
             producto.getColores().clear();
+            // Mismo criterio para las asignaciones de insumo por pin: apuntan a pines de la
+            // moldería anterior.
+            producto.getInsumosSecundarios().forEach(insumo -> insumo.getAsignacionesPieza().clear());
         }
 
         producto.setPatronCorte(nuevoPatronCorte);
@@ -332,7 +337,7 @@ public class ProductoService {
             throw new BusinessRuleException("El color elegido no es un color de cierre");
         }
 
-        upsertInsumoSecundario(producto, cierre, DESCRIPCION_CIERRE, color, 1f);
+        upsertInsumoSecundario(producto, obtenerTipoInsumo(TipoInsumoCodigos.CIERRE), cierre, color, 1f);
 
         Producto guardado = productoRepository.save(producto);
         estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
@@ -340,13 +345,18 @@ public class ProductoService {
     }
 
     /**
-     * Reemplaza el set completo de insumos secundarios del producto (capucha, puños y
-     * cintura, cierre, o cualquier otro agregado a mano desde el modal) — mismo criterio
-     * de "reemplazar todo" que asignarColores usa para los colores del patrón. A propósito
-     * sin restricción de qué tipo de prenda puede tener qué insumo (eso lo decide el
-     * frontend armando la lista); actualizarColorCierre sigue siendo el único lugar que
-     * valida específicamente "solo Campera puede tener Cierre", para no duplicar esa regla
-     * acá y mantener ese endpoint funcionando en paralelo sin cambios de comportamiento.
+     * Guarda el set completo de insumos secundarios del producto (capucha, puños y cintura,
+     * cierre, estampado, o cualquier otro agregado a mano desde el modal). Cada item con `id`
+     * actualiza esa fila en su lugar, los que no traen `id` se insertan, y las filas del
+     * producto que no vienen en la lista se borran. Se actualiza en vez de borrar y recrear
+     * todo para que las filas conserven su id: las asignaciones de pines (ProductoInsumoPieza)
+     * apuntan a él. Esas asignaciones se descartan solo para las filas que se borran o que
+     * cambian de tipo de insumo.
+     *
+     * A propósito sin restricción de qué tipo de prenda puede tener qué insumo (eso lo decide
+     * el frontend armando la lista); actualizarColorCierre sigue siendo el único lugar que
+     * valida específicamente "solo Campera puede tener Cierre". Tampoco se validan duplicados:
+     * el tipo de insumo puede repetirse (ej. dos "Puños y cintura" de distinto color).
      */
     @Transactional
     public ProductoResponse actualizarInsumosSecundarios(
@@ -356,24 +366,81 @@ public class ProductoService {
         Producto producto = productoRepository.findById(idProducto)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el producto con id " + idProducto));
 
-        List<ProductoInsumoSecundarioItemRequest> items = request.insumos();
+        Map<Long, ProductoInsumoSecundario> existentesPorId = producto.getInsumosSecundarios().stream()
+            .collect(Collectors.toMap(ProductoInsumoSecundario::getId, Function.identity()));
+        List<TipoInsumo> tiposInsumo = tipoInsumoRepository.findAll();
 
-        // Sin validación de duplicados a propósito: la descripcion puede repetirse (ej. dos
-        // "Puños y cintura" de distinto color, uno por puño) — ver ProductoInsumoSecundario.
-        // Por eso acá se insertan todas las filas nuevas directamente, sin pasar por
-        // upsertInsumoSecundario (que matchea por descripcion): si dos items del pedido
-        // comparten descripcion, ese helper actualizaría el primero en vez de agregar un
-        // segundo. Mismo problema de flush que asignarColores: sin forzar el DELETE de las
-        // filas viejas antes de insertar las nuevas, Hibernate podría violar alguna
-        // constraint al reemplazar un insumo ya existente.
-        producto.getInsumosSecundarios().clear();
-        productoRepository.saveAndFlush(producto);
+        // Por identidad y no con equals(): las filas nuevas todavía no tienen id, y para
+        // ProductoInsumoSecundario.equals() dos filas sin id son "la misma".
+        Set<ProductoInsumoSecundario> filasVigentes = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<ProductoInsumoSecundario> filasNuevas = new ArrayList<>();
 
-        for (ProductoInsumoSecundarioItemRequest item : items) {
-            TipoTela tipoTela = tipoTelaRepository.findById(item.idTipoTela())
+        for (ProductoInsumoSecundarioItemRequest item : request.insumos()) {
+            ProductoInsumoSecundario fila;
+            if (item.id() != null) {
+                fila = existentesPorId.get(item.id());
+                if (fila == null) {
+                    throw new BusinessRuleException("El insumo " + item.id() + " no pertenece a este producto");
+                }
+                if (!filasVigentes.add(fila)) {
+                    throw new BusinessRuleException("El insumo " + item.id() + " está duplicado en la solicitud");
+                }
+            } else {
+                fila = ProductoInsumoSecundario.builder().producto(producto).build();
+                filasVigentes.add(fila);
+                filasNuevas.add(fila);
+            }
+            aplicarItem(fila, item, tiposInsumo);
+        }
+
+        producto.getInsumosSecundarios().removeIf(fila -> !filasVigentes.contains(fila));
+        producto.getInsumosSecundarios().addAll(filasNuevas);
+
+        // Con el set final de filas: los gramos sugeridos se reparten entre las filas de cada
+        // tipo, salvo en los tipos donde alguna fila fue editada a mano.
+        RepartoGramosInsumo.aplicar(producto);
+
+        Producto guardado = productoRepository.save(producto);
+        // Agregar/quitar el insumo Estampado cambia qué etapas aplican (ver
+        // EtapaProduccionAplicabilidad) y por lo tanto el estado de producción persistido.
+        productoEtapaProduccionService.sincronizarEtapas(guardado);
+        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
+        return construirRespuesta(guardado);
+    }
+
+    /** Valida un item de la ficha y vuelca sus datos sobre la fila (nueva o existente). */
+    private void aplicarItem(ProductoInsumoSecundario fila, ProductoInsumoSecundarioItemRequest item, List<TipoInsumo> tiposInsumo) {
+        TipoInsumo tipoInsumo = resolverTipoInsumo(item, tiposInsumo);
+        String descripcion = item.descripcion() != null && !item.descripcion().isBlank()
+            ? item.descripcion().trim()
+            : (tipoInsumo != null ? tipoInsumo.getNombre() : null);
+        if (descripcion == null) {
+            throw new BusinessRuleException("Debe indicar para qué es este insumo");
+        }
+
+        TipoTela tipoTela = null;
+        PaletaColores color = null;
+        if (tipoInsumo != null && !tipoInsumo.isConsumeMaterial()) {
+            // Marca sin material (ej. Estampado): la fila solo indica que la prenda "lo lleva".
+            if (item.idTipoTela() != null || item.idPaletaColor() != null || item.cantidad() != null) {
+                throw new BusinessRuleException(
+                    "\"" + tipoInsumo.getNombre() + "\" no lleva tela, color ni cantidad");
+            }
+        } else {
+            if (item.idTipoTela() == null) {
+                throw new BusinessRuleException("Debe indicar el tipo de tela de \"" + descripcion + "\"");
+            }
+            if (item.idPaletaColor() == null) {
+                throw new BusinessRuleException("Debe seleccionar el color de \"" + descripcion + "\"");
+            }
+            if (item.cantidad() == null || item.cantidad() <= 0) {
+                throw new BusinessRuleException("La cantidad de \"" + descripcion + "\" debe ser mayor a cero");
+            }
+
+            tipoTela = tipoTelaRepository.findById(item.idTipoTela())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "No existe el tipo de tela con id " + item.idTipoTela()));
-            PaletaColores color = paletaColoresRepository.findById(item.idPaletaColor())
+            color = paletaColoresRepository.findById(item.idPaletaColor())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "No existe el color de paleta con id " + item.idPaletaColor()));
 
@@ -381,22 +448,33 @@ public class ProductoService {
                 throw new BusinessRuleException(
                     "El color elegido no pertenece al tipo de tela " + tipoTela.getNombre());
             }
-
-            producto.getInsumosSecundarios().add(ProductoInsumoSecundario.builder()
-                .producto(producto)
-                .descripcion(item.descripcion().trim())
-                .tipoTela(tipoTela)
-                .color(color)
-                .cantidad(item.cantidad())
-                .build());
+            if (tipoInsumo != null && TipoInsumoCodigos.soloTelasPorPeso(tipoInsumo) && !tipoTela.isEsPorPeso()) {
+                throw new BusinessRuleException(
+                    "\"" + tipoInsumo.getNombre() + "\" se corta en tela: no puede usar " + tipoTela.getNombre());
+            }
         }
 
-        Producto guardado = productoRepository.save(producto);
-        // Agregar/quitar el insumo "Estampado" cambia qué etapas aplican (ver
-        // EtapaProduccionAplicabilidad) y por lo tanto el estado de producción persistido.
-        productoEtapaProduccionService.sincronizarEtapas(guardado);
-        estadoPedidoService.recalcularEstadoPedido(guardado.getPedido().getId());
-        return construirRespuesta(guardado);
+        // Si la fila pasa a ser de otro tipo de insumo, los pines que cubría ya no le corresponden.
+        if (!Objects.equals(fila.getTipoInsumo(), tipoInsumo)) {
+            fila.getAsignacionesPieza().clear();
+        }
+
+        boolean editadaAMano;
+        if (tipoTela == null) {
+            editadaAMano = false;
+        } else if (item.cantidadEditadaManualmente() != null) {
+            editadaAMano = item.cantidadEditadaManualmente();
+        } else {
+            editadaAMano = fila.getId() != null
+                && (RepartoGramosInsumo.editadaAMano(fila) || !Objects.equals(fila.getCantidad(), item.cantidad()));
+        }
+
+        fila.setTipoInsumo(tipoInsumo);
+        fila.setDescripcion(descripcion);
+        fila.setTipoTela(tipoTela);
+        fila.setColor(color);
+        fila.setCantidad(item.cantidad());
+        fila.setCantidadEditadaManualmente(editadaAMano);
     }
 
     /**
@@ -422,29 +500,56 @@ public class ProductoService {
 
     private Optional<ProductoInsumoSecundario> obtenerInsumoCierre(Producto producto) {
         return producto.getInsumosSecundarios().stream()
-            .filter(insumo -> DESCRIPCION_CIERRE.equals(insumo.getDescripcion()))
+            .filter(insumo -> TipoInsumoCodigos.esDeTipo(insumo, TipoInsumoCodigos.CIERRE))
             .findFirst();
     }
 
+    private TipoInsumo obtenerTipoInsumo(String codigo) {
+        return tipoInsumoRepository.findByCodigo(codigo)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "No existe el tipo de insumo " + codigo + " en el catálogo"));
+    }
+
     /**
-     * Sugiere un insumo secundario con descripcion=descripcion (ej. "Capucha") y
-     * tipoTela=codigoTipoTela, con el mismo nombre de color que colorPosicionUno, buscado en
-     * esa categoría de tela. No hace nada si: el tipo de tela no existe en el catálogo, ya
-     * hay un insumo con esa descripcion para el producto (no pisa una elección manual — se
-     * matchea por descripcion, no por tipo de tela, ver ProductoInsumoSecundario), o no hay
-     * un color con ese nombre exacto en esa categoría (queda para completar a mano). La
-     * cantidad sugerida sale de TipoTela.gramosSugerido si es por peso, o 1 si es por unidad
+     * Tipo de una fila que llega de la ficha: el que indica `idTipoInsumo` o, si no viene, el
+     * tipo cuyo nombre coincide exactamente con la descripción (mismo criterio que la
+     * migración de arranque, ver TipoInsumoMigracionService — que de todos modos asociaría
+     * esa fila en el próximo reinicio). Null = insumo libre.
+     */
+    private TipoInsumo resolverTipoInsumo(ProductoInsumoSecundarioItemRequest item, List<TipoInsumo> tiposInsumo) {
+        if (item.idTipoInsumo() != null) {
+            return tiposInsumo.stream()
+                .filter(tipo -> tipo.getId().equals(item.idTipoInsumo()))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "No existe el tipo de insumo con id " + item.idTipoInsumo()));
+        }
+        String descripcionNormalizada = TipoInsumoMigracionService.normalizar(item.descripcion());
+        return tiposInsumo.stream()
+            .filter(tipo -> TipoInsumoMigracionService.normalizar(tipo.getNombre()).equals(descripcionNormalizada))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Sugiere un insumo secundario del tipo codigoTipoInsumo (ej. CAPUCHA) en la tela
+     * codigoTipoTela, con el mismo nombre de color que colorPosicionUno, buscado en esa
+     * categoría de tela. No hace nada si: el tipo de insumo o el de tela no existen en el
+     * catálogo, ya hay un insumo de ese tipo para el producto (no pisa una elección manual),
+     * o no hay un color con ese nombre exacto en esa categoría (queda para completar a mano).
+     * La cantidad sugerida sale de TipoTela.gramosSugerido si es por peso, o 1 si es por unidad
      * (ej. Cierre) — mismo criterio 100% de datos, sin hardcodear cantidades por tipo acá.
      */
-    private void sugerirInsumoSecundario(Producto producto, PaletaColores colorPosicionUno, String codigoTipoTela, String descripcion) {
+    private void sugerirInsumoSecundario(Producto producto, PaletaColores colorPosicionUno, String codigoTipoTela, String codigoTipoInsumo) {
         Optional<TipoTela> tipoTelaOpt = tipoTelaRepository.findByCodigo(codigoTipoTela);
-        if (tipoTelaOpt.isEmpty()) {
+        Optional<TipoInsumo> tipoInsumoOpt = tipoInsumoRepository.findByCodigo(codigoTipoInsumo);
+        if (tipoTelaOpt.isEmpty() || tipoInsumoOpt.isEmpty()) {
             return;
         }
         TipoTela tipoTela = tipoTelaOpt.get();
 
         boolean yaExiste = producto.getInsumosSecundarios().stream()
-            .anyMatch(insumo -> descripcion.equals(insumo.getDescripcion()));
+            .anyMatch(insumo -> TipoInsumoCodigos.esDeTipo(insumo, codigoTipoInsumo));
         if (yaExiste) {
             return;
         }
@@ -454,15 +559,15 @@ public class ProductoService {
                 float cantidad = tipoTela.isEsPorPeso()
                     ? (tipoTela.getGramosSugerido() != null ? tipoTela.getGramosSugerido() : 0f)
                     : 1f;
-                upsertInsumoSecundario(producto, tipoTela, descripcion, color, cantidad);
+                upsertInsumoSecundario(producto, tipoInsumoOpt.get(), tipoTela, color, cantidad);
             });
     }
 
-    /** Upsert por (producto, descripcion): si ya había una fila con esa descripcion, la
-     *  reemplaza (incluido el tipoTela, que puede cambiar) en vez de duplicar. */
-    private void upsertInsumoSecundario(Producto producto, TipoTela tipoTela, String descripcion, PaletaColores color, float cantidad) {
+    /** Upsert por (producto, tipo de insumo): si ya había una fila de ese tipo, la reemplaza
+     *  (incluido el tipoTela, que puede cambiar) en vez de duplicar. */
+    private void upsertInsumoSecundario(Producto producto, TipoInsumo tipoInsumo, TipoTela tipoTela, PaletaColores color, float cantidad) {
         Optional<ProductoInsumoSecundario> existente = producto.getInsumosSecundarios().stream()
-            .filter(insumo -> descripcion.equals(insumo.getDescripcion()))
+            .filter(insumo -> TipoInsumoCodigos.esDeTipo(insumo, tipoInsumo.getCodigo()))
             .findFirst();
 
         if (existente.isPresent()) {
@@ -472,7 +577,8 @@ public class ProductoService {
         } else {
             producto.getInsumosSecundarios().add(ProductoInsumoSecundario.builder()
                 .producto(producto)
-                .descripcion(descripcion)
+                .tipoInsumo(tipoInsumo)
+                .descripcion(tipoInsumo.getNombre())
                 .tipoTela(tipoTela)
                 .color(color)
                 .cantidad(cantidad)

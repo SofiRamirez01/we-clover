@@ -62,6 +62,9 @@ export function calcularConsumoProducto(producto: ProductoResponse, tiposTela: T
   }
 
   for (const insumo of producto.insumosSecundarios) {
+    // Una marca sin material (ej. Estampado) no tiene tela, color ni cantidad: no consume nada.
+    if (insumo.tipoTela == null || insumo.idPaletaColor == null || insumo.cantidad == null) continue;
+    if (insumo.nombreTipoTela == null || insumo.esPorPeso == null || insumo.nombreColor == null || insumo.hexColor == null) continue;
     const cantidad = convertirAUnidadDeCompra(insumo.cantidad * producto.cantidadTotal, insumo.esPorPeso);
     sumar(insumo.tipoTela, insumo.nombreTipoTela, insumo.esPorPeso, insumo.idPaletaColor, insumo.nombreColor, insumo.hexColor, cantidad);
   }

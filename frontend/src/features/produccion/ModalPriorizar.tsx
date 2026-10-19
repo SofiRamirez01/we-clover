@@ -371,7 +371,6 @@ export default function ModalPriorizar({ onCerrar, onGuardado }: ModalPriorizarP
             {saldoCero ? 'Saldo 0' : `${Math.round(pedido.porcentajePagado)}% pago`}
           </span>
           <EstadoBadge estado={pedido.estadoActual} />
-          {pedido.ubicacionActual && <span className="text-[11px] text-wc-text">📍 {pedido.ubicacionActual}</span>}
           {!enTanda && pedido.prioridadAutomatica != null && (
             <span className="text-[11px] text-wc-text-muted" title="Puntaje sugerido: orden por % de pago">
               sugerido #{pedido.prioridadAutomatica}
