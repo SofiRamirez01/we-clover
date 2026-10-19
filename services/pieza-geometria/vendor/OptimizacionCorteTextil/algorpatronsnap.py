@@ -384,7 +384,7 @@ def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_indi
 
                 ubicado = None
                 for modo in modos:
-                    gene = _nuevo_gen(plantilla, modo, 0)
+                    gene = _nuevo_gen(plantilla, modo, random.choice(ROTACIONES))
                     ubicado = _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez,
                                                 max_placement_attempts)
                     if ubicado is not None:
