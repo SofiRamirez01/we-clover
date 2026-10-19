@@ -587,6 +587,8 @@ def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
         nuevo = gene.copy()
         nuevo.update({"polygon": polygon, "x": new_x, "y": new_y, "rotacion": rotacion})
         mutated.append(nuevo)
+        # Los genes siguientes se validan contra la posición ya mutada de este.
+        moved_individual[index] = _move_margin_entry(nuevo)
 
     if mutation_rate_modo > 0:
         for i0 in range(len(mutated) - 1):
