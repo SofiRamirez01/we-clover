@@ -108,7 +108,7 @@ def send_to_canvas(patterns_file=PATTERNS_FILE):
 			"x": float(entry.get("x")),
 			"y": float(entry.get("y")),
 			"simetrico": entry.get("simetrico", False),
-			"flipped": entry.get("flipped", False),
+			"rotacion": entry.get("rotacion", 0),
 		})
 	
 	with open("best_individual.json", "w", encoding="utf-8") as f:

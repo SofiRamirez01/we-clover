@@ -1,12 +1,23 @@
 ﻿from math import hypot
 from functools import lru_cache
-import matplotlib.pyplot as plt
-import shapely.plotting
-import numpy as np
 import random
-from shapely.affinity import translate, scale
-from shapely.geometry import Polygon
-import polyorder
+from shapely.affinity import translate, rotate
+from shapely.geometry import Polygon, box
+from shapely.geometry.polygon import orient
+
+# Modificado respecto de v1.0.0 (S.G.O.T.): matplotlib, shapely.plotting, numpy y polyorder
+# se importan adentro de las funciones que los usan, para que el servidor no los cargue.
+# El espejo (flipped) se reemplazó por una rotación de 180°, y las piezas simétricas pueden
+# ir ENTERA o como MITAD al doblez (ver _preparar_entradas).
+
+ENTERA = "ENTERA"
+MITAD = "MITAD"
+RANURA = "RANURA"
+ROTACIONES = (0, 180)
+
+
+class CorteCancelado(Exception):
+    """El indicador de cancelación se activó durante la búsqueda."""
 
 
 @lru_cache(maxsize=4096)
@@ -17,8 +28,121 @@ def _polygon_properties(polygon):
     return minx, miny, maxx, maxy, center.x, center.y
 
 
+def create_half_polygons(base_polygon, offset):
+    """Corta una pieza simétrica por su eje vertical (centro del bounding box).
+
+    Devuelve (mitad_base, mitad_margen), las dos con el eje como borde izquierdo (minx):
+    la mitad derecha de la pieza. El margen es un buffer en inglete recortado por el
+    semiplano del eje, para que no quede margen sobre el doblez.
+    """
+    minx, miny, maxx, maxy = base_polygon.bounds
+    eje = (minx + maxx) / 2
+    alto = maxy - miny
+    lado_derecho = box(eje, miny - offset - alto, maxx + offset + alto, maxy + offset + alto)
+    mitad_base = _poligono_mayor(base_polygon.intersection(lado_derecho))
+    mitad_margen = _poligono_mayor(
+        mitad_base.buffer(offset, join_style=2).intersection(lado_derecho)
+    )
+    return orient(mitad_base), orient(mitad_margen)
+
+
+def _poligono_mayor(geometria):
+    if geometria.geom_type == "Polygon":
+        return geometria
+    poligonos = [g for g in getattr(geometria, "geoms", []) if g.geom_type == "Polygon"]
+    if not poligonos:
+        raise ValueError("La geometría no tiene ningún polígono")
+    return max(poligonos, key=lambda p: p.area)
+
+
+def place_polygon(polygon, reference_polygon, rotacion, x, y):
+    """Aplica a `polygon` la misma transformación que el algoritmo aplicó a `reference_polygon`.
+
+    `reference_polygon` es el polígono con margen en orientación 0 que recibió el algoritmo;
+    `polygon` es la pieza sin margen en ese mismo sistema de coordenadas. El algoritmo rota
+    sobre el centroide del polígono con margen y lo lleva a (x, y).
+    """
+    centro = reference_polygon.centroid
+    rotado = rotate(polygon, rotacion, origin=centro) if rotacion else polygon
+    return translate(rotado, xoff=x - centro.x, yoff=y - centro.y)
+
+
+def _preparar_entradas(margin_polygons):
+    """Normaliza las entradas en plantillas de gen, una por ubicación posible.
+
+    Cada entrada es {name, polygon, simetrico, modo?, mitad?}:
+    - modo ENTERA (default): la pieza entera, ubicada libremente.
+    - modo MITAD: `mitad` (ver create_half_polygons) con el eje pegado a un doblez.
+    - modo RANURA: rinde lo mismo que 1 entera o que 2 mitades, y el algoritmo elige cuál;
+      se expande en dos plantillas (rol 0 y rol 1); en ENTERA la de rol 1 queda inactiva.
+    """
+    if margin_polygons and "formas" in margin_polygons[0]:
+        return margin_polygons
+    plantillas = []
+    for indice, entry in enumerate(margin_polygons):
+        modo = entry.get("modo", ENTERA)
+        formas = {}
+        if modo in (ENTERA, RANURA):
+            formas[(ENTERA, 0)] = entry["polygon"]
+            formas[(ENTERA, 180)] = rotate(entry["polygon"], 180, origin="centroid")
+        if modo in (MITAD, RANURA):
+            mitad = entry.get("mitad")
+            if mitad is None:
+                raise ValueError(f"La entrada {entry.get('name')} en modo {modo} no tiene 'mitad'")
+            formas[(MITAD, 0)] = mitad
+            formas[(MITAD, 180)] = rotate(mitad, 180, origin="centroid")
+        base = {
+            "name": entry.get("name"),
+            "simetrico": bool(entry.get("simetrico", False)),
+            "indice_entrada": indice,
+            "formas": formas,
+        }
+        if modo == RANURA:
+            for rol in (0, 1):
+                plantillas.append({**base, "modo_entrada": RANURA, "ranura": indice, "rol": rol})
+        else:
+            plantillas.append({**base, "modo_entrada": modo, "ranura": None, "rol": 0})
+    return plantillas
+
+
+def _nuevo_gen(plantilla, modo, rotacion, x=0.0, y=0.0, activo=True):
+    gen = {key: value for key, value in plantilla.items()}
+    gen.update({
+        "modo": modo,
+        "rotacion": rotacion,
+        "activo": activo,
+        "polygon": plantilla["formas"][(modo, rotacion)] if activo else None,
+        "x": x,
+        "y": y,
+    })
+    return gen
+
+
+def _x_mitad(polygon, rotacion, doblez):
+    """x del centroide que deja el eje de la mitad sobre el doblez (izquierdo si 0°, derecho si 180°)."""
+    minx, _, maxx, _, center_x, _ = _polygon_properties(polygon)
+    if rotacion == 0:
+        return doblez[0] + (center_x - minx)
+    return doblez[1] - (maxx - center_x)
+
+
+def _limites_x(gene, x_bounds, doblez):
+    return doblez if gene.get("modo") == MITAD else x_bounds
+
+
+def _activos(individual):
+    return [gene for gene in individual if gene.get("activo", True)]
+
+
+def _revisar_cancelacion(cancelado):
+    if cancelado is not None and cancelado.is_set():
+        raise CorteCancelado()
+
+
 def load_margin_polygons(patterns_file="patrones.json"):
     """Load margin geometries saved in the patterns file."""
+    import polyorder
+
     patterns = polyorder.load_patrones_from_file(patterns_file)
     return [
         {
@@ -43,9 +167,12 @@ def plot_margin_individual(individual, width=900, title=None):
     Blue box: width 900, height determined by the max y of all moved polygons.
     Red polygons: margin polygons positioned according to individual's x/y.
     """
+    import matplotlib.pyplot as plt
+    import shapely.plotting
+
     # Translate polygons to their target positions
     moved_polygons = []
-    for entry in individual:
+    for entry in _activos(individual):
         poly = entry["polygon"]
         center = poly.centroid
         x_offset = entry["x"] - center.x
@@ -88,11 +215,15 @@ def plot_margin_snapshots(snapshots, width=900):
     if not snapshots:
         return
 
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import shapely.plotting
+
     snapshot_polygons = []
     all_bounds = []
     for generation, individual in snapshots:
         moved_polygons = []
-        for entry in individual:
+        for entry in _activos(individual):
             poly = entry["polygon"]
             center = poly.centroid
             x_offset = entry["x"] - center.x
@@ -164,14 +295,21 @@ def _placement_is_valid(candidate, placed, x_bounds, y_bounds):
 
 def _placement_is_valid_moved(candidate_poly, candidate_bounds, placed_data,
                               x_bounds, y_bounds, excluded_index=None):
-    """Check a moved candidate against already translated polygons."""
+    """Check a moved candidate against already translated polygons.
+
+    `placed_data` puede tener None (genes inactivos); `excluded_index` puede ser un índice o
+    un conjunto de índices.
+    """
     min_x, min_y, max_x, max_y = candidate_bounds
-    if min_x < x_bounds[0] or min_y < y_bounds[0] or max_x > x_bounds[1] or max_y > y_bounds[1]:
+    if (min_x < x_bounds[0] or min_y < y_bounds[0]
+            or max_x > x_bounds[1] or max_y > y_bounds[1]):
         return False
 
-    for index, (placed_poly, placed_bounds) in enumerate(placed_data):
-        if index == excluded_index:
+    excluded = excluded_index if isinstance(excluded_index, (set, frozenset)) else {excluded_index}
+    for index, placed in enumerate(placed_data):
+        if placed is None or index in excluded:
             continue
+        placed_poly, placed_bounds = placed
         if (
             candidate_bounds[2] < placed_bounds[0]
             or placed_bounds[2] < candidate_bounds[0]
@@ -187,54 +325,80 @@ def _placement_is_valid_moved(candidate_poly, candidate_bounds, placed_data,
 def _individual_max_y(individual):
     """Return the highest translated boundary of an individual."""
     max_y = float("-inf")
-    for entry in individual:
+    for entry in _activos(individual):
         properties = _polygon_properties(entry["polygon"])
         max_y = max(max_y, properties[3] + entry["y"] - properties[5])
     return max_y
 
 
-def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_individual_attempts=500, max_placement_attempts=200):
+def _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez, attempts, excluded_index=None):
+    """Prueba posiciones al azar (y sesgada hacia abajo) para un gen activo.
+
+    Devuelve (gen ubicado, (polígono movido, bounds)) o None. Las mitades tienen x fija.
+    """
+    polygon = gene["polygon"]
+    limites_x = _limites_x(gene, x_bounds, doblez)
+    min_x, max_x, min_y, max_y = get_margin_position_bounds(polygon, limites_x, y_bounds)
+    if min_x > max_x or min_y > max_y:
+        return None
+    for _ in range(attempts):
+        if gene["modo"] == MITAD:
+            x = _x_mitad(polygon, gene["rotacion"], doblez)
+        else:
+            x = random.uniform(min_x, max_x)
+        t = random.random()
+        y = min_y + (t * t) * (max_y - min_y)
+        candidate = {**gene, "x": x, "y": y}
+        moved = _move_margin_entry(candidate)
+        if _placement_is_valid_moved(moved[0], moved[1], placed_data, limites_x, y_bounds,
+                                     excluded_index=excluded_index):
+            return candidate, moved
+    return None
+
+
+def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_individual_attempts=500,
+                             max_placement_attempts=200, doblez=None):
     """Create a population of valid individuals with non-overlapping in-bounds margin polygons."""
+    doblez = doblez or x_bounds
+    plantillas = _preparar_entradas(margin_polygons)
     population = []
     for _ in range(size):
         for _ in range(max_individual_attempts):
             individual = []
             placed_data = []
             valid = True
-            for entry in margin_polygons:
-                polygon = entry.get("polygon")
-                name = entry.get("name")
-                min_x, max_x, min_y, max_y = get_margin_position_bounds(polygon, x_bounds, y_bounds)
-                if min_x > max_x or min_y > max_y:
-                    valid = False
-                    break
+            modo_ranura = {}
+            for plantilla in plantillas:
+                ranura = plantilla["ranura"]
+                if ranura is not None and plantilla["rol"] == 1 and modo_ranura[ranura] == ENTERA:
+                    individual.append(_nuevo_gen(plantilla, ENTERA, 0, activo=False))
+                    placed_data.append(None)
+                    continue
 
-                placement_found = False
-                for _ in range(max_placement_attempts):
-                    x = random.uniform(min_x, max_x)
-                    t = random.random()
-                    y = min_y + (t * t) * (max_y - min_y)
-                    candidate = {
-                        "name": name,
-                        "polygon": polygon,
-                        "x": x,
-                        "y": y,
-                        "flipped": False,
-                    }
-                    candidate_poly, candidate_bounds = _move_margin_entry(candidate)
-                    if _placement_is_valid_moved(
-                        candidate_poly, candidate_bounds, placed_data, x_bounds, y_bounds
-                    ):
-                        individual.append(candidate)
-                        placed_data.append((candidate_poly, candidate_bounds))
-                        placement_found = True
+                if ranura is None:
+                    modos = [plantilla["modo_entrada"]]
+                elif plantilla["rol"] == 0:
+                    modos = [random.choice([ENTERA, MITAD])]
+                else:
+                    modos = [MITAD]
+
+                ubicado = None
+                for modo in modos:
+                    gene = _nuevo_gen(plantilla, modo, 0)
+                    ubicado = _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez,
+                                                max_placement_attempts)
+                    if ubicado is not None:
                         break
-
-                if not placement_found:
+                if ubicado is None:
                     valid = False
                     break
+                gene, moved = ubicado
+                if ranura is not None and plantilla["rol"] == 0:
+                    modo_ranura[ranura] = gene["modo"]
+                individual.append(gene)
+                placed_data.append(moved)
 
-            if valid and score_margin_positions(individual, x_bounds, y_bounds) > -30000000000:
+            if valid and score_margin_positions(individual, x_bounds, y_bounds, doblez) > -30000000000:
                 population.append(individual)
                 break
         else:
@@ -244,7 +408,7 @@ def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_indi
     return population
 
 
-def create_random_immigrants(count, margin_polygons, x_bounds, y_bounds):
+def create_random_immigrants(count, margin_polygons, x_bounds, y_bounds, doblez=None):
     """Create replacement individuals to restore diversity during late search."""
     return create_margin_population(
         count,
@@ -253,11 +417,16 @@ def create_random_immigrants(count, margin_polygons, x_bounds, y_bounds):
         y_bounds,
         max_individual_attempts=100,
         max_placement_attempts=100,
+        doblez=doblez,
     )
 
 
-def crossover_margin_individuals(parent1, parent2, alpha=None):
-    """Blend the x/y of two margin individuals to create two children."""
+def crossover_margin_individuals(parent1, parent2, alpha=None, doblez=None):
+    """Blend the x/y of two margin individuals to create two children.
+
+    Cada hijo conserva modo, rotación y genes activos de su padre principal; en las mitades
+    la x se recalcula para que el eje siga sobre el doblez.
+    """
     if alpha is None:
         alpha = random.random()
 
@@ -268,52 +437,84 @@ def crossover_margin_individuals(parent1, parent2, alpha=None):
         y1 = alpha * gene1["y"] + (1 - alpha) * gene2["y"]
         x2 = alpha * gene2["x"] + (1 - alpha) * gene1["x"]
         y2 = alpha * gene2["y"] + (1 - alpha) * gene1["y"]
-
-        polygon1 = gene1.get("polygon") or gene2.get("polygon")
-        polygon2 = gene2.get("polygon") or gene1.get("polygon")
-        child1.append({
-            "name": gene1.get("name"),
-            "polygon": polygon1,
-            "x": x1,
-            "y": y1,
-            "flipped": gene1.get("flipped", False),
-        })
-        child2.append({
-            "name": gene2.get("name"),
-            "polygon": polygon2,
-            "x": x2,
-            "y": y2,
-            "flipped": gene2.get("flipped", False),
-        })
+        child1.append(_hijo(gene1, x1, y1, doblez))
+        child2.append(_hijo(gene2, x2, y2, doblez))
 
     return child1, child2
+
+
+def _hijo(gene, x, y, doblez):
+    child = gene.copy()
+    if not gene.get("activo", True):
+        return child
+    if gene.get("modo") == MITAD and doblez is not None:
+        x = _x_mitad(gene["polygon"], gene["rotacion"], doblez)
+    child["x"] = x
+    child["y"] = y
+    return child
+
+
+def _alternar_modo_ranura(individual, moved_individual, i0, i1, x_bounds, y_bounds, doblez, attempts=20):
+    """Pasa una ranura de 1 entera a 2 mitades o al revés, si encuentra lugar válido."""
+    gene0, gene1 = individual[i0], individual[i1]
+    excluidos = {i0, i1}
+    placed = [None if i in excluidos else moved for i, moved in enumerate(moved_individual)]
+    if gene0["modo"] == ENTERA:
+        nuevos = []
+        for gene in (gene0, gene1):
+            ubicado = _buscar_ubicacion(_nuevo_gen(gene, MITAD, random.choice(ROTACIONES)),
+                                        placed, x_bounds, y_bounds, doblez, attempts)
+            if ubicado is None:
+                return
+            nuevos.append(ubicado)
+            placed = placed + [ubicado[1]]
+        (nuevo0, moved0), (nuevo1, moved1) = nuevos
+    else:
+        ubicado = _buscar_ubicacion(_nuevo_gen(gene0, ENTERA, random.choice(ROTACIONES)),
+                                    placed, x_bounds, y_bounds, doblez, attempts)
+        if ubicado is None:
+            return
+        nuevo0, moved0 = ubicado
+        nuevo1, moved1 = _nuevo_gen(gene1, ENTERA, 0, activo=False), None
+    individual[i0], individual[i1] = nuevo0, nuevo1
+    moved_individual[i0], moved_individual[i1] = moved0, moved1
 
 
 def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
                              x_bounds=(0, 900), y_bounds=(0, 900),
                              mutation_scale_x=50, mutation_scale_y_pos=50, mutation_scale_y_neg=50,
-                             mutation_rate_flip=0.1):
-    """Randomly perturb x and y and occasionally mirror a polygon.
+                             mutation_rate_flip=0.1, doblez=None, mutation_rate_modo=0.0):
+    """Randomly perturb x and y and occasionally rotate a polygon 180°.
 
     Each coordinate has its own mutation probability and scale.
     The y-direction supports separate positive and negative scales,
     and the negative scale is amplified for higher current y values.
-    A small chance also flips the polygon around its centroid to explore
-    mirrored orientations without changing the placement center.
+    `mutation_rate_flip` (nombre de v1.0.0) es la probabilidad de rotar la pieza 180° sobre
+    su centroide; el hilo sigue en el eje vertical. Ninguna pieza se espeja. Las mitades solo
+    mutan en y, y al rotar pasan al otro doblez. `mutation_rate_modo` es la probabilidad de
+    alternar una ranura entre 1 entera y 2 mitades. Todo cambio se valida contra el resto.
     """
+    doblez = doblez or x_bounds
     mutated = []
     y_max = max(y_bounds[1], 1.0)
-    moved_individual = [_move_margin_entry(gene) for gene in individual]
+    moved_individual = [
+        _move_margin_entry(gene) if gene.get("activo", True) else None for gene in individual
+    ]
     for index, gene in enumerate(individual):
+        if not gene.get("activo", True):
+            mutated.append(gene.copy())
+            continue
         new_x = gene["x"]
         new_y = gene["y"]
         polygon = gene.get("polygon")
-        flipped = gene.get("flipped", False)
+        rotacion = gene.get("rotacion", 0)
+        es_mitad = gene.get("modo") == MITAD
+        limites_x = _limites_x(gene, x_bounds, doblez)
         min_x, max_x, min_y, _ = get_margin_position_bounds(
-            polygon, x_bounds, y_bounds
+            polygon, limites_x, y_bounds
         )
 
-        if random.random() < mutation_rate_x:
+        if not es_mitad and random.random() < mutation_rate_x:
             proposed_x = new_x + random.uniform(-mutation_scale_x, mutation_scale_x)
             proposed_gene = {
                 "polygon": polygon,
@@ -322,7 +523,7 @@ def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
             }
             proposed_poly, proposed_bounds = _move_margin_entry(proposed_gene)
             if _placement_is_valid_moved(
-                proposed_poly, proposed_bounds, moved_individual, x_bounds, y_bounds,
+                proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
                 excluded_index=index,
             ):
                 new_x = proposed_x
@@ -341,11 +542,11 @@ def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
                 }
                 proposed_poly, proposed_bounds = _move_margin_entry(proposed_gene)
                 if _placement_is_valid_moved(
-                    proposed_poly, proposed_bounds, moved_individual, x_bounds, y_bounds,
+                    proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
                     excluded_index=index,
                 ):
                     new_y = proposed_y
-            else:
+            elif not es_mitad:
                 left_space = max(new_x - min_x, 0.0)
                 right_space = max(max_x - new_x, 0.0)
                 available_directions = [
@@ -366,36 +567,48 @@ def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
                     }
                     proposed_poly, proposed_bounds = _move_margin_entry(proposed_gene)
                     if _placement_is_valid_moved(
-                        proposed_poly, proposed_bounds, moved_individual, x_bounds, y_bounds,
+                        proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
                         excluded_index=index,
                     ):
                         new_x = proposed_x
         if polygon is not None and random.random() < mutation_rate_flip:
-            cx, cy = polygon.centroid.x, polygon.centroid.y
-            axis = random.choice(["vertical", "horizontal"])
-            if axis == "vertical":
-                polygon = scale(polygon, xfact=-1, yfact=1, origin=(cx, cy))
-            else:
-                polygon = scale(polygon, xfact=1, yfact=-1, origin=(cx, cy))
-            flipped = not flipped
+            proposed_rot = 180 - rotacion
+            proposed_polygon = gene["formas"][(gene["modo"], proposed_rot)]
+            proposed_x = _x_mitad(proposed_polygon, proposed_rot, doblez) if es_mitad else new_x
+            proposed_poly, proposed_bounds = _move_margin_entry(
+                {"polygon": proposed_polygon, "x": proposed_x, "y": new_y}
+            )
+            if _placement_is_valid_moved(
+                proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
+                excluded_index=index,
+            ):
+                polygon, rotacion, new_x = proposed_polygon, proposed_rot, proposed_x
 
-        mutated.append({
-            "name": gene.get("name"),
-            "polygon": polygon,
-            "x": new_x,
-            "y": new_y,
-            "flipped": flipped,
-        })
+        nuevo = gene.copy()
+        nuevo.update({"polygon": polygon, "x": new_x, "y": new_y, "rotacion": rotacion})
+        mutated.append(nuevo)
+
+    if mutation_rate_modo > 0:
+        for i0 in range(len(mutated) - 1):
+            gene = mutated[i0]
+            if (gene.get("ranura") is not None and gene["rol"] == 0
+                    and random.random() < mutation_rate_modo):
+                _alternar_modo_ranura(mutated, moved_individual, i0, i0 + 1,
+                                      x_bounds, y_bounds, doblez)
     return mutated
 
 
-def score_margin_positions(margin_params, x_bounds, y_bounds):
+def score_margin_positions(margin_params, x_bounds, y_bounds, doblez=None):
     """Translate copies of margin polygons to x/y centers and score placement.
 
     Scoring:
     - Penalizes intersections and out-of-bounds with -30000000000
     - Rewards valid placements closer to y=0, lower height, and more compact clusters
+    Las mitades se validan contra `doblez` en x (su eje va sobre el doblez); los genes
+    inactivos de una ranura no cuentan.
     """
+    doblez = doblez or x_bounds
+    margin_params = _activos(margin_params)
     moved_polygons = []
     centers = []
     moved_bounds = []
@@ -405,8 +618,10 @@ def score_margin_positions(margin_params, x_bounds, y_bounds):
         moved_bounds.append(bounds)
         centers.append((entry["x"], entry["y"]))
 
-    for minx, miny, maxx, maxy in moved_bounds:
-        if minx < x_bounds[0] or miny < y_bounds[0] or maxx > x_bounds[1] or maxy > y_bounds[1]:
+    for entry, (minx, miny, maxx, maxy) in zip(margin_params, moved_bounds):
+        limites_x = _limites_x(entry, x_bounds, doblez)
+        if (minx < limites_x[0] or miny < y_bounds[0]
+                or maxx > limites_x[1] or maxy > y_bounds[1]):
             return -30000000000
 
     # Check overlaps, touches, and nearest gaps in one pairwise pass.
@@ -449,10 +664,10 @@ def score_margin_positions(margin_params, x_bounds, y_bounds):
     max_y = float("-inf")
     touch_y0_count = 0
     x_touch_count = 0
-    min_x_allowed, min_y_allowed = x_bounds[0], y_bounds[0]
-    max_x_allowed, max_y_allowed = x_bounds[1], y_bounds[1]
+    min_y_allowed = y_bounds[0]
     individual_y0_distances = []
     for entry, (minx, miny, maxx, maxy) in zip(margin_params, moved_bounds):
+        min_x_allowed, max_x_allowed = _limites_x(entry, x_bounds, doblez)
         if abs(miny - min_y_allowed) < 1e-8:
             touch_y0_count += 1
         if entry.get("simetrico", False) and (
@@ -513,6 +728,8 @@ def compute_diversity_metrics(population, fitnesses, sample_limit=200):
     - unique_individuals_count (by rounded x/y tuples)
     - avg_pairwise_distance (Euclidean on flattened x/y vectors)
     """
+    import numpy as np
+
     metrics = {}
     metrics['unique_fitness_count'] = len(set(fitnesses))
 
@@ -571,21 +788,39 @@ def genetic_algorithm_margin_placement(margin_polygons,
                                        immigrant_rate=0.1,
                                        diversity_threshold=0.25,
                                        stagnation_limit=40,
-                                       restart_rate=0.3):
+                                       restart_rate=0.3,
+                                       doblez=None,
+                                       mutation_rate_modo=0.0,
+                                       on_generation=None,
+                                       cancelado=None,
+                                       verbose=True):
     """Run a genetic algorithm to optimize margin polygon placement.
-    
+
     All parameters must be provided by the caller.
     Returns a tuple of (best_individual, best_fitness, snapshots).
+
+    Agregados respecto de v1.0.0 (todos opcionales):
+    - doblez: (x_izquierdo, x_derecho) donde va el eje de las mitades; por defecto x_bounds.
+    - mutation_rate_modo: probabilidad de alternar una ranura entre 1 entera y 2 mitades.
+    - on_generation(gen, total, mejor_fitness, mejor_largo): se llama en cada generación.
+    - cancelado: threading.Event; si está activo al inicio de una generación se lanza
+      CorteCancelado.
+    - verbose: si es False no imprime la línea por generación.
+    Los genes de best_individual llevan modo, rotacion, activo e indice_entrada.
     """
-    population = create_margin_population(population_size, margin_polygons, x_bounds, y_bounds)
-    
+    doblez = doblez or x_bounds
+    plantillas = _preparar_entradas(margin_polygons)
+    population = create_margin_population(population_size, plantillas, x_bounds, y_bounds,
+                                          doblez=doblez)
+
     best_individual = None
     best_fitness = float('-inf')
     stagnation_generations = 0
-    
+
     snapshots = []
     for generation in range(generations):
-        fitnesses = [score_margin_positions(ind, x_bounds, y_bounds) for ind in population]
+        _revisar_cancelacion(cancelado)
+        fitnesses = [score_margin_positions(ind, x_bounds, y_bounds, doblez) for ind in population]
 
         unique_fitness_count = len(set(fitnesses))
         gen_best_idx = max(range(len(fitnesses)), key=lambda i: fitnesses[i])
@@ -595,11 +830,14 @@ def genetic_algorithm_margin_placement(margin_polygons,
             stagnation_generations = 0
         else:
             stagnation_generations += 1
-        
-        print(f"Generation {generation}: best_fitness = {best_fitness} | "
-              f"uniq_fit={unique_fitness_count} "
-              f"maxy={_individual_max_y(best_individual):.2f} "
-              f"avg_dist=skipped")
+
+        if verbose:
+            print(f"Generation {generation}: best_fitness = {best_fitness} | "
+                  f"uniq_fit={unique_fitness_count} "
+                  f"maxy={_individual_max_y(best_individual):.2f} "
+                  f"avg_dist=skipped")
+        if on_generation is not None:
+            on_generation(generation, generations, best_fitness, _individual_max_y(best_individual))
 
         if best_individual is not None and (
             generation == 0
@@ -615,7 +853,7 @@ def genetic_algorithm_margin_placement(margin_polygons,
         offspring = []
         for i in range(0, len(parents), 2):
             if random.random() < crossover_prob and i + 1 < len(parents):
-                child1, child2 = crossover_margin_individuals(parents[i], parents[i+1])
+                child1, child2 = crossover_margin_individuals(parents[i], parents[i+1], doblez=doblez)
                 offspring.extend([child1, child2])
             else:
                 offspring.append(_copy_individual(parents[i]))
@@ -642,6 +880,8 @@ def genetic_algorithm_margin_placement(margin_polygons,
                 mutation_scale_y_pos * mutation_scale_multiplier,
                 mutation_scale_y_neg * mutation_scale_multiplier,
                 mutation_rate_flip=mutation_rate_flip,
+                doblez=doblez,
+                mutation_rate_modo=mutation_rate_modo,
             )
             for ind in offspring[:num_to_mutate]
         ]
@@ -706,7 +946,7 @@ if __name__ == "__main__":
             "x": float(entry.get("x")),
             "y": float(entry.get("y")),
             "simetrico": entry.get("simetrico", False),
-            "flipped": entry.get("flipped", False),
+            "rotacion": entry.get("rotacion", 0),
         })
     
     with open("best_individual.json", "w", encoding="utf-8") as f:
