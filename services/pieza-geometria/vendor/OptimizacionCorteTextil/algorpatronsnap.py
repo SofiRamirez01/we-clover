@@ -14,6 +14,7 @@ ENTERA = "ENTERA"
 MITAD = "MITAD"
 RANURA = "RANURA"
 ROTACIONES = (0, 180)
+_EPS = 1e-9
 
 
 class CorteCancelado(Exception):
@@ -301,8 +302,8 @@ def _placement_is_valid_moved(candidate_poly, candidate_bounds, placed_data,
     un conjunto de índices.
     """
     min_x, min_y, max_x, max_y = candidate_bounds
-    if (min_x < x_bounds[0] or min_y < y_bounds[0]
-            or max_x > x_bounds[1] or max_y > y_bounds[1]):
+    if (min_x < x_bounds[0] - _EPS or min_y < y_bounds[0] - _EPS
+            or max_x > x_bounds[1] + _EPS or max_y > y_bounds[1] + _EPS):
         return False
 
     excluded = excluded_index if isinstance(excluded_index, (set, frozenset)) else {excluded_index}
@@ -339,7 +340,7 @@ def _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez, attempts, e
     polygon = gene["polygon"]
     limites_x = _limites_x(gene, x_bounds, doblez)
     min_x, max_x, min_y, max_y = get_margin_position_bounds(polygon, limites_x, y_bounds)
-    if min_x > max_x or min_y > max_y:
+    if min_x > max_x + _EPS or min_y > max_y + _EPS:
         return None
     for _ in range(attempts):
         if gene["modo"] == MITAD:
@@ -622,8 +623,8 @@ def score_margin_positions(margin_params, x_bounds, y_bounds, doblez=None):
 
     for entry, (minx, miny, maxx, maxy) in zip(margin_params, moved_bounds):
         limites_x = _limites_x(entry, x_bounds, doblez)
-        if (minx < limites_x[0] or miny < y_bounds[0]
-                or maxx > limites_x[1] or maxy > y_bounds[1]):
+        if (minx < limites_x[0] - _EPS or miny < y_bounds[0] - _EPS
+                or maxx > limites_x[1] + _EPS or maxy > y_bounds[1] + _EPS):
             return -30000000000
 
     # Check overlaps, touches, and nearest gaps in one pairwise pass.
@@ -673,7 +674,7 @@ def score_margin_positions(margin_params, x_bounds, y_bounds, doblez=None):
         if abs(miny - min_y_allowed) < 1e-8:
             touch_y0_count += 1
         if entry.get("simetrico", False) and (
-            abs(minx - min_x_allowed) < 1e-8 or abs(maxx - max_x_allowed) < 1e-8
+            abs(minx - min_x_allowed) < 1e-6 or abs(maxx - max_x_allowed) < 1e-6
         ):
             x_touch_count += 1
         max_y = max(max_y, maxy)
