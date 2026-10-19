@@ -21,6 +21,18 @@ class CorteCancelado(Exception):
     """El indicador de cancelación se activó durante la búsqueda."""
 
 
+class SinUbicacionValida(RuntimeError):
+    """No se pudo armar un individuo válido para la población inicial.
+
+    `indices_entrada` son las entradas que no encontraron lugar, de la que más falló a la
+    que menos (vacío si todas entraron pero el individuo resultó inválido igual).
+    """
+
+    def __init__(self, mensaje, indices_entrada=()):
+        super().__init__(mensaje)
+        self.indices_entrada = list(indices_entrada)
+
+
 @lru_cache(maxsize=4096)
 def _polygon_properties(polygon):
     """Cache immutable geometry properties reused throughout the search."""
@@ -363,6 +375,7 @@ def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_indi
     doblez = doblez or x_bounds
     plantillas = _preparar_entradas(margin_polygons)
     population = []
+    fallas = {}
     for _ in range(size):
         _revisar_cancelacion(cancelado)
         for _ in range(max_individual_attempts):
@@ -392,6 +405,8 @@ def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_indi
                     if ubicado is not None:
                         break
                 if ubicado is None:
+                    indice = plantilla["indice_entrada"]
+                    fallas[indice] = fallas.get(indice, 0) + 1
                     valid = False
                     break
                 gene, moved = ubicado
@@ -404,8 +419,9 @@ def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_indi
                 population.append(individual)
                 break
         else:
-            raise RuntimeError(
-                f"Unable to generate a valid starting individual after {max_individual_attempts} attempts"
+            raise SinUbicacionValida(
+                f"Unable to generate a valid starting individual after {max_individual_attempts} attempts",
+                sorted(fallas, key=lambda indice: -fallas[indice]),
             )
     return population
 
