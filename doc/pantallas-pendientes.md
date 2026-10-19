@@ -539,9 +539,10 @@ Hecho (pasos 1 a 8): catálogo `tipos_insumo`, tipo en cada fila de insumo y en 
 reparto de gramos con indicador de edición manual, y `ResolucionTelaPin` (tela y color de un
 pin, o motivo). Pendiente:
 
-- **`GET /api/tandas/{id}/preparacion-corte` (Módulo 4, paso 1) no está implementado.** Quedó
-  frenado hasta tener la tela de cada pieza; ahora debe usar `ResolucionTelaPin` para la tela
-  y el color de cada pin, y mandar a `pendientes` los que devuelvan un motivo.
+- **`GET /api/tandas/{id}/preparacion-corte` ya está implementado** (Módulo 4, paso 2; usa
+  `ResolucionTelaPin`). Falta el paso siguiente: invocar el algoritmo con esa demanda y
+  persistir las tizadas. Con los datos actuales casi todo sale como pendiente (molderías sin
+  pines y piezas sin talles graduados): el bloque `resumen.faltaCargar` lista qué cargar.
 - **Las piezas todavía no tienen tela propia cargada.** Todas arrancan como "Cuerpo": hay que
   editar Capucha, Cintura y Puños desde Piezas y elegirles su tela. Hoy no existe una pieza
   "Puño" y casi ninguna pieza tiene los 7 talles graduados.

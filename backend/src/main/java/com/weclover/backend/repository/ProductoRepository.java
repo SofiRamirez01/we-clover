@@ -18,6 +18,34 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      *  para que el corte (M4/nesting) tome "todos los productos de la tanda X". */
     List<Producto> findByPedido_Tanda_IdAndHabilitadoTrue(Long idTanda);
 
+    // ---------- Preparación del corte (ver PreparacionCorteService): carga en lote ----------
+    // Cada consulta trae una sola colección (Hibernate no trae dos listas en la misma consulta).
+    // Las que reciben `productos` no se usan por lo que devuelven: vuelven a consultar los mismos
+    // productos en la misma transacción y así inicializan esa colección en todos de una vez.
+
+    /** Mismo criterio que findByPedido_Tanda_IdAndHabilitadoTrue, con lo que el corte lee de
+     *  cada producto ya traído: pedido, tipo de prenda y su grupo de talle, tela y moldería. */
+    @Query("SELECT p FROM Producto p "
+        + "JOIN FETCH p.pedido pe "
+        + "LEFT JOIN FETCH p.tipoPrenda tp LEFT JOIN FETCH tp.grupoTalle "
+        + "LEFT JOIN FETCH p.tipoTela "
+        + "LEFT JOIN FETCH p.patronCorte "
+        + "WHERE pe.tanda.id = :idTanda AND p.habilitado = true")
+    List<Producto> buscarParaCorte(@Param("idTanda") Long idTanda);
+
+    /** Inicializa Producto.colores (con su color de paleta y su posición) de esos productos. */
+    @Query("SELECT DISTINCT p FROM Producto p "
+        + "LEFT JOIN FETCH p.colores c LEFT JOIN FETCH c.paletaColor LEFT JOIN FETCH c.patronCorteColor "
+        + "WHERE p IN :productos")
+    List<Producto> cargarColores(@Param("productos") List<Producto> productos);
+
+    /** Inicializa Producto.insumosSecundarios (con tela, color y tipo de insumo) de esos productos. */
+    @Query("SELECT DISTINCT p FROM Producto p "
+        + "LEFT JOIN FETCH p.insumosSecundarios i "
+        + "LEFT JOIN FETCH i.tipoTela LEFT JOIN FETCH i.color LEFT JOIN FETCH i.tipoInsumo "
+        + "WHERE p IN :productos")
+    List<Producto> cargarInsumosSecundarios(@Param("productos") List<Producto> productos);
+
     /** Productos sin Producto.estadoProduccion asignado (ver
      *  ProductoEtapaProduccionService.inicializarEstadosFaltantes). Incluye Bandera, que siempre
      *  queda en null — el servicio la saltea. */

@@ -14,11 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.weclover.backend.dto.corte.PreparacionCorteResponse;
 import com.weclover.backend.dto.tanda.AlertaPriorizacionResponse;
 import com.weclover.backend.dto.tanda.PriorizacionRequest;
 import com.weclover.backend.dto.tanda.PriorizacionResponse;
 import com.weclover.backend.dto.tanda.TandaRenombrarRequest;
 import com.weclover.backend.dto.tanda.TandaResponse;
+import com.weclover.backend.service.PreparacionCorteService;
 import com.weclover.backend.service.PriorizacionTandaService;
 import com.weclover.backend.service.TandaService;
 
@@ -32,6 +34,7 @@ public class TandaController {
 
     private final TandaService tandaService;
     private final PriorizacionTandaService priorizacionTandaService;
+    private final PreparacionCorteService preparacionCorteService;
 
     /** Por defecto solo las tandas no cerradas, en orden de cola. */
     @GetMapping
@@ -39,6 +42,14 @@ public class TandaController {
             @RequestParam(defaultValue = "false") boolean incluirCerradas,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return tandaService.listar(incluirCerradas, idUsuarioActor);
+    }
+
+    /** Demanda de piezas de la tanda para el algoritmo de corte (Módulo 4). Solo lectura. */
+    @GetMapping("/{id}/preparacion-corte")
+    public PreparacionCorteResponse prepararCorte(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return preparacionCorteService.preparar(id, idUsuarioActor);
     }
 
     @GetMapping("/alertas")

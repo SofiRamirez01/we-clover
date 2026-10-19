@@ -299,15 +299,36 @@ public class CargaTallesService {
         }
     }
 
+    /** Solo junta las unidades de ese producto en la carga y delega la regla en
+     *  tallesCompletosDelProducto (no consulta nada si la prenda no usa talles). */
     private boolean estaCompletoElProducto(CargaTallesPedido carga, Producto producto) {
-        if (producto.getTipoPrenda() == null || producto.getTipoPrenda().getGrupoTalle() == null) {
+        List<AlumnoProductoTalle> combos = !usaTalles(producto)
+            ? List.of()
+            : alumnoProductoTalleRepository.findByAlumnoPedido_CargaTalles(carga).stream()
+                .filter(c -> c.getProducto().getId().equals(producto.getId()))
+                .toList();
+        return tallesCompletosDelProducto(producto, combos);
+    }
+
+    /**
+     * Regla de "talles completos" de un Producto, expuesta para quien ya tiene sus unidades
+     * cargadas (ej. la preparación del corte, que las trae en lote para todos los productos de
+     * una tanda): recibe las unidades ya cargadas y no consulta nada. Una prenda sin grupo de
+     * talle está completa; si no, tienen que estar asignadas exactamente `cantidadTotal`
+     * unidades y todas con ancho y largo. Es la misma regla que usan validarTallesCompletos y
+     * tallesCompletos(Pedido) — el método privado estaCompletoElProducto solo delega acá.
+     * Estático y puro, como ProductoDisenoValidador.
+     */
+    public static boolean tallesCompletosDelProducto(Producto producto, List<AlumnoProductoTalle> unidades) {
+        if (!usaTalles(producto)) {
             return true;
         }
-        List<AlumnoProductoTalle> combos = alumnoProductoTalleRepository.findByAlumnoPedido_CargaTalles(carga).stream()
-            .filter(c -> c.getProducto().getId().equals(producto.getId()))
-            .toList();
-        return combos.size() == producto.getCantidadTotal()
-            && combos.stream().allMatch(c -> c.getAnchoCm() != null && c.getLargoCm() != null);
+        return unidades.size() == producto.getCantidadTotal()
+            && unidades.stream().allMatch(c -> c.getAnchoCm() != null && c.getLargoCm() != null);
+    }
+
+    private static boolean usaTalles(Producto producto) {
+        return producto.getTipoPrenda() != null && producto.getTipoPrenda().getGrupoTalle() != null;
     }
 
     /** Expuesto para EstadoPedidoService (condición de LISTO_PARA_PRODUCCION, ver 3.2): true si

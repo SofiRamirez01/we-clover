@@ -1,9 +1,12 @@
 package com.weclover.backend.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.weclover.backend.entity.AlumnoPedido;
 import com.weclover.backend.entity.AlumnoProductoTalle;
@@ -27,4 +30,9 @@ public interface AlumnoProductoTalleRepository extends JpaRepository<AlumnoProdu
     /** Para el resumen "18/20 unidades cargadas" por Producto — cuenta unidades (filas), no
      *  alumnos distintos, porque un mismo alumno puede aportar más de una. */
     int countByProducto(Producto producto);
+
+    /** Preparación del corte: las unidades de todos esos productos, con su talle asignado, en
+     *  una sola consulta. */
+    @Query("SELECT a FROM AlumnoProductoTalle a LEFT JOIN FETCH a.talleAsignado WHERE a.producto.id IN :idsProducto")
+    List<AlumnoProductoTalle> buscarConTallePorProductos(@Param("idsProducto") Collection<Long> idsProducto);
 }
