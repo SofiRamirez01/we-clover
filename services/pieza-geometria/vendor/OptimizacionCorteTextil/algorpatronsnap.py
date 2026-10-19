@@ -378,7 +378,7 @@ def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_indi
                 if ranura is None:
                     modos = [plantilla["modo_entrada"]]
                 elif plantilla["rol"] == 0:
-                    modos = [random.choice([ENTERA, MITAD])]
+                    modos = random.sample([ENTERA, MITAD], 2)
                 else:
                     modos = [MITAD]
 
