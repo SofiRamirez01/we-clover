@@ -338,3 +338,71 @@ def test_sin_ubicacion_valida_indica_que_pieza_no_entra():
         ga.create_margin_population(2, entradas, (0, ANCHO), (0, LARGO), max_individual_attempts=5)
     assert error.value.indices_entrada == [1]
     assert isinstance(error.value, RuntimeError)  # compatible con quien capturaba RuntimeError
+
+
+# --- Rendimiento y población constructiva (cambios 7 a 9, ver README) -------------------------
+
+def test_cambio7_la_cache_es_por_identidad_y_no_compara_coordenadas(monkeypatch):
+    from shapely.geometry.base import BaseGeometry
+
+    a, b = Polygon(CUADRADO), Polygon(CUADRADO)  # iguales pero objetos distintos
+    def prohibido(*args):
+        raise AssertionError("la caché no debe comparar polígonos")
+    monkeypatch.setattr(BaseGeometry, "__eq__", prohibido)
+    monkeypatch.setattr(BaseGeometry, "__hash__", prohibido)
+    assert ga._polygon_properties(a) == ga._polygon_properties(b) == (0, 0, 100, 100, 50, 50)
+    assert ga._polygon_properties(a) is ga._polygon_properties(a)
+
+
+def test_cambio7_el_traslado_directo_da_lo_mismo_que_translate():
+    for poligono in (ASIMETRICA, SIMETRICA, _margen(ASIMETRICA)):
+        directo = ga._trasladar(poligono, 123.4, -56.7)
+        esperado = translate(poligono, 123.4, -56.7)
+        assert directo.equals_exact(esperado, 1e-9)
+    con_agujero = Polygon(CUADRADO.exterior.coords, [[(10, 10), (20, 10), (20, 20), (10, 20)]])
+    assert ga._trasladar(con_agujero, 5, 5).equals_exact(translate(con_agujero, 5, 5), 1e-9)
+
+
+def test_cambio8_la_validacion_perezosa_decide_igual_que_la_de_v100():
+    random.seed(8)
+    colocados = [ga._move_margin_entry(_gen_entero(f"p{i}", x, y)) for i, (x, y) in
+                 enumerate([(100, 100), (210, 100), (100, 230), (400, 400)])]
+    for _ in range(400):
+        candidato = _gen_entero("c", random.uniform(40, 500), random.uniform(40, 500))
+        candidato["x"] = round(candidato["x"] / 10) * 10  # muchos casos de tocarse justo
+        candidato["y"] = round(candidato["y"] / 10) * 10
+        movido = ga._move_margin_entry(candidato)
+        clasico = ga._placement_is_valid_moved(movido[0], movido[1], colocados, (0, ANCHO), (0, LARGO))
+        perezoso = ga._valido_perezoso(candidato, colocados, (0, ANCHO), (0, LARGO)) is not None
+        assert clasico == perezoso, (candidato["x"], candidato["y"])
+
+
+def test_cambio9_un_corte_denso_arma_la_poblacion_abajo_a_la_izquierda():
+    from shapely.geometry import box
+
+    entradas = [{"name": f"r{i}", "polygon": box(0, 0, 150, 120)} for i in range(30)]  # 60 % del lienzo
+    random.seed(2)
+    with pytest.raises(ga.SinUbicacionValida):  # solo al azar no se arma
+        ga.create_margin_population(4, entradas, (0, 900), (0, 1000), max_individual_attempts=2,
+                                    max_placement_attempts=20, densidad_constructiva=1.0)
+    random.seed(2)
+    poblacion = ga.create_margin_population(10, entradas, (0, 900), (0, 1000))
+    assert len(poblacion) == 10
+    for individuo in poblacion:
+        assert ga.score_margin_positions(individuo, (0, 900), (0, 1000)) > -3e10
+    # 2 de 10 construidos y el resto variantes mutadas, todos distintos entre sí.
+    claves = {tuple((round(g["x"], 3), round(g["y"], 3)) for g in ind) for ind in poblacion}
+    assert len(claves) > 2
+
+
+def test_cambio9_la_ranura_que_no_entra_en_mitades_se_deshace_y_va_entera(monkeypatch):
+    # Doblez de 150 mm: la primera mitad (100 mm) entra pegada al doblez izquierdo, la segunda no
+    # (ni en el izquierdo ocupado ni en el derecho, que se pisa con la primera): se deshace.
+    _, mitad = ga.create_half_polygons(Polygon([(0, 0), (200, 0), (200, 3000), (0, 3000)]), OFFSET)
+    entrada = {"name": "f", "polygon": _margen(Polygon([(0, 0), (200, 0), (200, 3000), (0, 3000)])),
+               "mitad": mitad, "simetrico": True, "modo": ga.RANURA}
+    monkeypatch.setattr(ga.random, "sample", lambda opciones, k: [ga.MITAD, ga.ENTERA])
+    poblacion = ga.create_margin_population(2, [entrada], (0, 900), (0, 3200), doblez=(0, 150),
+                                            densidad_constructiva=1.0)
+    for g0, g1 in poblacion:
+        assert g0["modo"] == ga.ENTERA and g0["activo"] and not g1["activo"]

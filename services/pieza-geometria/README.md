@@ -43,15 +43,24 @@ puntos, cada uno en su propio commit y con su test en `tests/test_vendor_algorpa
 | 4 | Tolerancia de 1e-9 en los límites del lienzo y del doblez, y de 1e-6 en el bonus de tocar el borde. No se aplica a la superposición, que sigue rechazando un área de intersección > 1e-8 | Comparación exacta: una mitad rotada 180° quedaba 1e-13 afuera del doblez por redondeo y se rechazaba | `4d805d2` |
 | 5 | La cancelación también se revisa mientras se arma la población inicial | No existía | `30a3ed0` |
 | 6 | `mutation_rate_modo` vale 0,1 por defecto en el algoritmo | No existía | `49e0fb8` |
+| 7 | Caché de propiedades de cada polígono **por identidad del objeto**, y traslado sumando el desplazamiento a las coordenadas. Mismo resultado, unas 2,3 veces más rápido | `lru_cache`, que para buscar compara y hashea las coordenadas (40 % del tiempo medido), y `shapely.affinity.translate`, que arma la matriz afín en cada llamada | `2870a8a` |
+| 8 | **Validación perezosa**: primero se comparan cajas y el polígono se traslada solo si alguna caja vecina se superpone; el área de intersección se calcula solo si los polígonos se tocan. El criterio de superposición no cambia (área > 1e-8) | Trasladaba el polígono y calculaba la intersección en cada chequeo | `51898cd` |
+| 9 | **Población inicial constructiva** en cortes densos (piezas > 30 % del lienzo): cada individuo se arma abajo a la izquierda, con orden, rotaciones y modos al azar; se construye el 20 % y el resto son variantes mutadas. En cortes no densos, si una pieza no entra al azar se usa el mismo respaldo. Una ranura que no entra en mitades se deshace y va entera | Solo al azar: en un corte denso las primeras piezas quedaban desparramadas y las últimas no entraban (dos cortes de la tanda A no arrancaban en 800 cm) | `e32c211` |
 
 También `75d8569`: si no se logra armar un individuo inicial, se lanza `SinUbicacionValida`
 (subclase de `RuntimeError`, como en v1.0.0) con `indices_entrada`, las entradas que no
 encontraron lugar. Así el planificador puede partir el corte o dejar la pieza como no
 resuelta, en lugar de que falle el trabajo.
 
-El wrapper (`app/`) todavía no usa nada del vendor: el margen de costura ya viene incluido
-en las coordenadas medidas de la moldería, y la optimización de layout se integra en las
-próximas partes del Módulo 4.
+## Optimización de cortes (`app/corte/`)
+
+- `planificador.py`: decide qué piezas van juntas en cada tizada y cuántas capas lleva cada
+  color (sin algoritmo genético). `python scripts/planificar.py preparacion.json` lo reporta.
+- `tizada.py`: ubica cada corte con el algoritmo del vendor. La frontera de unidades está acá:
+  el plan y el resultado van en cm y el vendor trabaja en mm (×10).
+- `residuo.py`: optimizador de residuo (sustituciones), con la interfaz preparada; todavía no
+  aplica nada.
+- `python scripts/medir.py preparacion.json` mide el algoritmo sobre los cortes de una tanda.
 
 ## Levantar el servicio
 
