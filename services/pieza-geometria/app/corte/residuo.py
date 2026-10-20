@@ -75,10 +75,10 @@ def buscar_candidatas(plan: Plan, parametros: ParametrosCorte) -> list[dict]:
     prohibidos = {tuple(par) for par in parametros.pares_prohibidos}
     candidatas = []
     for indice_b, corte_b in enumerate(plan.cortes):
+        tope = parametros.para_tela(corte_b.codigo_tela).excedente_maximo_por_item
         residuo = [ic for ic in corte_b.items
                    if corte_b.capas_totales == 1
-                   or any(e > max(parametros.excedente_maximo_por_item, ic.excedente_inevitable[c])
-                          for c, e in ic.excedente.items())]
+                   or any(e > max(tope, ic.excedente_inevitable[c]) for c, e in ic.excedente.items())]
         for ic_b in residuo:
             b = ic_b.item.geo
             mejor = None

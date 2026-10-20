@@ -18,6 +18,8 @@ class ParametrosCorte:
     # Piezas de más aceptadas por pieza, talle y color. Lo manda la solicitud; no se prueban
     # otros topes automáticamente.
     excedente_maximo_por_item: int = 0
+    # Tope por código de tela (ej. {"RIBB": 2}); pisa a `excedente_maximo_por_item` en esa tela.
+    excedente_maximo_por_tela: dict = field(default_factory=dict)
     # TELA: minimizar Σ(largo × capas). COSTO: minimizar minutos (ver planificador.py), apagado.
     modo_objetivo: str = "TELA"
     # Minutos que cuesta una prenda partida entre cortes (solo en modo COSTO).
@@ -95,7 +97,9 @@ class ParametrosCorte:
 
     def para_tela(self, codigo_tela: str | None) -> "ParametrosCorte":
         """Los mismos parámetros con los valores propios de esa tela."""
-        return replace(self, eficiencia_estimada=self.eficiencia_para(codigo_tela))
+        return replace(self, eficiencia_estimada=self.eficiencia_para(codigo_tela),
+                       excedente_maximo_por_item=self.excedente_maximo_por_tela.get(
+                           codigo_tela, self.excedente_maximo_por_item))
 
     @property
     def presupuesto_segundos(self) -> float:

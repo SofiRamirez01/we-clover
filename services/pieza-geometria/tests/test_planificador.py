@@ -275,3 +275,18 @@ def test_prendas_partidas_cuenta_producto_y_talle_en_mas_de_un_corte():
     assert plan.prendas_partidas == [(1, 7, 1)]
     juntas = planificar(_preparacion(piezas, items), ParametrosCorte(capas_maximas=1))
     assert len(juntas.cortes) == 1 and juntas.prendas_partidas == []
+
+
+
+def test_el_tope_de_excedente_se_puede_mandar_por_tela():
+    preparacion = _tanda_dos_pedidos()
+    for grupo in preparacion["grupos"]:
+        grupo["codigoTipoTela"] = "RIBB"
+    general = ParametrosCorte(modo_objetivo="COSTO", excedente_maximo_por_item=0)
+    por_tela = ParametrosCorte.desde_dict({"modoObjetivo": "COSTO", "excedenteMaximoPorTela": {"RIBB": 4}})
+    otra_tela = ParametrosCorte(modo_objetivo="COSTO", excedente_maximo_por_tela={"FRIZA": 4})
+    assert por_tela.para_tela("RIBB").excedente_maximo_por_item == 4
+    assert por_tela.para_tela("FRIZA").excedente_maximo_por_item == 0
+    sin, con, ajeno = (planificar(preparacion, p) for p in (general, por_tela, otra_tela))
+    assert sin.excedente_total == 0 and ajeno.excedente_total == 0
+    assert con.excedente_total > 0 and len(con.cortes) < len(sin.cortes)
