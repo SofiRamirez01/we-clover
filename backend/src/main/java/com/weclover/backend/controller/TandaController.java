@@ -15,11 +15,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.weclover.backend.dto.corte.PreparacionCorteResponse;
+import com.weclover.backend.dto.corte.optimizacion.OptimizarCorteRequest;
+import com.weclover.backend.dto.corte.optimizacion.TrabajoCorteCreadoResponse;
+import com.weclover.backend.dto.corte.optimizacion.TrabajoCorteResponse;
 import com.weclover.backend.dto.tanda.AlertaPriorizacionResponse;
 import com.weclover.backend.dto.tanda.PriorizacionRequest;
 import com.weclover.backend.dto.tanda.PriorizacionResponse;
 import com.weclover.backend.dto.tanda.TandaRenombrarRequest;
 import com.weclover.backend.dto.tanda.TandaResponse;
+import com.weclover.backend.service.CorteOptimizacionService;
 import com.weclover.backend.service.PreparacionCorteService;
 import com.weclover.backend.service.PriorizacionTandaService;
 import com.weclover.backend.service.TandaService;
@@ -35,6 +39,7 @@ public class TandaController {
     private final TandaService tandaService;
     private final PriorizacionTandaService priorizacionTandaService;
     private final PreparacionCorteService preparacionCorteService;
+    private final CorteOptimizacionService corteOptimizacionService;
 
     /** Por defecto solo las tandas no cerradas, en orden de cola. */
     @GetMapping
@@ -50,6 +55,28 @@ public class TandaController {
             @PathVariable Long id,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         return preparacionCorteService.preparar(id, idUsuarioActor);
+    }
+
+    /**
+     * Lanza la optimización de los cortes de la tanda (Módulo 4): arma la demanda y la manda al
+     * optimizador, que la corre en segundo plano. Devuelve el id del trabajo (202). Solo
+     * ADMINISTRATIVO. El cuerpo es opcional (modoTiempo, presupuesto, topes de excedente).
+     */
+    @PostMapping("/{id}/cortes/optimizar")
+    public ResponseEntity<TrabajoCorteCreadoResponse> optimizarCortes(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) OptimizarCorteRequest opciones,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return ResponseEntity.accepted().body(corteOptimizacionService.optimizar(id, opciones, idUsuarioActor));
+    }
+
+    /** Estado, avance y (si terminó) resultado de un trabajo de optimización. ADMINISTRATIVO y PLANTA. */
+    @GetMapping("/{id}/cortes/trabajos/{idTrabajo}")
+    public TrabajoCorteResponse consultarTrabajoCorte(
+            @PathVariable Long id,
+            @PathVariable String idTrabajo,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return corteOptimizacionService.consultar(id, idTrabajo, idUsuarioActor);
     }
 
     @GetMapping("/alertas")
