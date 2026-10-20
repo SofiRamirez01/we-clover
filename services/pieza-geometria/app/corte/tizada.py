@@ -49,15 +49,21 @@ COMPLETO = "COMPLETO"  # todas las corridas hicieron sus generaciones
 LIMITE_DE_TIEMPO = "LIMITE_DE_TIEMPO"  # la mejor corrida terminó por el presupuesto de tiempo
 
 
+# Por qué terminó una corrida.
+FIN_GENERACIONES = "GENERACIONES"
+FIN_LIMITE_DE_TIEMPO = "LIMITE_DE_TIEMPO"
+
+
 @dataclass
 class Corrida:
     """Un reinicio del algoritmo, para poder reproducirlo."""
     semilla: int
     largo_cm: float
-    generaciones: int
+    generaciones: int  # generación en la que terminó (cuántas hizo)
     segundos: float
     estado: str  # COMPLETO o LIMITE_DE_TIEMPO
     verificacion_ok: bool
+    motivo_fin: str = FIN_GENERACIONES  # GENERACIONES o LIMITE_DE_TIEMPO
 
 
 @dataclass
@@ -230,7 +236,9 @@ def _piezas_ubicadas(mejor, meta):
 
 
 def _largo_cm(piezas, p):
-    return max(pieza.poligono.bounds[3] for pieza in piezas) + p.margen_borde_cm
+    """Largo de tela que ocupa la tizada: desde el borde (y = 0, que ya deja `margen_borde_cm`
+    debajo de la primera pieza) hasta el punto más alto de la última pieza."""
+    return max(pieza.poligono.bounds[3] for pieza in piezas)
 
 
 def _correr(entradas, limites, p, semilla, limite_tiempo, avance, cancelado):
@@ -328,8 +336,9 @@ def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado
             break
         piezas = _piezas_ubicadas(individuo, meta)
         errores = verificar(piezas, p)
+        motivo = FIN_GENERACIONES if generaciones[0] >= p.generaciones else FIN_LIMITE_DE_TIEMPO
         corrida = Corrida(semilla, _largo_cm(piezas, p), generaciones[0], time.monotonic() - arranque,
-                          COMPLETO if generaciones[0] >= p.generaciones else LIMITE_DE_TIEMPO, not errores)
+                          COMPLETO if motivo == FIN_GENERACIONES else LIMITE_DE_TIEMPO, not errores, motivo)
         corridas.append(corrida)
         if errores:
             advertencias.append(f"Semilla {semilla}: la verificación con polígonos exactos falló: "
@@ -382,11 +391,13 @@ def optimizar(preparacion: dict, p: ParametrosCorte, plan: Plan | None = None,
             on_corte(len(tizadas) + 1, total, corte)
         try:
             tizada = ubicar_corte(corte, p, on_generation, cancelado)
+            if tizada.largo_usado_cm > p.largo_maximo_cm + _TOLERANCIA_CM:
+                raise NoSeUbica([])  # el algoritmo no sale del lienzo, pero si pasara, se parte igual
         except NoSeUbica as error:
             partes = partir_corte(corte, p.para_tela(corte.codigo_tela))
             if partes:
-                advertencias.append(f"Un corte de {corte.codigo_tela} no se pudo ubicar completo y se partió en "
-                                    f"{len(partes)}")
+                motivo = "no se pudo ubicar completo" if error.items else f"dio más de {p.largo_maximo_cm:.0f} cm"
+                advertencias.append(f"Un corte de {corte.codigo_tela} {motivo} y se partió en {len(partes)}")
                 pendientes[:0] = partes
                 total += len(partes) - 1
                 continue

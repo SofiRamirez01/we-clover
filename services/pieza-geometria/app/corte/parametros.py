@@ -32,6 +32,10 @@ class ParametrosCorte:
     eficiencia_estimada: float = 0.70
     eficiencia_estimada_por_tela: dict = field(
         default_factory=lambda: {"FRIZA": 0.66, "JERSEY": 0.65, "RIBB": 0.80})
+    # Como la estimación es aproximada, un corte se intenta entero si su largo estimado no pasa
+    # el máximo en más de esta fracción (800 cm -> hasta 880); si el algoritmo da más de 800 o no
+    # ubica las piezas, recién ahí se parte. Más allá, el planificador lo parte de entrada.
+    tolerancia_estimacion_largo: float = 0.10
     # Optimizador de residuo (todavía no implementado, ver residuo.py).
     sustituciones_habilitadas: bool = False
     minutos_por_corte_adicional: float = 120.0

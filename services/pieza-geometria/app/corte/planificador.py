@@ -150,7 +150,9 @@ def _item_en_corte(item, u, capas, demanda, p):
 # --- Reparto en cortes (bin packing por área) -------------------------------------------------
 
 def _capacidad_cm2(p: ParametrosCorte) -> float:
-    return p.largo_maximo_cm * p.ancho_util_cm * p.eficiencia_estimada
+    """Área por capa que se le asigna a un corte: hasta el largo máximo más la tolerancia de la
+    estimación (ver `tolerancia_estimacion_largo`)."""
+    return p.largo_maximo_cm * (1 + p.tolerancia_estimacion_largo) * p.ancho_util_cm * p.eficiencia_estimada
 
 
 def _largo_estimado(items, p: ParametrosCorte) -> float:

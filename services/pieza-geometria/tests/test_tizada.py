@@ -281,3 +281,56 @@ def test_el_planificador_estima_el_largo_con_la_eficiencia_de_cada_tela():
         p = ParametrosCorte(capas_maximas=1, eficiencia_estimada_por_tela={"FRIZA": eficiencia})
         largos[eficiencia] = planificar(preparacion, p).cortes[0].largo_estimado_cm
     assert largos[0.5] == pytest.approx(largos[0.8] * 0.8 / 0.5)
+
+
+
+def test_el_largo_usado_es_el_punto_mas_alto_de_las_piezas():
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 4})], capas_maximas=1, reinicios_sin_mejora=0)
+    tizada = ubicar_corte(corte, p)
+    assert tizada.largo_usado_cm == pytest.approx(max(pz.poligono.bounds[3] for pz in tizada.piezas))
+    assert min(pz.poligono.bounds[1] for pz in tizada.piezas) >= p.margen_borde_cm - 1e-6
+
+
+def test_cada_corrida_registra_por_que_termino():
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1, reinicios_sin_mejora=0)
+    (corrida,) = ubicar_corte(corte, p).corridas
+    assert (corrida.motivo_fin, corrida.generaciones) == ("GENERACIONES", 3)
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1,
+                      generaciones=100000, presupuesto_segundos_por_corte=0.5)
+    (corrida,) = ubicar_corte(corte, p).corridas
+    assert corrida.motivo_fin == "LIMITE_DE_TIEMPO" and corrida.generaciones < 100000
+
+
+def test_un_corte_estimado_hasta_10_por_ciento_de_mas_se_intenta_entero():
+    # Rectángulos de 40 × 50 cm: el estimado por corte crece con la cantidad.
+    def cortes_con(unidades):
+        preparacion = _preparacion([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: unidades})])
+        return planificar(preparacion, ParametrosCorte(capas_maximas=1, eficiencia_estimada_por_tela={"FRIZA": 0.7}))
+
+    estimados = {u: cortes_con(u).cortes for u in range(20, 80, 2)}
+    entre_800_y_880 = [u for u, cortes in estimados.items() if len(cortes) == 1 and 800 < cortes[0].largo_estimado_cm <= 880]
+    assert entre_800_y_880, "hace falta algún caso estimado entre 800 y 880 cm"
+    for u, cortes in estimados.items():
+        assert all(c.largo_estimado_cm <= 880 + 1e-6 for c in cortes)
+        if sum(c.largo_estimado_cm for c in cortes) > 880:
+            assert len(cortes) > 1
+
+
+def test_una_tizada_de_mas_de_800_cm_se_parte_y_se_vuelve_a_correr(monkeypatch):
+    import app.corte.tizada as tizada_mod
+
+    original = tizada_mod.ubicar_corte
+
+    def largo_de_mas_si_hay_varios_items(corte, p, *args, **kwargs):
+        tizada = original(corte, p, *args, **kwargs)
+        if len(corte.items) > 1:
+            tizada.largo_usado_cm = p.largo_maximo_cm + 50
+        return tizada
+
+    monkeypatch.setattr(tizada_mod, "ubicar_corte", largo_de_mas_si_hay_varios_items)
+    preparacion = _preparacion([_pieza(1, RECTANGULO, True), _pieza(2, ASIMETRICO, False)],
+                               [_item(1, {ROJO: 2}), _item(2, {ROJO: 2})])
+    resultado = optimizar(preparacion, _p(capas_maximas=1))
+    assert sorted(tz.corte.items[0].item.geo.id_pieza for tz in resultado.tizadas) == [1, 2]
+    assert all(tz.largo_usado_cm <= 800 for tz in resultado.tizadas)
+    assert any("más de 800 cm" in a and "se partió" in a for a in resultado.advertencias)

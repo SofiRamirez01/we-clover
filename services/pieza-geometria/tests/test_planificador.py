@@ -162,7 +162,7 @@ def test_lo_que_no_entra_en_800_cm_se_parte_en_varios_cortes():
     plan = planificar(_preparacion([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 400})]),
                       ParametrosCorte(capas_maximas=1))
     assert len(plan.cortes) > 1
-    assert all(c.largo_estimado_cm <= 800 for c in plan.cortes)
+    assert all(c.largo_estimado_cm <= 800 * 1.1 + 1e-6 for c in plan.cortes)  # con la tolerancia de estimación
     assert sum(ic.produccion[ROJO] for c in plan.cortes for ic in c.items) == 400
 
 
