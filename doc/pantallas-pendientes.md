@@ -6,7 +6,7 @@ detalle de lo ya construido (el "por qué" de cada decisión ya tomada) vive en
 [tareas-realizadas.md](tareas-realizadas.md). Cuando algo de acá se resuelva, mover el
 detalle a ese archivo y borrarlo de este.
 
-Última actualización: 2026-09-25 (historial unificado de cambios de producción).
+Última actualización: 2026-10-20 (Módulo 4: algoritmo de corte y API de trabajos).
 
 ## Responsive: falta verificar por debajo de 1280px y otras pantallas con tablas
 
@@ -540,9 +540,10 @@ reparto de gramos con indicador de edición manual, y `ResolucionTelaPin` (tela 
 pin, o motivo). Pendiente:
 
 - **`GET /api/tandas/{id}/preparacion-corte` ya está implementado** (Módulo 4, paso 2; usa
-  `ResolucionTelaPin`). Falta el paso siguiente: invocar el algoritmo con esa demanda y
-  persistir las tizadas. Con los datos actuales casi todo sale como pendiente (molderías sin
-  pines y piezas sin talles graduados): el bloque `resumen.faltaCargar` lista qué cargar.
+  `ResolucionTelaPin`) y el servicio Python ya planifica y ubica los cortes (paso 3, ver la
+  sección siguiente). Falta conectarlo desde el backend Java y persistir las tizadas. Con datos
+  incompletos casi todo sale como pendiente (molderías sin pines y piezas sin talles graduados):
+  el bloque `resumen.faltaCargar` lista qué cargar.
 - **Las piezas todavía no tienen tela propia cargada.** Todas arrancan como "Cuerpo": hay que
   editar Capucha, Cintura y Puños desde Piezas y elegirles su tela. Hoy no existe una pieza
   "Puño" y casi ninguna pieza tiene los 7 talles graduados.
@@ -554,3 +555,43 @@ pin, o motivo). Pendiente:
   manual por el formulario de Piezas.
 - **Un Buzo con Cierre** (producto 24) pierde esa fila al guardar su Ficha: el Cierre solo se
   edita y se conserva en Camperas. Es el comportamiento previo, no se cambió.
+
+## Módulo 4 — Algoritmo de corte: optimizaciones para después del MVP
+
+Hecho (paso 3, partes 1 a 4, en `services/pieza-geometria`): planificador de cortes (modo TELA),
+integración con el algoritmo genético (cambios del vendor 1 a 10, ver su README), reinicios con
+presupuesto de tiempo, compactación final, verificación con polígonos exactos y la API de
+trabajos (`/corte/trabajos`). Falta para el MVP: cliente Java y endpoints del backend, persistir
+las tizadas y el frontend. Quedan para después, a propósito:
+
+- **El presupuesto de tiempo no se respeta en la población inicial de un corte denso.** La
+  construcción abajo a la izquierda (10 a 27 s en un corte grande) solo revisa la cancelación: con
+  5 s de presupuesto un corte tardó 21,7 s. Con RAPIDO (60 s) y COMPLETO (200 s) entra con margen.
+  Arreglo propuesto (cambio 12 del vendor): cortar la construcción al llegar al límite y completar
+  la población con variantes mutadas.
+- **Corte por estancamiento (cambio 11 del vendor) sin commitear ni medir.** Redefinido sobre el
+  largo (80 generaciones sin acortarlo 1 mm, mínimo 60), apagado por defecto. La primera versión,
+  sobre el fitness, nunca cortó. Falta medirlo con una comparación aparte (mismas semillas, con y
+  sin corte; aflojar N si algún corte empeora más de 3 %). El algoritmo deja de acortar cerca de
+  la generación 80, así que debería dejar lugar a más reinicios.
+- **Eficiencia supuesta por tela preliminar** (Friza 0,66, Jersey 0,65, Ribb 0,80): sale de una sola
+  tanda (8 cortes de un pedido grande). El estimado se desvía hasta −18 % / +16 % según el tamaño
+  del corte: recalibrar con tandas reales, quizás por tamaño de corte y no solo por tela.
+- **Cortes de Ribb con 80 a 99 piezas en 1 capa** en la tanda sintética de 15 a 30 pedidos (con tope
+  0, colores repartidos y demandas impares, 1 capa es la única forma de no sobrar). Probablemente
+  lo exagere el generador (4 colores de Ribb al azar; en la realidad suelen ser de un color).
+  Decidir con tandas reales; `excedenteMaximoPorTela` ya permite, por ejemplo, Ribb = 2.
+- **Tiempo de una tanda real**: 37 a 61 cortes para 15 a 30 pedidos (sintético) → con COMPLETO,
+  1,7 a 2,8 h de algoritmo (cota 2 a 3,4 h); con RAPIDO, 37 a 61 min.
+- **Optimizador de residuo (sustituciones) sin implementar.** Solo está la interfaz y el buscador de
+  candidatas (sin aplicar). En la tanda A aparecieron, por ejemplo, el Bolsillo T1 con el molde
+  del T2 (moldes idénticos, desperdicio 0) y la Capucha T1 con el molde del T2 (97 %).
+- **Variación por semilla**: la misma tizada da hasta 25 % más corta o más larga según la semilla.
+  Los reinicios la acotan (−17 % en un corte), pero con una sola corrida un corte denso queda a
+  merced de la semilla.
+- **El costo por generación crece al compactar** (piezas que se tocan → cálculo de intersección).
+  Ideas: cachear distancias entre pares que no se movieron, o un chequeo por no-fit polygon.
+- **El planificador es voraz** (cobertura de planes de capas con varios topes de búsqueda): no
+  garantiza el óptimo de cortes. Alternativa: programación entera para los cortes de cada tela.
+- **Agrupación de talles distinta de la de planta** (T6+T7 y T5+T4+T3): con tope 0 la deciden las
+  capas que dividen exactamente cada demanda. Contrastar con planta cuando haya resultados reales.
