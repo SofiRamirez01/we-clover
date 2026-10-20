@@ -75,6 +75,14 @@ uvicorn app.main:app --reload --port 8001
 
 Swagger UI: http://localhost:8001/docs
 
+**Uvicorn tiene que correr con un solo worker** (es el default; no usar `--workers N`): los
+trabajos de corte viven en la memoria del proceso y los corre un único hilo, de a uno. Con varios
+workers, un `GET` podría llegar a un proceso que no tiene el trabajo. Si se reinicia el servicio,
+los trabajos en curso y los resultados guardados se pierden.
+
+Variable de entorno: `CORTE_VENCIMIENTO_MINUTOS` (60 por defecto): cuánto tiempo se guarda un
+trabajo después de terminar (bien, con error o cancelado); pasado ese tiempo, `GET` da 404.
+
 ## Tests
 
 ```bash
@@ -89,3 +97,18 @@ python -m pytest tests
   perímetro calculados directamente sobre ese polígono (sin ningún buffer/margen).
 - `POST /piezas/escalar`: escala un contorno ya calculado a un ancho/largo objetivo
   (por talle), anclando el escalado en la esquina inferior izquierda del bounding box.
+- `POST /corte/trabajos` (202): `{"preparacion": <contrato de preparacion-corte>, "parametros": {...}}`.
+  Encola la optimización de los cortes de una tanda y devuelve `idTrabajo`, `estado` y
+  `posicionEnCola`. Los `parametros` (camelCase) pisan los de la preparación: `modoTiempo`
+  (`RAPIDO` 60 s por corte, `COMPLETO` hasta 200 s), `presupuestoSegundosPorCorte`,
+  `excedenteMaximoPorItem`, `excedenteMaximoPorTela`, `modoObjetivo`, `semilla`, etc.
+  422 si la preparación no tiene demanda o un parámetro es inválido.
+- `GET /corte/trabajos/{id}`: `estado` (`EN_COLA`, `EJECUTANDO`, `TERMINADO`, `ERROR`,
+  `CANCELADO`), `progreso` (corte, corrida y generación actuales, mejor largo y eficiencia del
+  corte en curso, segundos transcurridos) y, si terminó, `resultado`: por corte la tela, el ancho,
+  el largo usado, la eficiencia, el estado (`COMPLETO` o `LIMITE_DE_TIEMPO`), las corridas, las
+  capas por color, las piezas ubicadas (con el polígono final en cm) y la producción frente a la
+  demanda; más `noResueltas`, `advertencias` y un `resumen`. 404 si no existe o ya venció.
+- `DELETE /corte/trabajos/{id}`: cancela. Si estaba en cola queda `CANCELADO` en el acto; si
+  estaba corriendo, en cuanto el algoritmo revisa el indicador (al empezar cada generación o
+  cada individuo de la población inicial). 409 si ya terminó.

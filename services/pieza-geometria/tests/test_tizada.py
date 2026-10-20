@@ -230,6 +230,9 @@ def test_presupuesto_por_modo_por_solicitud_y_con_tope():
     assert ParametrosCorte(presupuesto_segundos_por_corte=30).presupuesto_segundos == 30
     assert ParametrosCorte(presupuesto_segundos_por_corte=500).presupuesto_segundos == 200
     assert ParametrosCorte(presupuesto_segundos_por_corte=500, presupuesto_maximo_segundos=300).presupuesto_segundos == 300
+    assert ParametrosCorte(modo_tiempo="RAPIDO", presupuesto_maximo_segundos=300).presupuesto_segundos == 60
+    assert ParametrosCorte(modo_tiempo="RAPIDO", presupuesto_segundos_por_corte=150).presupuesto_segundos == 60
+    assert ParametrosCorte(modo_tiempo="RAPIDO", presupuesto_segundos_por_corte=30).presupuesto_segundos == 30
     assert ParametrosCorte.desde_dict({"presupuestoSegundosPorCorte": 45}).presupuesto_segundos == 45
     with pytest.raises(ValueError):
         ParametrosCorte(modo_tiempo="LENTO")

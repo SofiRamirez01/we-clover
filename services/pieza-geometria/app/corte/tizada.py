@@ -378,7 +378,7 @@ def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado
 # --- Todos los cortes de un plan ------------------------------------------------------------
 
 def optimizar(preparacion: dict, p: ParametrosCorte, plan: Plan | None = None,
-              on_corte=None, on_generation=None, cancelado=None) -> ResultadoOptimizacion:
+              on_corte=None, on_generation=None, cancelado=None, on_corrida=None) -> ResultadoOptimizacion:
     """Planifica (si no viene el plan) y ubica cada corte. Un corte que no se puede ubicar se
     parte en dos y se reintenta; una unidad sola que no entra va a no resueltas con el motivo."""
     plan = plan or planificar(preparacion, p)
@@ -390,7 +390,7 @@ def optimizar(preparacion: dict, p: ParametrosCorte, plan: Plan | None = None,
         if on_corte is not None:
             on_corte(len(tizadas) + 1, total, corte)
         try:
-            tizada = ubicar_corte(corte, p, on_generation, cancelado)
+            tizada = ubicar_corte(corte, p, on_generation, cancelado, on_corrida)
             if tizada.largo_usado_cm > p.largo_maximo_cm + _TOLERANCIA_CM:
                 raise NoSeUbica([])  # el algoritmo no sale del lienzo, pero si pasara, se parte igual
         except NoSeUbica as error:

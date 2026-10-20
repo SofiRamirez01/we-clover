@@ -107,8 +107,13 @@ class ParametrosCorte:
 
     @property
     def presupuesto_segundos(self) -> float:
+        """Segundos por corte: lo pedido (o el del modo), sin pasar el tope. En RAPIDO el tope es
+        60 s; en COMPLETO, `presupuesto_maximo_segundos` (200 por defecto, configurable)."""
+        tope = self.presupuesto_maximo_segundos
+        if self.modo_tiempo == "RAPIDO":
+            tope = min(tope, PRESUPUESTO_POR_MODO["RAPIDO"])
         pedido = self.presupuesto_segundos_por_corte or PRESUPUESTO_POR_MODO[self.modo_tiempo]
-        return min(pedido, self.presupuesto_maximo_segundos)
+        return min(pedido, tope)
 
     @property
     def unidades_por_entera(self) -> int:

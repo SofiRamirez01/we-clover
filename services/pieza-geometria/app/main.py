@@ -1,10 +1,22 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from shapely.geometry import Polygon
 
+from app.corte import api as corte_api
 from app.geometria import construir_contorno, escalar_contorno, polygon_a_coordenadas
 from app.schemas import CalcularBaseRequest, CalcularBaseResponse, EscalarRequest, EscalarResponse
 
-app = FastAPI(title="Servicio de Geometría de Piezas")
+
+@asynccontextmanager
+async def ciclo_de_vida(_app):
+    yield
+    if corte_api._gestor is not None:  # al apagar: cancela lo que corre y frena el hilo trabajador
+        corte_api._gestor.apagar()
+
+
+app = FastAPI(title="Servicio de Geometría de Piezas", lifespan=ciclo_de_vida)
+app.include_router(corte_api.router)
 
 
 @app.post("/piezas/calcular-base", response_model=CalcularBaseResponse)
