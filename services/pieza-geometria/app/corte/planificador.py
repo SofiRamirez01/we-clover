@@ -345,7 +345,9 @@ def planificar(preparacion: dict, parametros: ParametrosCorte | None = None) -> 
     geometrias, advertencias = preparar_piezas(preparacion["piezas"], p)
     cortes, no_resueltas, estrategias, partidas = [], [], {}, []
 
+    general = p
     for grupo_tela in preparacion["grupos"]:
+        p = general.para_tela(grupo_tela["codigoTipoTela"])
         items = []
         for it in grupo_tela["items"]:
             geo = geometrias.get((it["idPieza"], it["idTalle"]))

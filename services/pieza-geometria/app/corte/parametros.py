@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, replace
 
 PRESUPUESTO_POR_MODO = {"RAPIDO": 60.0, "COMPLETO": 200.0}
 
@@ -24,9 +24,12 @@ class ParametrosCorte:
     costo_prenda_partida: float = 0.0
     # Desvío máximo (área de la diferencia simétrica / área) para ofrecer la mitad al doblez.
     tolerancia_simetria: float = 0.01
-    # Aprovechamiento supuesto para estimar el largo antes de correr el algoritmo; se calibra
-    # con la medición (Parte 3).
+    # Aprovechamiento supuesto para estimar el largo antes de correr el algoritmo: por código de
+    # tela, y `eficiencia_estimada` para las que no están. PRELIMINARES: salen de una sola
+    # medición (tanda A, 8 cortes de un solo pedido grande); hay que recalibrarlas con más tandas.
     eficiencia_estimada: float = 0.70
+    eficiencia_estimada_por_tela: dict = field(
+        default_factory=lambda: {"FRIZA": 0.66, "JERSEY": 0.65, "RIBB": 0.80})
     # Optimizador de residuo (todavía no implementado, ver residuo.py).
     sustituciones_habilitadas: bool = False
     minutos_por_corte_adicional: float = 120.0
@@ -86,6 +89,13 @@ class ParametrosCorte:
             raise ValueError(f"modoObjetivo inválido: {self.modo_objetivo} (TELA o COSTO)")
         if self.modo_tiempo not in PRESUPUESTO_POR_MODO:
             raise ValueError(f"modoTiempo inválido: {self.modo_tiempo} (RAPIDO o COMPLETO)")
+
+    def eficiencia_para(self, codigo_tela: str | None) -> float:
+        return self.eficiencia_estimada_por_tela.get(codigo_tela, self.eficiencia_estimada)
+
+    def para_tela(self, codigo_tela: str | None) -> "ParametrosCorte":
+        """Los mismos parámetros con los valores propios de esa tela."""
+        return replace(self, eficiencia_estimada=self.eficiencia_para(codigo_tela))
 
     @property
     def presupuesto_segundos(self) -> float:

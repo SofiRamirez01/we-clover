@@ -264,3 +264,20 @@ def test_la_compactacion_nunca_alarga_la_tizada():
     tizada = ubicar_corte(corte, p)
     assert tizada.largo_usado_cm <= tizada.largo_sin_compactar_cm + 1e-9
     assert tizada.verificacion_ok
+
+
+def test_eficiencia_supuesta_por_tela():
+    p = ParametrosCorte()
+    assert p.eficiencia_para("FRIZA") == 0.66 and p.eficiencia_para("RIBB") == 0.80
+    assert p.eficiencia_para("OTRA") == 0.70
+    assert p.para_tela("JERSEY").eficiencia_estimada == 0.65
+    assert ParametrosCorte.desde_dict({"eficienciaEstimadaPorTela": {"FRIZA": 0.5}}).eficiencia_para("FRIZA") == 0.5
+
+
+def test_el_planificador_estima_el_largo_con_la_eficiencia_de_cada_tela():
+    preparacion = _preparacion([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 10})])
+    largos = {}
+    for eficiencia in (0.5, 0.8):
+        p = ParametrosCorte(capas_maximas=1, eficiencia_estimada_por_tela={"FRIZA": eficiencia})
+        largos[eficiencia] = planificar(preparacion, p).cortes[0].largo_estimado_cm
+    assert largos[0.5] == pytest.approx(largos[0.8] * 0.8 / 0.5)

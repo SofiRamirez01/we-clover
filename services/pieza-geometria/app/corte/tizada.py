@@ -383,7 +383,7 @@ def optimizar(preparacion: dict, p: ParametrosCorte, plan: Plan | None = None,
         try:
             tizada = ubicar_corte(corte, p, on_generation, cancelado)
         except NoSeUbica as error:
-            partes = partir_corte(corte, p)
+            partes = partir_corte(corte, p.para_tela(corte.codigo_tela))
             if partes:
                 advertencias.append(f"Un corte de {corte.codigo_tela} no se pudo ubicar completo y se partió en "
                                     f"{len(partes)}")
