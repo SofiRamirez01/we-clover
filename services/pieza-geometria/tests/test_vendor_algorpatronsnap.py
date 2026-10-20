@@ -406,3 +406,19 @@ def test_cambio9_la_ranura_que_no_entra_en_mitades_se_deshace_y_va_entera(monkey
                                             densidad_constructiva=1.0)
     for g0, g1 in poblacion:
         assert g0["modo"] == ga.ENTERA and g0["activo"] and not g1["activo"]
+
+
+def test_cambio10_el_limite_de_tiempo_devuelve_el_mejor_sin_descartarlo():
+    import time as reloj
+
+    vistas = []
+    entradas = [{"name": f"c{i}", "polygon": _margen(ASIMETRICA)} for i in range(3)]
+    mejor, fitness, _ = _correr(entradas, generations=100000, limite_tiempo=reloj.monotonic() + 0.5,
+                                on_generation=lambda g, *a: vistas.append(g))
+    assert mejor is not None and fitness > -3e10
+    assert 1 <= len(vistas) < 100000
+    # Aunque el límite ya pasó, se completa al menos una generación.
+    vistas.clear()
+    _correr(entradas, generations=50, limite_tiempo=reloj.monotonic() - 1,
+            on_generation=lambda g, *a: vistas.append(g))
+    assert vistas == [0]

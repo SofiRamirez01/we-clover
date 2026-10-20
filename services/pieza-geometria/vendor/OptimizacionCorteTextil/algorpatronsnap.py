@@ -1,6 +1,7 @@
 ﻿from math import hypot
 from collections import OrderedDict
 import random
+import time
 import shapely
 from shapely.affinity import translate, rotate
 from shapely.geometry import Polygon, box
@@ -977,7 +978,8 @@ def genetic_algorithm_margin_placement(margin_polygons,
                                        mutation_rate_modo=0.1,
                                        on_generation=None,
                                        cancelado=None,
-                                       verbose=True):
+                                       verbose=True,
+                                       limite_tiempo=None):
     """Run a genetic algorithm to optimize margin polygon placement.
 
     All parameters must be provided by the caller.
@@ -990,6 +992,9 @@ def genetic_algorithm_margin_placement(margin_polygons,
     - cancelado: threading.Event; si está activo al inicio de una generación (o mientras se
       arma la población inicial) se lanza CorteCancelado.
     - verbose: si es False no imprime la línea por generación.
+    - limite_tiempo: instante de time.monotonic() a partir del cual no se empieza otra
+      generación (siempre se completa al menos una) y se devuelve el mejor hasta ahí. A
+      diferencia de cancelado, no descarta el resultado.
     Los genes de best_individual llevan modo, rotacion, activo e indice_entrada.
     """
     doblez = doblez or x_bounds
@@ -1004,6 +1009,8 @@ def genetic_algorithm_margin_placement(margin_polygons,
     snapshots = []
     for generation in range(generations):
         _revisar_cancelacion(cancelado)
+        if limite_tiempo is not None and generation > 0 and time.monotonic() >= limite_tiempo:
+            break
         fitnesses = [score_margin_positions(ind, x_bounds, y_bounds, doblez) for ind in population]
 
         unique_fitness_count = len(set(fitnesses))
