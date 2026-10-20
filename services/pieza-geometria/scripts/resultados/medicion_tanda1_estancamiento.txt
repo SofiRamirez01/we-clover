@@ -1,0 +1,32 @@
+Tanda A: 9 cortes | modo COMPLETO, presupuesto 200 s por corte, semilla base 1, población 100, 200 generaciones por corrida, corte anticipado tras 2 reinicios sin mejorar más de 1%; corte por estancamiento a las 80 generaciones sin mejora (mínimo 60; el vendor agranda las mutaciones a las 40)
+corte 1: FRIZA  [Verde=2] T1+T2+T3+T4+T5+T6+T7   30 entradas | LIMITE_DE_TIEMPO 1 corrida(s), gana semilla 1 | primera   624 · mejor   624 · peor   624 · final   624 cm (est.  696) | efic. real 71.9% |   201 s | verif. ok | fin de corridas: LIMI@136 | sin estancamiento: 624 cm en 201 s (+0.0%)
+corte 2: FRIZA  [Verde=5] T4+T5                   8 entradas | COMPLETO         3 corrida(s), gana semilla 2 | primera   183 · mejor   183 · peor   193 · final   183 cm (est.  168) | efic. real 59.3% |    93 s | verif. ok | fin de corridas: GENE@200 GENE@200 GENE@200 | sin estancamiento: 183 cm en 93 s (+0.0%)
+corte 3: FRIZA  [Verde=1] T1                      9 entradas | COMPLETO         4 corrida(s), gana semilla 4 | primera   221 · mejor   183 · peor   221 · final   183 cm (est.  201) | efic. real 70.5% |   189 s | verif. ok | fin de corridas: GENE@200 GENE@200 GENE@200 GENE@200 | sin estancamiento: 183 cm en 189 s (+0.0%)
+corte 4: FRIZA  [Natural=2] T2+T3+T5+T6            13 entradas | COMPLETO         3 corrida(s), gana semilla 2 | primera   274 · mejor   240 · peor   274 · final   240 cm (est.  245) | efic. real 65.6% |   188 s | verif. ok | fin de corridas: GENE@200 GENE@200 GENE@200 | sin estancamiento: 240 cm en 188 s (+0.0%)
+corte 5: FRIZA  [Natural=1] T3+T6                  13 entradas | COMPLETO         2 corrida(s), gana semilla 1 | primera   301 · mejor   301 · peor   304 · final   301 cm (est.  319) | efic. real 68.3% |   138 s | verif. ok | fin de corridas: GENE@200 GENE@200 | sin estancamiento: 301 cm en 138 s (+0.0%)
+corte 6: JERSEY [Blanco=1] T1+T2+T3+T4+T5+T6+T7   23 entradas | COMPLETO         1 corrida(s), gana semilla 1 | primera   416 · mejor   416 · peor   416 · final   415 cm (est.  431) | efic. real 65.6% |   155 s | verif. ok | fin de corridas: GENE@200 | sin estancamiento: 415 cm en 155 s (+0.0%)
+corte 7: JERSEY [Francia=1] T2+T3+T5+T6             8 entradas | COMPLETO         4 corrida(s), gana semilla 4 | primera   145 · mejor   134 · peor   145 · final   134 cm (est.  148) | efic. real 69.3% |   163 s | verif. ok | fin de corridas: GENE@200 GENE@200 GENE@200 GENE@200 | sin estancamiento: 134 cm en 163 s (+0.0%)
+corte 8: RIBB   [Blanco=1] T1+T2+T3+T4+T5+T6+T7   43 entradas | LIMITE_DE_TIEMPO 1 corrida(s), gana semilla 1 | primera   319 · mejor   319 · peor   319 · final   319 cm (est.  326) | efic. real 78.2% |   201 s | verif. ok | fin de corridas: LIMI@183 | sin estancamiento: 319 cm en 201 s (+0.0%)
+corte 9: RIBB   [Francia=1] T2+T3+T5+T6            14 entradas | COMPLETO         3 corrida(s), gana semilla 1 | primera   101 · mejor   101 · peor   116 · final   101 cm (est.  109) | efic. real 82.3% |   163 s | verif. ok | fin de corridas: GENE@200 GENE@200 GENE@200 | sin estancamiento: 101 cm en 163 s (+0.0%)
+
+Tanda: 1491 s (24.8 min) | eficiencia real de 59.3% a 82.3% (supuesta 70%) | largo total final 2499 cm frente a 2584 cm de una sola corrida y 2642 cm estimados
+CSV: D:\Documentos\Facultad\5to\Proy. Promocion y sintesis\sistema-weclover\services\pieza-geometria\scripts\resultados\medicion_tanda1_20261020_0825_cortes.csv y D:\Documentos\Facultad\5to\Proy. Promocion y sintesis\sistema-weclover\services\pieza-geometria\scripts\resultados\medicion_tanda1_20261020_0825_corridas.csv
+
+Agrupación de talles del planificador (referencia manual: T6+T7 por un lado y T5+T4+T3 por otro):
+  corte 1: FRIZA  T1+T2+T3+T4+T5+T6+T7
+  corte 2: FRIZA  T4+T5
+  corte 3: FRIZA  T1
+  corte 4: FRIZA  T2+T3+T5+T6
+  corte 5: FRIZA  T3+T6
+  corte 6: JERSEY T1+T2+T3+T4+T5+T6+T7
+  corte 7: JERSEY T2+T3+T5+T6
+  corte 8: RIBB   T1+T2+T3+T4+T5+T6+T7
+  corte 9: RIBB   T2+T3+T5+T6
+
+Sustituciones candidatas sobre el residuo (NO aplicadas):
+  SOBRE_TALLE       Espalda Buzo T2 T1 (corte 3) con el molde de Espalda Buzo T2 T3 (corte 1) | aprovechamiento 85.9% | desperdicio 419 cm² | recorte 159 cm
+  SOBRE_TALLE       Capucha Buzo T2 T1 (corte 3) con el molde de Capucha Buzo T2 T2 (corte 1) | aprovechamiento 97.2% | desperdicio 28 cm² | recorte 84 cm
+  SOBRE_TALLE       Bolsillo T1-2 T1 (corte 3) con el molde de Bolsillo T1-2 T2 (corte 1) | aprovechamiento 100.0% | desperdicio 0 cm² | recorte 0 cm
+  SOBRE_TALLE       Capucha Buzo T2 T3 (corte 5) con el molde de Capucha Buzo T2 T5 (corte 4) | aprovechamiento 94.6% | desperdicio 59 cm² | recorte 86 cm
+  SOBRE_TALLE       Bolsillo T1-2 T3 (corte 5) con el molde de Bolsillo T1-2 T5 (corte 4) | aprovechamiento 91.0% | desperdicio 86 cm² | recorte 134 cm
+  PIEZA_EQUIVALENTE Bolsillo T1-2 T6 (corte 5) con el molde de Bolsillo T1-2 T5 (corte 4) | aprovechamiento 100.0% | desperdicio 0 cm² | recorte 0 cm
