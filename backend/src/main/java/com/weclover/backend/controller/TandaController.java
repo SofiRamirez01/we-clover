@@ -79,6 +79,15 @@ public class TandaController {
         return corteOptimizacionService.consultar(id, idTrabajo, idUsuarioActor);
     }
 
+    /** Cancela un trabajo de optimización en cola o en curso. Solo ADMINISTRATIVO; 409 si ya terminó. */
+    @DeleteMapping("/{id}/cortes/trabajos/{idTrabajo}")
+    public TrabajoCorteResponse cancelarTrabajoCorte(
+            @PathVariable Long id,
+            @PathVariable String idTrabajo,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return corteOptimizacionService.cancelar(id, idTrabajo, idUsuarioActor);
+    }
+
     @GetMapping("/alertas")
     public List<AlertaPriorizacionResponse> listarAlertas(
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {

@@ -128,6 +128,20 @@ class CorteOptimizadorClientTest {
     }
 
     @Test
+    void cancelar_un_trabajo_y_409_si_ya_termino() {
+        servidor.expect(requestTo(URL + "/corte/trabajos/abc")).andExpect(method(HttpMethod.DELETE))
+            .andRespond(withSuccess("{\"idTrabajo\":\"abc\",\"idTanda\":7,\"estado\":\"CANCELADO\"}",
+                MediaType.APPLICATION_JSON));
+        servidor.expect(requestTo(URL + "/corte/trabajos/fin")).andExpect(method(HttpMethod.DELETE))
+            .andRespond(withStatus(HttpStatus.CONFLICT));
+
+        assertThat(client.cancelarTrabajo("abc").estado()).isEqualTo("CANCELADO");
+        assertThatThrownBy(() -> client.cancelarTrabajo("fin"))
+            .isInstanceOf(BusinessRuleException.class)
+            .hasMessageContaining("ya terminó");
+    }
+
+    @Test
     void si_el_servicio_falla_adentro_es_servicio_no_disponible() {
         servidor.expect(requestTo(URL + "/corte/trabajos/abc")).andRespond(withServerError());
 

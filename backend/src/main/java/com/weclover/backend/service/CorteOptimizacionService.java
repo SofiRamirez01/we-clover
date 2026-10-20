@@ -54,6 +54,17 @@ public class CorteOptimizacionService {
 
     public TrabajoCorteResponse consultar(Long idTanda, String idTrabajo, Long idUsuarioActor) {
         autorizacionService.verificarRolPermitido(idUsuarioActor, ROLES_LECTURA);
+        return aRespuesta(trabajoDeLaTanda(idTanda, idTrabajo));
+    }
+
+    /** Cancela un trabajo en cola o en curso. Solo ADMINISTRATIVO. 409 si ya terminó. */
+    public TrabajoCorteResponse cancelar(Long idTanda, String idTrabajo, Long idUsuarioActor) {
+        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+        trabajoDeLaTanda(idTanda, idTrabajo);
+        return aRespuesta(corteOptimizadorClient.cancelarTrabajo(idTrabajo));
+    }
+
+    private TrabajoCorteServicioDto trabajoDeLaTanda(Long idTanda, String idTrabajo) {
         if (!tandaRepository.existsById(idTanda)) {
             throw new ResourceNotFoundException("No existe la tanda con id " + idTanda);
         }
@@ -62,6 +73,10 @@ public class CorteOptimizacionService {
             // El id de trabajo es de otra tanda: para esta tanda no existe.
             throw new ResourceNotFoundException("No existe el trabajo de corte " + idTrabajo + " para la tanda " + idTanda);
         }
+        return trabajo;
+    }
+
+    private static TrabajoCorteResponse aRespuesta(TrabajoCorteServicioDto trabajo) {
         return new TrabajoCorteResponse(trabajo.idTrabajo(), trabajo.idTanda(), trabajo.estado(), trabajo.posicionEnCola(),
             trabajo.progreso(), instante(trabajo.creado()), instante(trabajo.iniciado()), instante(trabajo.terminado()),
             instante(trabajo.venceEn()), trabajo.error(), trabajo.resultado());

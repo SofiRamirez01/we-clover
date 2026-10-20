@@ -86,6 +86,22 @@ public class CorteOptimizadorClient {
             .body(TrabajoCorteServicioDto.class));
     }
 
+    public TrabajoCorteServicioDto cancelarTrabajo(String idTrabajo) {
+        return ejecutar(() -> restClient.delete()
+            .uri("/corte/trabajos/{id}", idTrabajo)
+            .retrieve()
+            .onStatus(status -> status.value() == 404, (request, response) -> {
+                throw new ResourceNotFoundException("No existe el trabajo de corte " + idTrabajo + " (o ya venció)");
+            })
+            .onStatus(status -> status.value() == 409, (request, response) -> {
+                throw new BusinessRuleException("El trabajo de corte ya terminó: no se puede cancelar");
+            })
+            .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                throw new ServicioNoDisponibleException("El optimizador de cortes falló al cancelar el trabajo");
+            })
+            .body(TrabajoCorteServicioDto.class));
+    }
+
     private <T> T ejecutar(java.util.function.Supplier<T> llamada) {
         try {
             return llamada.get();

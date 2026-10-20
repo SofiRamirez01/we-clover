@@ -167,6 +167,34 @@ class CorteOptimizacionServiceTest {
     }
 
     @Test
+    void administrativo_cancela_un_trabajo_de_su_tanda() {
+        when(tandaRepository.existsById(TANDA)).thenReturn(true);
+        when(client.consultarTrabajo("abc")).thenReturn(trabajo(TANDA, "EJECUTANDO"));
+        when(client.cancelarTrabajo("abc")).thenReturn(trabajo(TANDA, "CANCELADO"));
+
+        assertThat(service.cancelar(TANDA, "abc", ADMIN).estado()).isEqualTo("CANCELADO");
+        verify(autorizacionService).verificarRolAdministrativo(ADMIN);
+    }
+
+    @Test
+    void no_se_cancela_un_trabajo_de_otra_tanda() {
+        when(tandaRepository.existsById(TANDA)).thenReturn(true);
+        when(client.consultarTrabajo("abc")).thenReturn(trabajo(99L, "EJECUTANDO"));
+
+        assertThatThrownBy(() -> service.cancelar(TANDA, "abc", ADMIN)).isInstanceOf(ResourceNotFoundException.class);
+        verify(client, org.mockito.Mockito.never()).cancelarTrabajo(any());
+    }
+
+    @Test
+    void planta_no_puede_cancelar() {
+        doThrow(new ForbiddenException("Esta acción requiere uno de estos roles: ROLE_ADMINISTRATIVO"))
+            .when(autorizacionService).verificarRolAdministrativo(PLANTA);
+
+        assertThatThrownBy(() -> service.cancelar(TANDA, "abc", PLANTA)).isInstanceOf(ForbiddenException.class);
+        verifyNoInteractions(client);
+    }
+
+    @Test
     void un_cliente_no_puede_consultar() {
         doThrow(new ForbiddenException("Esta acción requiere uno de estos roles"))
             .when(autorizacionService).verificarRolPermitido(eq(2L), anySet());
