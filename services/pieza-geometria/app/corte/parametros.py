@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field, fields
 
+PRESUPUESTO_POR_MODO = {"RAPIDO": 60.0, "COMPLETO": 200.0}
+
 
 @dataclass(frozen=True)
 class ParametrosCorte:
@@ -47,8 +49,20 @@ class ParametrosCorte:
     # versión simplificada contiene a la original; 0 = sin simplificar). Las piezas del resultado
     # y la verificación final usan siempre los polígonos exactos.
     tolerancia_simplificacion_cm: float = 0.05
-    # Reintentos de un corte si la verificación final con polígonos exactos falla.
-    reintentos_verificacion: int = 1
+    # Tiempo por corte: el algoritmo se reinicia con otra semilla mientras quede presupuesto y
+    # se queda la tizada más corta. `presupuesto_segundos_por_corte` (de la solicitud) manda
+    # sobre `modo_tiempo`; los dos se recortan a `presupuesto_maximo_segundos`.
+    modo_tiempo: str = "COMPLETO"
+    presupuesto_segundos_por_corte: float | None = None
+    presupuesto_maximo_segundos: float = 200.0
+    # Corte anticipado: si los últimos K reinicios no acortan la mejor tizada en más de esta
+    # fracción, el corte termina aunque quede presupuesto.
+    reinicios_sin_mejora: int = 2
+    mejora_minima_reinicio: float = 0.01
+    # Compactación final de la mejor tizada (mitades solo en y, enteras en x e y).
+    compactar: bool = True
+    paso_minimo_compactacion_cm: float = 0.01
+    # Semilla del primer reinicio (cada reinicio usa semilla + n). None = al azar.
     semilla: int | None = None
 
     @classmethod
@@ -70,6 +84,13 @@ class ParametrosCorte:
     def __post_init__(self):
         if self.modo_objetivo not in ("TELA", "COSTO"):
             raise ValueError(f"modoObjetivo inválido: {self.modo_objetivo} (TELA o COSTO)")
+        if self.modo_tiempo not in PRESUPUESTO_POR_MODO:
+            raise ValueError(f"modoTiempo inválido: {self.modo_tiempo} (RAPIDO o COMPLETO)")
+
+    @property
+    def presupuesto_segundos(self) -> float:
+        pedido = self.presupuesto_segundos_por_corte or PRESUPUESTO_POR_MODO[self.modo_tiempo]
+        return min(pedido, self.presupuesto_maximo_segundos)
 
     @property
     def unidades_por_entera(self) -> int:

@@ -13,7 +13,9 @@ ANCHO_100 = [[0, 0], [100, 0], [100, 14], [0, 14]]
 
 
 def _p(**extra):
-    return ParametrosCorte(poblacion=6, generaciones=3, tamano_torneo=3, semilla=5, **extra)
+    valores = {"poblacion": 6, "generaciones": 3, "tamano_torneo": 3, "semilla": 5,
+               "presupuesto_segundos_por_corte": 10, **extra}
+    return ParametrosCorte(**valores)
 
 
 def _tizada(piezas, items, **extra):
@@ -170,3 +172,95 @@ def test_la_simplificacion_contiene_a_la_original_y_respeta_el_eje():
     assert simple_mitad.buffer(1e-9).contains(mitad_margen)
     assert simple_mitad.bounds[0] == pytest.approx(mitad_base.bounds[0])  # sin margen sobre el doblez
     assert simplificar_conteniendo(curva, 0) is curva
+
+
+# --- Reinicios, presupuesto de tiempo y compactación ----------------------------------------
+
+def _corte(piezas, items, **extra):
+    p = _p(**extra)
+    return planificar(_preparacion(piezas, items), p).cortes[0], p
+
+
+def test_cada_reinicio_usa_otra_semilla_y_gana_la_tizada_mas_corta():
+    corte, p = _corte([_pieza(1, ASIMETRICO, False)], [_item(1, {ROJO: 8})], capas_maximas=1,
+                      mejora_minima_reinicio=1.0, reinicios_sin_mejora=3, compactar=False)
+    tizada = ubicar_corte(corte, p)
+    assert [c.semilla for c in tizada.corridas] == [5, 6, 7, 8]  # la primera y 3 sin mejora
+    verificadas = [c for c in tizada.corridas if c.verificacion_ok]
+    mejor = min(verificadas, key=lambda c: c.largo_cm)
+    assert tizada.semilla_ganadora == mejor.semilla
+    assert tizada.largo_usado_cm == pytest.approx(mejor.largo_cm)
+    assert tizada.estado == "COMPLETO" and tizada.reinicios == 4
+
+
+def test_corte_anticipado_sin_mejora():
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 4})], capas_maximas=1,
+                      mejora_minima_reinicio=1.0, reinicios_sin_mejora=2)
+    assert ubicar_corte(corte, p).reinicios == 3
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 4})], capas_maximas=1,
+                      reinicios_sin_mejora=0)
+    assert ubicar_corte(corte, p).reinicios == 1
+
+
+def test_si_el_presupuesto_no_alcanza_usa_una_sola_corrida_y_la_devuelve_verificada():
+    corte, p = _corte([_pieza(1, RECTANGULO, True), _pieza(2, ASIMETRICO, False)],
+                      [_item(1, {ROJO: 6}), _item(2, {ROJO: 6})], capas_maximas=1,
+                      generaciones=100000, presupuesto_segundos_por_corte=1.0)
+    tizada = ubicar_corte(corte, p)
+    assert tizada.reinicios == 1 and tizada.estado == "LIMITE_DE_TIEMPO"
+    assert 1 <= tizada.corridas[0].generaciones < 100000
+    assert tizada.verificacion_ok and len(tizada.piezas) > 0
+    assert tizada.segundos < 5
+
+
+def test_la_cancelacion_no_devuelve_tizada_y_es_distinta_del_limite_de_tiempo():
+    import threading
+    from app.corte.tizada import ga as vendor
+
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 4})], capas_maximas=1)
+    cancelado = threading.Event()
+    cancelado.set()
+    with pytest.raises(vendor.CorteCancelado):
+        ubicar_corte(corte, p, cancelado=cancelado)
+
+
+def test_presupuesto_por_modo_por_solicitud_y_con_tope():
+    assert ParametrosCorte().presupuesto_segundos == 200
+    assert ParametrosCorte(modo_tiempo="RAPIDO").presupuesto_segundos == 60
+    assert ParametrosCorte(presupuesto_segundos_por_corte=30).presupuesto_segundos == 30
+    assert ParametrosCorte(presupuesto_segundos_por_corte=500).presupuesto_segundos == 200
+    assert ParametrosCorte(presupuesto_segundos_por_corte=500, presupuesto_maximo_segundos=300).presupuesto_segundos == 300
+    assert ParametrosCorte.desde_dict({"presupuestoSegundosPorCorte": 45}).presupuesto_segundos == 45
+    with pytest.raises(ValueError):
+        ParametrosCorte(modo_tiempo="LENTO")
+
+
+def test_la_compactacion_baja_y_corre_las_enteras_y_deja_las_mitades_en_el_doblez():
+    from app.corte.tizada import armar_entradas, compactar, limites_mm, ga as vendor
+
+    corte, p = _corte([_pieza(1, RECTANGULO, False), _pieza(2, ANCHO_100, True)],
+                      [_item(1, {ROJO: 2}), _item(2, {ROJO: 1})], capas_maximas=1)
+    entradas, _ = armar_entradas(corte, p)
+    limites = limites_mm(entradas, p)
+    plantillas = vendor._preparar_entradas(entradas)
+    entera = next(t for t in plantillas if t["modo_entrada"] == vendor.ENTERA)
+    mitad = next(t for t in plantillas if t["modo_entrada"] == vendor.MITAD)
+    alto = limites[1][1]
+    g_entera = vendor._nuevo_gen(entera, vendor.ENTERA, 0, x=600, y=alto * 0.5)  # suelta, arriba
+    g_mitad = vendor._nuevo_gen(mitad, vendor.MITAD, 180, y=alto * 0.85)
+    g_mitad["x"] = vendor._x_mitad(g_mitad["polygon"], 180, limites[2])
+    compacto = compactar([g_entera, g_mitad], limites, p)
+    nueva_entera, nueva_mitad = compacto
+    assert nueva_entera["y"] < alto * 0.5 and nueva_entera["x"] < 600
+    assert nueva_mitad["y"] < alto * 0.85 and nueva_mitad["x"] == g_mitad["x"]
+    movidos = [vendor._move_margin_entry(g) for g in compacto]
+    assert movidos[0][0].intersection(movidos[1][0]).area < 1e-8
+    assert min(b[1] for _, b in movidos) == pytest.approx(limites[1][0], abs=p.paso_minimo_compactacion_cm * 10)
+
+
+def test_la_compactacion_nunca_alarga_la_tizada():
+    corte, p = _corte([_pieza(1, ASIMETRICO, False), _pieza(2, RECTANGULO, True)],
+                      [_item(1, {ROJO: 6}), _item(2, {ROJO: 5})], capas_maximas=1, reinicios_sin_mejora=0)
+    tizada = ubicar_corte(corte, p)
+    assert tizada.largo_usado_cm <= tizada.largo_sin_compactar_cm + 1e-9
+    assert tizada.verificacion_ok

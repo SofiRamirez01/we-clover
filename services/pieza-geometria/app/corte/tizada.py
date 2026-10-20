@@ -43,6 +43,23 @@ class PiezaUbicada:
     poligono: object  # shapely Polygon en cm, ya rotado y trasladado, sin margen
 
 
+# Cómo terminó un corte. La cancelación del trabajo no es un estado de la tizada: corta todo
+# con ga.CorteCancelado y no devuelve resultado.
+COMPLETO = "COMPLETO"  # todas las corridas hicieron sus generaciones
+LIMITE_DE_TIEMPO = "LIMITE_DE_TIEMPO"  # la mejor corrida terminó por el presupuesto de tiempo
+
+
+@dataclass
+class Corrida:
+    """Un reinicio del algoritmo, para poder reproducirlo."""
+    semilla: int
+    largo_cm: float
+    generaciones: int
+    segundos: float
+    estado: str  # COMPLETO o LIMITE_DE_TIEMPO
+    verificacion_ok: bool
+
+
 @dataclass
 class Tizada:
     corte: Corte
@@ -52,8 +69,16 @@ class Tizada:
     generaciones: int
     segundos: float
     verificacion_ok: bool
-    intentos: int
+    estado: str
+    semilla_ganadora: int
+    corridas: list
+    presupuesto_segundos: float
+    largo_sin_compactar_cm: float
     advertencias: list = field(default_factory=list)
+
+    @property
+    def reinicios(self) -> int:
+        return len(self.corridas)
 
 
 @dataclass
@@ -204,45 +229,141 @@ def _piezas_ubicadas(mejor, meta):
     return piezas
 
 
-def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado=None) -> Tizada:
-    """Corre el algoritmo sobre un corte. Lanza NoSeUbica si no puede ubicar todo, y
-    ga.CorteCancelado si se cancela. Si la verificación falla, reintenta con otra semilla."""
-    entradas, meta = armar_entradas(corte, p)
-    x_bounds, y_bounds, doblez = limites_mm(entradas, p)
-    advertencias = []
-    inicio = time.perf_counter()
-    generaciones = [0]
+def _largo_cm(piezas, p):
+    return max(pieza.poligono.bounds[3] for pieza in piezas) + p.margen_borde_cm
 
-    def avance(gen, total, mejor_fitness, mejor_largo_mm):
-        generaciones[0] = gen + 1
-        if on_generation is not None:
-            on_generation(gen, total, mejor_fitness, mejor_largo_mm / MM_POR_CM)
 
-    for intento in range(1, p.reintentos_verificacion + 2):
-        if p.semilla is not None:
-            random.seed(p.semilla + intento - 1)
-        try:
-            mejor, _, _ = ga.genetic_algorithm_margin_placement(
-                entradas, x_bounds=x_bounds, y_bounds=y_bounds,
-                population_size=p.poblacion, generations=p.generaciones,
-                mutation_rate_x=p.tasa_mutacion_x, mutation_rate_y=p.tasa_mutacion_y,
-                mutation_scale_x=p.escala_mutacion_x_mm, mutation_scale_y_pos=p.escala_mutacion_y_pos_mm,
-                mutation_scale_y_neg=p.escala_mutacion_y_neg_mm,
-                tournament_size=min(p.tamano_torneo, p.poblacion), crossover_prob=p.probabilidad_cruce,
-                mutation_rate_flip=p.tasa_rotacion, mutation_rate_modo=p.tasa_cambio_modo,
-                doblez=doblez, on_generation=avance, cancelado=cancelado, verbose=False)
-        except ga.SinUbicacionValida as error:
-            raise NoSeUbica([meta[i]["ic"] for i in error.indices_entrada]) from error
-        piezas = _piezas_ubicadas(mejor, meta)
-        errores = verificar(piezas, p)
-        if not errores:
+def _correr(entradas, limites, p, semilla, limite_tiempo, avance, cancelado):
+    x_bounds, y_bounds, doblez = limites
+    random.seed(semilla)
+    mejor, _, _ = ga.genetic_algorithm_margin_placement(
+        entradas, x_bounds=x_bounds, y_bounds=y_bounds,
+        population_size=p.poblacion, generations=p.generaciones,
+        mutation_rate_x=p.tasa_mutacion_x, mutation_rate_y=p.tasa_mutacion_y,
+        mutation_scale_x=p.escala_mutacion_x_mm, mutation_scale_y_pos=p.escala_mutacion_y_pos_mm,
+        mutation_scale_y_neg=p.escala_mutacion_y_neg_mm,
+        tournament_size=min(p.tamano_torneo, p.poblacion), crossover_prob=p.probabilidad_cruce,
+        mutation_rate_flip=p.tasa_rotacion, mutation_rate_modo=p.tasa_cambio_modo,
+        doblez=doblez, on_generation=avance, cancelado=cancelado, verbose=False,
+        limite_tiempo=limite_tiempo)
+    return mejor
+
+
+def compactar(individuo, limites, p):
+    """Baja (y corre a la izquierda, si es entera) cada pieza mientras siga siendo válida, de la
+    más baja a la más alta, hasta que una pasada no mueva nada. Las mitades solo se mueven en y
+    (su x queda en el doblez). Cada movimiento se valida con el criterio estricto del vendor."""
+    x_bounds, y_bounds, doblez = limites
+    paso_minimo = p.paso_minimo_compactacion_cm * MM_POR_CM
+    genes = [dict(gen) for gen in individuo]
+    movidos = [ga._move_margin_entry(g) if g.get("activo", True) else None for g in genes]
+    for _ in range(10):
+        movimiento = 0.0
+        orden = sorted((i for i, g in enumerate(genes) if g.get("activo", True)), key=lambda i: movidos[i][1][1])
+        for i in orden:
+            gen = genes[i]
+            limites_x = ga._limites_x(gen, x_bounds, doblez)
+            min_x, _, min_y, _ = ga.get_margin_position_bounds(gen["polygon"], limites_x, y_bounds)
+            ejes = ["y"] if gen["modo"] == ga.MITAD else ["y", "x", "y"]
+            for eje in ejes:
+                piso = min_y if eje == "y" else min_x
+                paso = gen[eje] - piso
+                while paso > paso_minimo:
+                    candidato = {**gen, eje: gen[eje] - paso}
+                    if ga._valido_perezoso(candidato, movidos, limites_x, y_bounds, excluded_index=i) is not None:
+                        movimiento += paso
+                        gen[eje] -= paso
+                        movidos[i] = ga._move_margin_entry(gen)
+                    else:
+                        paso /= 2
+        if movimiento < paso_minimo:
             break
-        advertencias.append(f"Intento {intento}: la verificación con polígonos exactos falló: "
-                            + "; ".join(errores[:5]) + (f" (y {len(errores) - 5} más)" if len(errores) > 5 else ""))
-    largo = max(pieza.poligono.bounds[3] for pieza in piezas) + p.margen_borde_cm
+    return genes
+
+
+def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado=None,
+                 on_corrida=None) -> Tizada:
+    """Ubica un corte con reinicios dentro del presupuesto de tiempo y compacta la mejor tizada.
+
+    - Cada reinicio corre el algoritmo completo con una semilla distinta (semilla, semilla + 1...)
+      y se queda la tizada más corta que pasa la verificación con polígonos exactos.
+    - No se empieza un reinicio si lo que queda de presupuesto no alcanza para uno como el
+      anterior; en un corte denso la primera corrida usa todo el presupuesto y se devuelve lo
+      mejor que encontró (estado LIMITE_DE_TIEMPO).
+    - Corte anticipado: si los últimos `reinicios_sin_mejora` reinicios no acortaron la mejor en
+      más de `mejora_minima_reinicio`, termina aunque quede presupuesto.
+    Lanza NoSeUbica si no puede ubicar todo, y ga.CorteCancelado si se cancela el trabajo.
+    """
+    entradas, meta = armar_entradas(corte, p)
+    limites = limites_mm(entradas, p)
+    presupuesto = p.presupuesto_segundos
+    inicio = time.monotonic()
+    fin = inicio + presupuesto
+    base = p.semilla if p.semilla is not None else random.randrange(2 ** 31)
+    corridas, mejor, sin_mejora, advertencias = [], None, 0, []
+    while True:
+        numero = len(corridas)
+        if numero:
+            anterior = corridas[-1]
+            if anterior.estado == LIMITE_DE_TIEMPO or fin - time.monotonic() < anterior.segundos:
+                break
+            if sin_mejora >= p.reinicios_sin_mejora:
+                break
+        semilla = base + numero
+        if on_corrida is not None:
+            on_corrida(numero + 1, semilla)
+        generaciones = [0]
+
+        def avance(gen, total, mejor_fitness, mejor_largo_mm):
+            generaciones[0] = gen + 1
+            if on_generation is not None:
+                on_generation(gen, total, mejor_fitness, mejor_largo_mm / MM_POR_CM)
+
+        arranque = time.monotonic()
+        try:
+            individuo = _correr(entradas, limites, p, semilla, fin, avance, cancelado)
+        except ga.SinUbicacionValida as error:
+            if not corridas:
+                raise NoSeUbica([meta[i]["ic"] for i in error.indices_entrada]) from error
+            break
+        piezas = _piezas_ubicadas(individuo, meta)
+        errores = verificar(piezas, p)
+        corrida = Corrida(semilla, _largo_cm(piezas, p), generaciones[0], time.monotonic() - arranque,
+                          COMPLETO if generaciones[0] >= p.generaciones else LIMITE_DE_TIEMPO, not errores)
+        corridas.append(corrida)
+        if errores:
+            advertencias.append(f"Semilla {semilla}: la verificación con polígonos exactos falló: "
+                                + "; ".join(errores[:3]) + (f" (y {len(errores) - 3} más)" if len(errores) > 3 else ""))
+        # Gana la más corta entre las verificadas. Para el corte anticipado, una corrida cuenta
+        # como mejora si es la primera verificada o si acorta más de mejora_minima_reinicio.
+        if mejor is None:
+            mejora = True
+        elif corrida.verificacion_ok != mejor[0].verificacion_ok:
+            mejora = corrida.verificacion_ok
+        else:
+            mejora = corrida.largo_cm < mejor[0].largo_cm * (1 - p.mejora_minima_reinicio)
+        if mejor is None or (not corrida.verificacion_ok, corrida.largo_cm) < (not mejor[0].verificacion_ok,
+                                                                                mejor[0].largo_cm):
+            mejor = (corrida, individuo, piezas)
+        sin_mejora = 0 if mejora else sin_mejora + 1
+
+    ganadora, individuo, piezas = mejor
+    largo_sin_compactar = _largo_cm(piezas, p)
+    if p.compactar:
+        compactado = compactar(individuo, limites, p)
+        piezas_compactadas = _piezas_ubicadas(compactado, meta)
+        errores = verificar(piezas_compactadas, p)
+        if not errores:
+            piezas = piezas_compactadas
+        else:
+            advertencias.append("La compactación final no pasó la verificación con polígonos exactos y se "
+                                "descartó: " + "; ".join(errores[:3]))
+    largo = _largo_cm(piezas, p)
     area = sum(pieza.poligono.area for pieza in piezas)
-    return Tizada(corte, piezas, largo, area / (p.ancho_util_cm * largo), generaciones[0],
-                  time.perf_counter() - inicio, not errores, intento, advertencias)
+    verificacion_ok = not verificar(piezas, p)
+    return Tizada(corte, piezas, largo, area / (p.ancho_util_cm * largo), ganadora.generaciones,
+                  time.monotonic() - inicio, verificacion_ok, ganadora.estado, ganadora.semilla, corridas,
+                  presupuesto, largo_sin_compactar, advertencias)
 
 
 # --- Todos los cortes de un plan ------------------------------------------------------------
