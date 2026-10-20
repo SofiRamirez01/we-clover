@@ -73,6 +73,7 @@ def test_ciclo_completo_y_resultado(entorno):
     assert corte["corridas"] and corte["corridas"][0]["motivoFin"] in ("GENERACIONES", "LIMITE_DE_TIEMPO")
     assert resultado["noResueltas"] == [] and resultado["resumen"]["cortes"] == 1
     assert vista["progreso"]["cortesTotales"] == 1 and vista["venceEn"] is not None
+    assert vista["idTanda"] == 1  # el de la preparación
 
 
 def test_uno_por_vez_y_cancelar_el_que_espera_en_cola(entorno):

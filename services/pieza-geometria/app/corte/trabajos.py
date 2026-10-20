@@ -55,6 +55,7 @@ class Trabajo:
     resultado: dict | None = None
     error: str | None = None
     cancelado: threading.Event = field(default_factory=threading.Event)
+    id_tanda: int | None = None  # de la preparación: el backend lo usa para no mezclar tandas
 
 
 class GestorTrabajos:
@@ -70,7 +71,8 @@ class GestorTrabajos:
     # --- API pública ----------------------------------------------------------------------
 
     def crear(self, preparacion: dict, parametros: ParametrosCorte) -> Trabajo:
-        trabajo = Trabajo(uuid.uuid4().hex, preparacion, parametros, creado=self._reloj())
+        trabajo = Trabajo(uuid.uuid4().hex, preparacion, parametros, creado=self._reloj(),
+                          id_tanda=preparacion.get("idTanda"))
         trabajo.progreso = {"corteActual": 0, "cortesTotales": None, "corridaActual": 0, "semillaActual": None,
                             "generacionActual": 0, "generacionesTotales": parametros.generaciones,
                             "mejorLargoCm": None, "mejorEficiencia": None, "segundosTranscurridos": 0.0}
@@ -127,7 +129,8 @@ class GestorTrabajos:
         progreso = dict(trabajo.progreso)
         if trabajo.iniciado is not None:
             progreso["segundosTranscurridos"] = round((trabajo.terminado or ahora) - trabajo.iniciado, 1)
-        vista = {"idTrabajo": trabajo.id, "estado": trabajo.estado, "posicionEnCola": self._posicion(trabajo),
+        vista = {"idTrabajo": trabajo.id, "idTanda": trabajo.id_tanda, "estado": trabajo.estado,
+                 "posicionEnCola": self._posicion(trabajo),
                  "progreso": progreso, "creado": trabajo.creado, "iniciado": trabajo.iniciado,
                  "terminado": trabajo.terminado,
                  "venceEn": trabajo.terminado + self._vencimiento if trabajo.terminado is not None else None}
