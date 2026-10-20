@@ -549,6 +549,16 @@ public class PedidoService {
         return construirRespuesta(pedido, estadoPedidoService.calcularPrioridadesAutomaticas());
     }
 
+    /** Mismo contrato que GET /api/pedidos para una lista ya filtrada (ver PedidoListadoService):
+     *  las prioridades automáticas se calculan una sola vez para toda la lista. Llamar dentro de
+     *  una transacción (recorre relaciones lazy). */
+    public List<PedidoResponse> construirRespuestas(List<Pedido> pedidos) {
+        Map<Long, Integer> prioridadesAutomaticas = estadoPedidoService.calcularPrioridadesAutomaticas();
+        return pedidos.stream()
+            .map(pedido -> construirRespuesta(pedido, prioridadesAutomaticas))
+            .toList();
+    }
+
     private PedidoResponse construirRespuesta(Pedido pedido, Map<Long, Integer> prioridadesAutomaticas) {
         PedidoResponse base = pedidoMapper.toResponse(pedido);
 

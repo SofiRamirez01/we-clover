@@ -39,10 +39,17 @@ public class AutorizacionService {
     /** Cualquier usuario corporativo: todos los roles menos ROLE_CLIENTE (representantes de
      *  curso). Para información interna que no debe llegar al cliente. */
     public void verificarRolInterno(Long idUsuarioActor) {
+        obtenerActorInterno(idUsuarioActor);
+    }
+
+    /** Igual que verificarRolInterno, pero devuelve al actor para aplicar reglas que dependen
+     *  de su rol (ej. un vendedor solo ve sus pedidos en Base Ventas, ver PedidoListadoService). */
+    public Usuario obtenerActorInterno(Long idUsuarioActor) {
         Usuario actor = obtenerActor(idUsuarioActor);
         if (ROL_CLIENTE.equals(actor.getRol().getNombre())) {
             throw new ForbiddenException("Esta acción es solo para usuarios internos");
         }
+        return actor;
     }
 
     private Usuario obtenerActor(Long idUsuarioActor) {

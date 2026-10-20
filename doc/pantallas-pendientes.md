@@ -260,6 +260,20 @@ rótulo puede confundir a futuro.
 bien con el volumen actual, pero no va a escalar — cuando haya muchos pedidos, mover el
 filtrado/paginado al backend (`PedidoRepository` con `Specification`/query params).
 
+## Histórico de pedidos (M5.4): "Copiar como nuevo pedido"
+
+El histórico queda de solo lectura (decisión de 2026-10-20). Para "reutilizar información
+existente para futuras ventas" falta un botón **Copiar como nuevo pedido** desde el histórico:
+abriría el alta de pedido precargado con lo que se le vendió a ese curso (colegio, prendas,
+moldería, colores, imagen del diseño) para ofrecérselo al curso siguiente. A definir antes de
+programarlo:
+- Qué se copia y qué no: en principio sin alumnos, talles, pagos, contrato ni tanda; ¿se copian
+  los precios o se cargan de nuevo?
+- Si el colegio se reutiliza (el mismo `Colegio`) o se crea uno nuevo: depende de
+  "Reutilización de Colegios existentes" (hoy cada pedido crea su propio colegio y hay
+  repetidos: Mariano Moreno, Gianelli, La Inmaculada).
+- El Nº de ficha del pedido nuevo (¿se sugiere el siguiente de la promoción?).
+
 ## Productos viejos sin `tipo_prenda` indexado
 
 Los productos con id 1, 2, 3 y 4 (pedidos 2 y 3, migración de 2026-08-19) quedaron con
