@@ -13,6 +13,7 @@ import PlanificadorComprasView from './features/planificador-compras/Planificado
 import StockView from './features/stock/StockView';
 import PantallaProduccion from './features/produccion/PantallaProduccion';
 import ReportesView from './features/reportes/ReportesView';
+import TizadasView from './features/tizadas/TizadasView';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import type { PedidoResponse } from './types/pedido';
 import './App.css';
@@ -80,6 +81,8 @@ function AppShell() {
     contenido = <PantallaProduccion />;
   } else if (view === 'reportes') {
     contenido = <ReportesView />;
+  } else if (view === 'tizadas') {
+    contenido = <TizadasView />;
   } else {
     contenido = <FichasTecnicasView />;
   }

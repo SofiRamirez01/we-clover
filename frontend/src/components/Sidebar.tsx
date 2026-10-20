@@ -145,7 +145,8 @@ export type AppView =
   | 'planificador-compras'
   | 'stock'
   | 'produccion'
-  | 'reportes';
+  | 'reportes'
+  | 'tizadas';
 
 interface NavItem {
   label: string;
@@ -165,7 +166,8 @@ const NAV_ITEMS_RAIZ: NavItem[] = [
   { label: 'Producción', icon: ProduccionIcon, view: 'produccion', rolesPermitidos: ['ROLE_ADMINISTRATIVO', 'ROLE_PLANTA'] },
   { label: 'Planificador Compras', icon: ComprasIcon, view: 'planificador-compras', soloAdministrativo: true },
   { label: 'Stock', icon: StockIcon, view: 'stock', soloAdministrativo: true },
-  { label: 'Motor Tizada', icon: TizadaIcon },
+  // Solo administrativo mientras las tizadas no se guarden: planta no tendría nada para ver.
+  { label: 'Motor Tizada', icon: TizadaIcon, view: 'tizadas', soloAdministrativo: true },
   { label: 'Reportes', icon: ReportesIcon, view: 'reportes', soloAdministrativo: true },
 ];
 
