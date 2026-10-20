@@ -561,8 +561,19 @@ pin, o motivo). Pendiente:
 Hecho (paso 3, partes 1 a 4, en `services/pieza-geometria`): planificador de cortes (modo TELA),
 integración con el algoritmo genético (cambios del vendor 1 a 10, ver su README), reinicios con
 presupuesto de tiempo, compactación final, verificación con polígonos exactos y la API de
-trabajos (`/corte/trabajos`). Falta para el MVP: cliente Java y endpoints del backend, persistir
-las tizadas y el frontend. Quedan para después, a propósito:
+trabajos (`/corte/trabajos`), endpoints del backend (`/api/tandas/{id}/cortes/...`: optimizar,
+consultar, cancelar) y la pantalla **Motor Tizada** (generar eligiendo tanda y tiempo, avance en
+vivo con cancelación, dibujo de cada tizada, capas por color y hoja de cortes). Falta para el MVP:
+
+- **Guardar las tizadas.** Hoy el resultado vive en memoria del optimizador (1 hora) y se pierde al
+  reiniciarlo. Idea acordada: una entidad con la foto de lo que tenía la tanda (para marcarla como
+  desactualizada si cambian los pedidos) y la semilla ganadora de cada corte (para reproducirla).
+- **Planta no ve Motor Tizada** (el menú es solo administrativo): sin tizadas guardadas no tendría
+  nada para consultar. Habilitarlo cuando se guarden.
+- **No hay lista de trabajos**: la pantalla retoma el último trabajo de cada tanda guardando su id en
+  la sesión del navegador; desde otra computadora no se ve un trabajo lanzado en esta.
+
+Quedan para después, a propósito:
 
 - **El presupuesto de tiempo no se respeta en la población inicial de un corte denso.** La
   construcción abajo a la izquierda (10 a 27 s en un corte grande) solo revisa la cancelación: con
