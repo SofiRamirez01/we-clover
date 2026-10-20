@@ -344,6 +344,34 @@ def _placement_is_valid(candidate, placed, x_bounds, y_bounds):
     )
 
 
+def _valido_perezoso(entry, placed_data, x_bounds, y_bounds, excluded_index=None):
+    """Como _placement_is_valid_moved, pero sin trasladar el polígono si ninguna caja vecina se
+    superpone (el caso más común). Devuelve None si no es válido, o (polígono movido o None,
+    bounds)."""
+    poly = entry["polygon"]
+    pminx, pminy, pmaxx, pmaxy, center_x, center_y = _polygon_properties(poly)
+    dx, dy = entry["x"] - center_x, entry["y"] - center_y
+    bounds = (pminx + dx, pminy + dy, pmaxx + dx, pmaxy + dy)
+    if (bounds[0] < x_bounds[0] - _EPS or bounds[1] < y_bounds[0] - _EPS
+            or bounds[2] > x_bounds[1] + _EPS or bounds[3] > y_bounds[1] + _EPS):
+        return None
+    excluded = excluded_index if isinstance(excluded_index, (set, frozenset)) else {excluded_index}
+    movido = None
+    for index, placed in enumerate(placed_data):
+        if placed is None or index in excluded:
+            continue
+        placed_poly, placed_bounds = placed
+        if (bounds[2] < placed_bounds[0] or placed_bounds[2] < bounds[0]
+                or bounds[3] < placed_bounds[1] or placed_bounds[3] < bounds[1]):
+            continue
+        if movido is None:
+            movido = _trasladar(poly, dx, dy)
+            shapely.prepare(movido)
+        if movido.intersects(placed_poly) and movido.intersection(placed_poly).area > 1e-8:
+            return None
+    return movido, bounds
+
+
 def _placement_is_valid_moved(candidate_poly, candidate_bounds, placed_data,
                               x_bounds, y_bounds, excluded_index=None):
     """Check a moved candidate against already translated polygons.
@@ -357,6 +385,7 @@ def _placement_is_valid_moved(candidate_poly, candidate_bounds, placed_data,
         return False
 
     excluded = excluded_index if isinstance(excluded_index, (set, frozenset)) else {excluded_index}
+    preparado = False
     for index, placed in enumerate(placed_data):
         if placed is None or index in excluded:
             continue
@@ -368,7 +397,12 @@ def _placement_is_valid_moved(candidate_poly, candidate_bounds, placed_data,
             or placed_bounds[3] < candidate_bounds[1]
         ):
             continue
-        if candidate_poly.intersection(placed_poly).area > 1e-8:
+        # Mismo criterio que v1.0.0 (área de intersección > 1e-8), pero primero `intersects`
+        # sobre el candidato preparado: casi siempre no se tocan y no hace falta el área.
+        if not preparado:
+            shapely.prepare(candidate_poly)
+            preparado = True
+        if candidate_poly.intersects(placed_poly) and candidate_poly.intersection(placed_poly).area > 1e-8:
             return False
     return True
 
@@ -400,10 +434,9 @@ def _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez, attempts, e
         t = random.random()
         y = min_y + (t * t) * (max_y - min_y)
         candidate = {**gene, "x": x, "y": y}
-        moved = _move_margin_entry(candidate)
-        if _placement_is_valid_moved(moved[0], moved[1], placed_data, limites_x, y_bounds,
-                                     excluded_index=excluded_index):
-            return candidate, moved
+        valido = _valido_perezoso(candidate, placed_data, limites_x, y_bounds, excluded_index)
+        if valido is not None:
+            return candidate, (valido[0] or _move_margin_entry(candidate)[0], valido[1])
     return None
 
 
@@ -577,11 +610,8 @@ def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
                 "x": proposed_x,
                 "y": new_y,
             }
-            proposed_poly, proposed_bounds = _move_margin_entry(proposed_gene)
-            if _placement_is_valid_moved(
-                proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
-                excluded_index=index,
-            ):
+            if _valido_perezoso(proposed_gene, moved_individual, limites_x, y_bounds,
+                                excluded_index=index) is not None:
                 new_x = proposed_x
         if random.random() < mutation_rate_y:
             downward_space = max(new_y - min_y, 0.0)
@@ -596,11 +626,8 @@ def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
                     "x": new_x,
                     "y": proposed_y,
                 }
-                proposed_poly, proposed_bounds = _move_margin_entry(proposed_gene)
-                if _placement_is_valid_moved(
-                    proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
-                    excluded_index=index,
-                ):
+                if _valido_perezoso(proposed_gene, moved_individual, limites_x, y_bounds,
+                                    excluded_index=index) is not None:
                     new_y = proposed_y
             elif not es_mitad:
                 left_space = max(new_x - min_x, 0.0)
@@ -621,23 +648,15 @@ def mutate_margin_individual(individual, mutation_rate_x, mutation_rate_y,
                         "x": proposed_x,
                         "y": new_y,
                     }
-                    proposed_poly, proposed_bounds = _move_margin_entry(proposed_gene)
-                    if _placement_is_valid_moved(
-                        proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
-                        excluded_index=index,
-                    ):
+                    if _valido_perezoso(proposed_gene, moved_individual, limites_x, y_bounds,
+                                        excluded_index=index) is not None:
                         new_x = proposed_x
         if polygon is not None and random.random() < mutation_rate_flip:
             proposed_rot = 180 - rotacion
             proposed_polygon = gene["formas"][(gene["modo"], proposed_rot)]
             proposed_x = _x_mitad(proposed_polygon, proposed_rot, doblez) if es_mitad else new_x
-            proposed_poly, proposed_bounds = _move_margin_entry(
-                {"polygon": proposed_polygon, "x": proposed_x, "y": new_y}
-            )
-            if _placement_is_valid_moved(
-                proposed_poly, proposed_bounds, moved_individual, limites_x, y_bounds,
-                excluded_index=index,
-            ):
+            if _valido_perezoso({"polygon": proposed_polygon, "x": proposed_x, "y": new_y},
+                                moved_individual, limites_x, y_bounds, excluded_index=index) is not None:
                 polygon, rotacion, new_x = proposed_polygon, proposed_rot, proposed_x
 
         nuevo = gene.copy()
@@ -698,18 +717,20 @@ def score_margin_positions(margin_params, x_bounds, y_bounds, doblez=None):
                 or bounds_a[3] < bounds_b[1]
                 or bounds_b[3] < bounds_a[1]
             )
+            se_tocan = False
             if not boxes_are_separate:
-                intersection = poly_a.intersection(poly_b)
-                if intersection.area > 1e-8:
-                    return -30000000000
-                if not intersection.is_empty:
+                # Igual que v1.0.0, sin calcular la intersección cuando no se tocan.
+                se_tocan = poly_a.intersects(poly_b)
+                if se_tocan:
+                    if poly_a.intersection(poly_b).area > 1e-8:
+                        return -30000000000
                     touch_pair_count += 1
 
             bbox_dx = max(bounds_b[0] - bounds_a[2], bounds_a[0] - bounds_b[2], 0.0)
             bbox_dy = max(bounds_b[1] - bounds_a[3], bounds_a[1] - bounds_b[3], 0.0)
             bbox_gap = hypot(bbox_dx, bbox_dy)
             if bbox_gap < nearest_gaps[i] or bbox_gap < nearest_gaps[j]:
-                gap = poly_a.distance(poly_b)
+                gap = 0.0 if se_tocan else poly_a.distance(poly_b)
                 nearest_gaps[i] = min(nearest_gaps[i], gap)
                 nearest_gaps[j] = min(nearest_gaps[j], gap)
 
