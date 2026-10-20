@@ -422,3 +422,46 @@ def test_cambio10_el_limite_de_tiempo_devuelve_el_mejor_sin_descartarlo():
     _correr(entradas, generations=50, limite_tiempo=reloj.monotonic() - 1,
             on_generation=lambda g, *a: vistas.append(g))
     assert vistas == [0]
+
+
+
+def test_cambio11_corte_por_estancamiento_del_largo_con_minimo_y_motivo():
+    entradas = [{"name": f"c{i}", "polygon": _margen(ASIMETRICA)} for i in range(2)]
+    fin = {}
+    _correr(entradas, generations=500, corte_estancamiento=45, generaciones_minimas=60,
+            umbral_estancamiento=1.0, resultado=fin)
+    assert fin["motivo"] == "ESTANCAMIENTO" and 60 <= fin["generaciones"] < 500
+    fin = {}
+    _correr(entradas, generations=20, corte_estancamiento=45, generaciones_minimas=60, resultado=fin)
+    assert fin == {"motivo": "GENERACIONES", "generaciones": 20}
+    fin = {}
+    _correr(entradas, generations=30, resultado=fin)  # apagado: no corta
+    assert fin == {"motivo": "GENERACIONES", "generaciones": 30}
+    import time as reloj
+    fin = {}
+    _correr(entradas, generations=100000, limite_tiempo=reloj.monotonic() + 0.3, resultado=fin)
+    assert fin["motivo"] == "LIMITE_DE_TIEMPO" and fin["generaciones"] >= 1
+
+
+def test_cambio11_mide_el_largo_y_no_el_fitness(monkeypatch):
+    # El fitness mejora en cada generación pero el largo no baja: igual tiene que cortar.
+    entradas = [{"name": f"c{i}", "polygon": _margen(ASIMETRICA)} for i in range(2)]
+    contador = {"n": 0}
+    original = ga.score_margin_positions
+
+    def siempre_mejor(*args, **kwargs):
+        valor = original(*args, **kwargs)
+        contador["n"] += 1
+        return valor + contador["n"] * 1e-3 if valor > -3e10 else valor
+
+    monkeypatch.setattr(ga, "score_margin_positions", siempre_mejor)
+    monkeypatch.setattr(ga, "_individual_max_y", lambda individuo: 1000.0)
+    fin = {}
+    _correr(entradas, generations=300, corte_estancamiento=45, generaciones_minimas=10, resultado=fin)
+    assert fin["motivo"] == "ESTANCAMIENTO" and fin["generaciones"] == 46
+
+
+def test_cambio11_el_corte_tiene_que_ser_mayor_que_el_stagnation_limit():
+    with pytest.raises(ValueError):
+        _correr([{"name": "c", "polygon": _margen(ASIMETRICA)}], generations=5,
+                corte_estancamiento=40, stagnation_limit=40)

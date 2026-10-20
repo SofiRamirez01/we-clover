@@ -4,7 +4,8 @@ import type { PedidoResponse } from '../types/pedido';
 
 interface AccionesPedidoMenuProps {
   pedido: PedidoResponse;
-  onEditar: (pedido: PedidoResponse) => void;
+  /** Sin onEditar no se muestra "Editar" (ej. el Histórico de Base Ventas, de solo lectura). */
+  onEditar?: (pedido: PedidoResponse) => void;
   onVerHistorial: (pedido: PedidoResponse) => void;
 }
 
@@ -83,15 +84,17 @@ export default function AccionesPedidoMenu({ pedido, onEditar, onVerHistorial }:
               : { top: 0, left: 0, visibility: 'hidden' }
           }
         >
-          <button
-            type="button"
-            onClick={() => {
-              setAbierto(false);
-              onEditar(pedido);
-            }}
-          >
-            Editar
-          </button>
+          {onEditar && (
+            <button
+              type="button"
+              onClick={() => {
+                setAbierto(false);
+                onEditar(pedido);
+              }}
+            >
+              Editar
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

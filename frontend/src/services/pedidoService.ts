@@ -1,8 +1,11 @@
 import api from './api';
 import type {
   CambioEstadoRequest,
+  FiltrosListadoPedidos,
   HistorialCambioResponse,
   ImportacionPedidosExcelResponse,
+  ListadoPedidosResponse,
+  OpcionesFiltroPedidos,
   PedidoCreateRequest,
   PedidoResponse,
   PedidoUpdateRequest,
@@ -39,6 +42,20 @@ export async function obtenerHistorialPedido(id: number): Promise<HistorialCambi
 
 export async function listarPedidos(): Promise<PedidoResponse[]> {
   const { data } = await api.get<PedidoResponse[]>('/pedidos');
+  return data;
+}
+
+/** Listado de Base Ventas filtrado y paginado en el backend (pestañas Pedidos e Histórico). */
+export async function listarPedidosPaginado(
+  filtros: FiltrosListadoPedidos,
+  signal?: AbortSignal,
+): Promise<ListadoPedidosResponse> {
+  const { data } = await api.get<ListadoPedidosResponse>('/pedidos/listado', { params: filtros, signal });
+  return data;
+}
+
+export async function obtenerOpcionesFiltroPedidos(): Promise<OpcionesFiltroPedidos> {
+  const { data } = await api.get<OpcionesFiltroPedidos>('/pedidos/opciones-filtro');
   return data;
 }
 

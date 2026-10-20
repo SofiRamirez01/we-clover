@@ -293,3 +293,79 @@ export interface ImportacionPedidosExcelResponse {
   pedidosImportados: PedidoImportadoResumen[];
   filasSalteadas: FilaImportacionSaltada[];
 }
+
+/** Query params de GET /pedidos/listado (ver PedidoListadoService en el backend): todos
+ *  opcionales, ausente = sin filtrar. */
+export interface FiltrosListadoPedidos {
+  /** Nº de ficha, colegio, localidad o vendedor. */
+  buscar?: string;
+  /** Año de la promoción: los 4 primeros dígitos del Nº de ficha (2026-05 → 2026). */
+  promocion?: number;
+  estado?: EstadoPedido;
+  /** true = sin ENTREGADO ni CANCELADO. */
+  soloActivos?: boolean;
+  /** Moldería – tipo de prenda: van siempre juntos. */
+  idPatronCorte?: number;
+  idTipoPrenda?: number;
+  /** Fecha de venta (ISO), inclusive. */
+  desde?: string;
+  hasta?: string;
+  pagina?: number;
+  tamanio?: number;
+  /** Sin orden: del pedido más nuevo al más viejo. */
+  orden?: CampoOrdenPedidos;
+  direccion?: DireccionOrden;
+}
+
+/** Columnas ordenables del listado de Base Ventas (ver CampoOrdenPedidos en el backend). */
+export type CampoOrdenPedidos =
+  | 'FICHA'
+  | 'FECHA_VENTA'
+  | 'FECHA_ENTREGA'
+  | 'COLEGIO'
+  | 'LOCALIDAD'
+  | 'CURSO'
+  | 'VENDEDOR'
+  | 'UNIDADES_BUZO_CAMPERA'
+  | 'UNIDADES_REMERA'
+  | 'UNIDADES_CHOMBA'
+  | 'PRECIO_UNITARIO'
+  | 'TOTAL'
+  | 'PORCENTAJE_PAGO'
+  | 'ESTADO';
+
+/** ASC = de menor a mayor (A→Z, más viejo primero); DESC = al revés. */
+export type DireccionOrden = 'ASC' | 'DESC';
+
+/** Totales de un estado, de la promoción y fechas elegidas (sin el filtro de estado ni la
+ *  búsqueda). Vienen todos los estados, con 0 los que no tienen pedidos. */
+export interface ContadorEstadoPedido {
+  estado: EstadoPedido;
+  pedidos: number;
+  /** Unidades vendidas por nombre de tipo de prenda. */
+  unidadesPorTipoPrenda: Record<string, number>;
+}
+
+export interface ListadoPedidosResponse {
+  pedidos: PedidoResponse[];
+  total: number;
+  pagina: number;
+  tamanio: number;
+  hayMas: boolean;
+  contadores: ContadorEstadoPedido[];
+}
+
+/** Una combinación moldería – tipo de prenda que aparece en algún pedido. */
+export interface OpcionMolderia {
+  idPatronCorte: number;
+  numeroInterno: number;
+  nombrePatronCorte: string;
+  idTipoPrenda: number;
+  tipoPrenda: string;
+}
+
+export interface OpcionesFiltroPedidos {
+  /** De la más nueva a la más vieja. */
+  promociones: number[];
+  molderias: OpcionMolderia[];
+}

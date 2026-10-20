@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.weclover.backend.dto.pedido.CambioEstadoRequest;
+import com.weclover.backend.dto.pedido.CampoOrdenPedidos;
 import com.weclover.backend.dto.pedido.FiltrosListadoPedidos;
 import com.weclover.backend.dto.pedido.HistorialCambioResponse;
 import com.weclover.backend.dto.pedido.ImportacionPedidosExcelResponse;
@@ -73,9 +75,12 @@ public class PedidoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Integer pagina,
             @RequestParam(required = false) Integer tamanio,
+            @RequestParam(required = false) CampoOrdenPedidos orden,
+            @RequestParam(required = false) Sort.Direction direccion,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         FiltrosListadoPedidos filtros = new FiltrosListadoPedidos(
-            buscar, promocion, estado, soloActivos, idPatronCorte, idTipoPrenda, desde, hasta, pagina, tamanio);
+            buscar, promocion, estado, soloActivos, idPatronCorte, idTipoPrenda, desde, hasta, pagina, tamanio,
+            orden, direccion);
         return pedidoListadoService.listar(filtros, idUsuarioActor);
     }
 

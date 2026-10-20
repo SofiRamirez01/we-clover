@@ -979,7 +979,11 @@ def genetic_algorithm_margin_placement(margin_polygons,
                                        on_generation=None,
                                        cancelado=None,
                                        verbose=True,
-                                       limite_tiempo=None):
+                                       limite_tiempo=None,
+                                       corte_estancamiento=None,
+                                       generaciones_minimas=0,
+                                       umbral_estancamiento=0.0,
+                                       resultado=None):
     """Run a genetic algorithm to optimize margin polygon placement.
 
     All parameters must be provided by the caller.
@@ -995,8 +999,19 @@ def genetic_algorithm_margin_placement(margin_polygons,
     - limite_tiempo: instante de time.monotonic() a partir del cual no se empieza otra
       generación (siempre se completa al menos una) y se devuelve el mejor hasta ahí. A
       diferencia de cancelado, no descarta el resultado.
+    - corte_estancamiento: si pasan tantas generaciones sin que el LARGO del mejor individuo baje
+      al menos `umbral_estancamiento` (en las unidades del lienzo), y ya se hicieron
+      `generaciones_minimas`, la corrida termina. Se mide sobre el largo y no sobre el fitness,
+      que sigue mejorando de a poco (compacidad, huecos) aunque el largo ya no baje. Usa su
+      propio contador: el de `stagnation_limit`, que agranda las mutaciones, se reinicia en cada
+      empujón; por eso tiene que ser mayor que `stagnation_limit`.
+    - resultado: dict que, si se pasa, se completa con "motivo" (GENERACIONES, LIMITE_DE_TIEMPO o
+      ESTANCAMIENTO) y "generaciones" (cuántas se hicieron).
     Los genes de best_individual llevan modo, rotacion, activo e indice_entrada.
     """
+    if corte_estancamiento is not None and corte_estancamiento <= stagnation_limit:
+        raise ValueError(f"corte_estancamiento ({corte_estancamiento}) tiene que ser mayor que "
+                         f"stagnation_limit ({stagnation_limit})")
     doblez = doblez or x_bounds
     plantillas = _preparar_entradas(margin_polygons)
     population = create_margin_population(population_size, plantillas, x_bounds, y_bounds,
@@ -1007,10 +1022,13 @@ def genetic_algorithm_margin_placement(margin_polygons,
     stagnation_generations = 0
 
     snapshots = []
+    motivo, hechas, sin_acortar, largo_referencia = "GENERACIONES", 0, 0, float("inf")
     for generation in range(generations):
         _revisar_cancelacion(cancelado)
         if limite_tiempo is not None and generation > 0 and time.monotonic() >= limite_tiempo:
+            motivo = "LIMITE_DE_TIEMPO"
             break
+        hechas = generation + 1
         fitnesses = [score_margin_positions(ind, x_bounds, y_bounds, doblez) for ind in population]
 
         unique_fitness_count = len(set(fitnesses))
@@ -1029,6 +1047,15 @@ def genetic_algorithm_margin_placement(margin_polygons,
                   f"avg_dist=skipped")
         if on_generation is not None:
             on_generation(generation, generations, best_fitness, _individual_max_y(best_individual))
+        if corte_estancamiento is not None:
+            largo = _individual_max_y(best_individual)
+            if largo < largo_referencia and largo_referencia - largo >= umbral_estancamiento:
+                largo_referencia, sin_acortar = largo, 0
+            else:
+                sin_acortar += 1
+            if hechas >= generaciones_minimas and sin_acortar >= corte_estancamiento and hechas < generations:
+                motivo = "ESTANCAMIENTO"
+                break
 
         if best_individual is not None and (
             generation == 0
@@ -1079,6 +1106,8 @@ def genetic_algorithm_margin_placement(margin_polygons,
 
         population = elites + mutated_offspring
     
+    if resultado is not None:
+        resultado.update(motivo=motivo, generaciones=hechas)
     return best_individual, best_fitness, snapshots
 
 

@@ -71,6 +71,15 @@ class ParametrosCorte:
     # Compactación final de la mejor tizada (mitades solo en y, enteras en x e y).
     compactar: bool = True
     paso_minimo_compactacion_cm: float = 0.01
+    # Corte por estancamiento de cada corrida (APAGADO por defecto, todavía sin medir): termina si
+    # pasan `generaciones_estancamiento` generaciones sin que el largo baje al menos
+    # `umbral_estancamiento_cm`, después de `generaciones_minimas`. Tiene que ser mayor que
+    # `limite_estancamiento_mutacion` (el stagnation_limit del vendor, que a las 40 generaciones
+    # sin mejora duplica la escala de mutación una generación). Valor sugerido: 80.
+    generaciones_estancamiento: int | None = None
+    umbral_estancamiento_cm: float = 0.1
+    generaciones_minimas: int = 60
+    limite_estancamiento_mutacion: int = 40
     # Semilla del primer reinicio (cada reinicio usa semilla + n). None = al azar.
     semilla: int | None = None
 
@@ -95,6 +104,10 @@ class ParametrosCorte:
             raise ValueError(f"modoObjetivo inválido: {self.modo_objetivo} (TELA o COSTO)")
         if self.modo_tiempo not in PRESUPUESTO_POR_MODO:
             raise ValueError(f"modoTiempo inválido: {self.modo_tiempo} (RAPIDO o COMPLETO)")
+        if (self.generaciones_estancamiento is not None
+                and self.generaciones_estancamiento <= self.limite_estancamiento_mutacion):
+            raise ValueError(f"generacionesEstancamiento ({self.generaciones_estancamiento}) tiene que ser "
+                             f"mayor que limiteEstancamientoMutacion ({self.limite_estancamiento_mutacion})")
 
     def eficiencia_para(self, codigo_tela: str | None) -> float:
         return self.eficiencia_estimada_por_tela.get(codigo_tela, self.eficiencia_estimada)

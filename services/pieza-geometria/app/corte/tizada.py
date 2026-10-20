@@ -52,6 +52,7 @@ LIMITE_DE_TIEMPO = "LIMITE_DE_TIEMPO"  # la mejor corrida terminó por el presup
 # Por qué terminó una corrida.
 FIN_GENERACIONES = "GENERACIONES"
 FIN_LIMITE_DE_TIEMPO = "LIMITE_DE_TIEMPO"
+FIN_ESTANCAMIENTO = "ESTANCAMIENTO"
 
 
 @dataclass
@@ -63,7 +64,7 @@ class Corrida:
     segundos: float
     estado: str  # COMPLETO o LIMITE_DE_TIEMPO
     verificacion_ok: bool
-    motivo_fin: str = FIN_GENERACIONES  # GENERACIONES o LIMITE_DE_TIEMPO
+    motivo_fin: str = FIN_GENERACIONES  # GENERACIONES, LIMITE_DE_TIEMPO o ESTANCAMIENTO
 
 
 @dataclass
@@ -241,7 +242,7 @@ def _largo_cm(piezas, p):
     return max(pieza.poligono.bounds[3] for pieza in piezas)
 
 
-def _correr(entradas, limites, p, semilla, limite_tiempo, avance, cancelado):
+def _correr(entradas, limites, p, semilla, limite_tiempo, avance, cancelado, fin_corrida):
     x_bounds, y_bounds, doblez = limites
     random.seed(semilla)
     mejor, _, _ = ga.genetic_algorithm_margin_placement(
@@ -253,8 +254,19 @@ def _correr(entradas, limites, p, semilla, limite_tiempo, avance, cancelado):
         tournament_size=min(p.tamano_torneo, p.poblacion), crossover_prob=p.probabilidad_cruce,
         mutation_rate_flip=p.tasa_rotacion, mutation_rate_modo=p.tasa_cambio_modo,
         doblez=doblez, on_generation=avance, cancelado=cancelado, verbose=False,
-        limite_tiempo=limite_tiempo)
+        limite_tiempo=limite_tiempo, **_estancamiento(p, fin_corrida))
     return mejor
+
+
+def _estancamiento(p, fin_corrida):
+    """Parámetros del corte por estancamiento, solo si está encendido."""
+    if p.generaciones_estancamiento is None:
+        return {}
+    return {"stagnation_limit": p.limite_estancamiento_mutacion,
+            "corte_estancamiento": p.generaciones_estancamiento,
+            "generaciones_minimas": p.generaciones_minimas,
+            "umbral_estancamiento": p.umbral_estancamiento_cm * MM_POR_CM,
+            "resultado": fin_corrida}
 
 
 def compactar(individuo, limites, p):
@@ -328,15 +340,17 @@ def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado
                 on_generation(gen, total, mejor_fitness, mejor_largo_mm / MM_POR_CM)
 
         arranque = time.monotonic()
+        fin_corrida = {}
         try:
-            individuo = _correr(entradas, limites, p, semilla, fin, avance, cancelado)
+            individuo = _correr(entradas, limites, p, semilla, fin, avance, cancelado, fin_corrida)
         except ga.SinUbicacionValida as error:
             if not corridas:
                 raise NoSeUbica([meta[i]["ic"] for i in error.indices_entrada]) from error
             break
         piezas = _piezas_ubicadas(individuo, meta)
         errores = verificar(piezas, p)
-        motivo = FIN_GENERACIONES if generaciones[0] >= p.generaciones else FIN_LIMITE_DE_TIEMPO
+        motivo = fin_corrida.get("motivo") or (
+            FIN_GENERACIONES if generaciones[0] >= p.generaciones else FIN_LIMITE_DE_TIEMPO)
         corrida = Corrida(semilla, _largo_cm(piezas, p), generaciones[0], time.monotonic() - arranque,
                           COMPLETO if motivo == FIN_GENERACIONES else LIMITE_DE_TIEMPO, not errores, motivo)
         corridas.append(corrida)

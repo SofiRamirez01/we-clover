@@ -254,11 +254,20 @@ También: la sección "Colegios" del listado en realidad cuenta **pedidos**, no 
 distintos (un colegio con 3 pedidos suma 3, no 1) — así lo aclaró el pedido original, pero el
 rótulo puede confundir a futuro.
 
-## Listado de Pedidos: filtros y datos 100% del lado del cliente
+## Fichas Técnicas: trae todos los pedidos sin filtrar ni paginar
 
-`GET /api/pedidos` trae todos los pedidos sin paginar ni filtrar en el servidor. Funciona
-bien con el volumen actual, pero no va a escalar — cuando haya muchos pedidos, mover el
-filtrado/paginado al backend (`PedidoRepository` con `Specification`/query params).
+Base Ventas (pestañas Pedidos e Histórico) ya filtra y pagina en el backend
+(`GET /api/pedidos/listado`, ver `PedidoListadoService`, 2026-10-20). Falta lo mismo en
+**Fichas Técnicas**, que sigue usando `GET /api/pedidos` (todos los pedidos, filtrado en el
+navegador): funciona con el volumen actual pero no va a escalar.
+
+## Base Ventas: la tabla de la pestaña Pedidos no entra a 1280px
+
+Con salto de línea en colegio, localidad, vendedor y encabezados, y celdas con 10px de
+espaciado, la tabla de Pedidos (con las flechitas de orden) entra completa a 1440px
+(2026-10-20). A 1280px todavía scrollea de costado. A definir: juntar Buzo/Camp. – Remeras –
+Chombas en una columna de unidades, u ocultar alguna columna (ej. Fecha est. entrega) en
+pantallas chicas.
 
 ## Histórico de pedidos (M5.4): "Copiar como nuevo pedido"
 

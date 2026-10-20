@@ -2,6 +2,8 @@ package com.weclover.backend.dto.pedido;
 
 import java.time.LocalDate;
 
+import org.springframework.data.domain.Sort;
+
 import com.weclover.backend.entity.EstadoPedido;
 
 /**
@@ -18,6 +20,8 @@ import com.weclover.backend.entity.EstadoPedido;
  * @param hasta         fecha de venta hasta (inclusive)
  * @param pagina        desde 0
  * @param tamanio       pedidos por página (por defecto 50, máximo 100)
+ * @param orden         columna por la que se ordena; null = del pedido más nuevo al más viejo
+ * @param direccion     ASC (de menor a mayor, por defecto) o DESC
  */
 public record FiltrosListadoPedidos(
     String buscar,
@@ -29,6 +33,8 @@ public record FiltrosListadoPedidos(
     LocalDate desde,
     LocalDate hasta,
     Integer pagina,
-    Integer tamanio
+    Integer tamanio,
+    CampoOrdenPedidos orden,
+    Sort.Direction direccion
 ) {
 }

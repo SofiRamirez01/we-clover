@@ -24,6 +24,7 @@ import com.weclover.backend.entity.EstadoPedido;
 import com.weclover.backend.entity.Pedido;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
+import com.weclover.backend.repository.OrdenListadoPedidos;
 import com.weclover.backend.repository.PedidoRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -72,7 +73,7 @@ public class PedidoListadoService {
             ESTADOS_CERRADOS,
             filtros.idPatronCorte(),
             filtros.idTipoPrenda(),
-            PageRequest.of(pagina, tamanio));
+            PageRequest.of(pagina, tamanio, OrdenListadoPedidos.de(filtros.orden(), filtros.direccion())));
 
         List<ContadorEstadoPedidoResponse> contadores = contadores(
             prefijoPromocion, filtros.desde(), filtros.hasta(), idVendedor);

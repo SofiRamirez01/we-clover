@@ -337,3 +337,20 @@ def test_una_tizada_de_mas_de_800_cm_se_parte_y_se_vuelve_a_correr(monkeypatch):
     assert sorted(tz.corte.items[0].item.geo.id_pieza for tz in resultado.tizadas) == [1, 2]
     assert all(tz.largo_usado_cm <= 800 for tz in resultado.tizadas)
     assert any("más de 800 cm" in a and "se partió" in a for a in resultado.advertencias)
+
+
+
+def test_estancamiento_apagado_por_defecto_y_validado():
+    assert ParametrosCorte().generaciones_estancamiento is None
+    with pytest.raises(ValueError):
+        ParametrosCorte(generaciones_estancamiento=40, limite_estancamiento_mutacion=40)
+    p = ParametrosCorte(generaciones_estancamiento=80)
+    assert (p.generaciones_minimas, p.limite_estancamiento_mutacion, p.umbral_estancamiento_cm) == (60, 40, 0.1)
+
+
+def test_con_estancamiento_encendido_la_corrida_registra_el_corte():
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1,
+                      generaciones=400, generaciones_estancamiento=45, generaciones_minimas=60,
+                      reinicios_sin_mejora=0)
+    (corrida,) = ubicar_corte(corte, p).corridas
+    assert corrida.motivo_fin == "ESTANCAMIENTO" and 60 <= corrida.generaciones < 400

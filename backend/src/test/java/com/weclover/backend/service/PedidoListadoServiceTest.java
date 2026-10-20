@@ -22,7 +22,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
+import com.weclover.backend.dto.pedido.CampoOrdenPedidos;
 import com.weclover.backend.dto.pedido.ContadorEstadoPedidoResponse;
 import com.weclover.backend.dto.pedido.FiltrosListadoPedidos;
 import com.weclover.backend.dto.pedido.ListadoPedidosResponse;
@@ -37,6 +39,7 @@ import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ForbiddenException;
+import com.weclover.backend.repository.OrdenListadoPedidos;
 import com.weclover.backend.repository.PedidoRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,7 +60,7 @@ class PedidoListadoServiceTest {
     }
 
     private static FiltrosListadoPedidos sinFiltros() {
-        return new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, null);
+        return new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private void actorEs(Long id, String rol) {
@@ -83,7 +86,7 @@ class PedidoListadoServiceTest {
         verify(pedidoRepository).buscarListado(
             isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
             eq(false), eq(PedidoListadoService.ESTADOS_CERRADOS), isNull(), isNull(),
-            eq(PageRequest.of(0, PedidoListadoService.TAMANIO_POR_DEFECTO)));
+            eq(PageRequest.of(0, PedidoListadoService.TAMANIO_POR_DEFECTO, OrdenListadoPedidos.de(null, null))));
         assertThat(listado.pedidos()).hasSize(2);
         assertThat(listado.total()).isEqualTo(120);
         assertThat(listado.pagina()).isZero();
@@ -123,14 +126,15 @@ class PedidoListadoServiceTest {
         LocalDate hasta = LocalDate.of(2026, 9, 30);
         listadoDevuelve(List.of(), 0, PageRequest.of(2, 20));
         FiltrosListadoPedidos filtros = new FiltrosListadoPedidos(
-            "  Morón ", 2026, EstadoPedido.SENADO, true, 4L, 2L, desde, hasta, 2, 20);
+            "  Morón ", 2026, EstadoPedido.SENADO, true, 4L, 2L, desde, hasta, 2, 20,
+            CampoOrdenPedidos.TOTAL, Sort.Direction.DESC);
 
         service.listar(filtros, ID_ADMIN);
 
         verify(pedidoRepository).buscarListado(
             eq("2026-%"), eq(desde), eq(hasta), isNull(), eq("%Morón%"), eq(EstadoPedido.SENADO),
             eq(true), eq(List.of(EstadoPedido.ENTREGADO, EstadoPedido.CANCELADO)), eq(4L), eq(2L),
-            eq(PageRequest.of(2, 20)));
+            eq(PageRequest.of(2, 20, OrdenListadoPedidos.de(CampoOrdenPedidos.TOTAL, Sort.Direction.DESC))));
         verify(pedidoRepository).contarPorEstado("2026-%", desde, hasta, null);
         verify(pedidoRepository).sumarUnidadesPorEstadoYTipoPrenda("2026-%", desde, hasta, null);
     }
@@ -163,15 +167,15 @@ class PedidoListadoServiceTest {
     void rechazaFiltrosInvalidosSinConsultarLaBase() {
         actorEs(ID_ADMIN, "ROLE_ADMINISTRATIVO");
         List<FiltrosListadoPedidos> invalidos = List.of(
-            new FiltrosListadoPedidos(null, 226, null, null, null, null, null, null, null, null),
-            new FiltrosListadoPedidos(null, null, null, null, 4L, null, null, null, null, null),
-            new FiltrosListadoPedidos(null, null, null, null, null, 2L, null, null, null, null),
+            new FiltrosListadoPedidos(null, 226, null, null, null, null, null, null, null, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, 4L, null, null, null, null, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, null, 2L, null, null, null, null, null, null),
             new FiltrosListadoPedidos(null, null, null, null, null, null,
-                LocalDate.of(2026, 5, 2), LocalDate.of(2026, 5, 1), null, null),
-            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, -1, null),
-            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, 0),
+                LocalDate.of(2026, 5, 2), LocalDate.of(2026, 5, 1), null, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, -1, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, 0, null, null),
             new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null,
-                PedidoListadoService.TAMANIO_MAXIMO + 1));
+                PedidoListadoService.TAMANIO_MAXIMO + 1, null, null));
 
         for (FiltrosListadoPedidos filtros : invalidos) {
             assertThatThrownBy(() -> service.listar(filtros, ID_ADMIN))
@@ -179,6 +183,30 @@ class PedidoListadoServiceTest {
                 .isInstanceOf(BusinessRuleException.class);
         }
         verifyNoInteractions(pedidoRepository, pedidoService);
+    }
+
+    @Test
+    void sinColumnaElegidaOrdenaDelMasNuevoAlMasViejo() {
+        Sort orden = OrdenListadoPedidos.de(null, null);
+
+        assertThat(orden).containsExactly(
+            Sort.Order.desc("fechaCreacion"),
+            Sort.Order.desc("id"));
+    }
+
+    @Test
+    void ordenPorColumnaConDesempatePorIdEnLaMismaDireccion() {
+        Sort ficha = OrdenListadoPedidos.de(CampoOrdenPedidos.FICHA, Sort.Direction.DESC);
+
+        assertThat(ficha).extracting(Sort.Order::getProperty).containsExactly(
+            "SUBSTRING(p.codigoInterno, 1, 4)", "LENGTH(p.codigoInterno)", "p.codigoInterno", "id");
+        assertThat(ficha).allMatch(Sort.Order::isDescending);
+        // Sin dirección, de menor a mayor.
+        assertThat(OrdenListadoPedidos.de(CampoOrdenPedidos.COLEGIO, null)).allMatch(Sort.Order::isAscending);
+        // Todas las columnas tienen su expresión.
+        for (CampoOrdenPedidos campo : CampoOrdenPedidos.values()) {
+            assertThat(OrdenListadoPedidos.de(campo, Sort.Direction.ASC)).as(campo.name()).hasSizeGreaterThan(1);
+        }
     }
 
     @Test

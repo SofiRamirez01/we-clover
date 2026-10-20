@@ -58,10 +58,10 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
      *  consulta (ver TandaService). */
     List<Pedido> findByTandaIsNotNull();
 
-    /** Listado paginado de Base Ventas, del más nuevo al más viejo (ver FILTROS_LISTADO). */
+    /** Listado paginado de Base Ventas (ver FILTROS_LISTADO). El orden viene en el Pageable
+     *  (ver OrdenListadoPedidos): por eso la consulta no tiene ORDER BY propio. */
     @Query(
-        value = "SELECT p FROM Pedido p WHERE " + FILTROS_LISTADO
-            + "ORDER BY p.fechaCreacion DESC, p.id DESC",
+        value = "SELECT p FROM Pedido p WHERE " + FILTROS_LISTADO,
         countQuery = "SELECT COUNT(p) FROM Pedido p WHERE " + FILTROS_LISTADO)
     Page<Pedido> buscarListado(
         @Param("prefijoPromocion") String prefijoPromocion,
