@@ -565,9 +565,25 @@ trabajos (`/corte/trabajos`), endpoints del backend (`/api/tandas/{id}/cortes/..
 consultar, cancelar) y la pantalla **Motor Tizada** (generar eligiendo tanda y tiempo, avance en
 vivo con cancelación, dibujo de cada tizada, capas por color y hoja de cortes). Falta para el MVP:
 
-- **Guardar las tizadas.** Hoy el resultado vive en memoria del optimizador (1 hora) y se pierde al
-  reiniciarlo. Idea acordada: una entidad con la foto de lo que tenía la tanda (para marcarla como
-  desactualizada si cambian los pedidos) y la semilla ganadora de cada corte (para reproducirla).
+- **Guardar las tizadas (diseño propuesto, falta definir antes de programar).** Hoy el resultado
+  vive en memoria del optimizador (1 hora) y se pierde al reiniciarlo. Propuesta:
+  - `OptimizacionCorte` (una corrida guardada de una tanda, inmutable): tanda, quién y cuándo,
+    `parametrosJson` (todos los parámetros efectivos), `demandaJson` (foto de lo que tenía la tanda:
+    piezas, talles, colores, cantidades por tela y pedidos de origen), `huellaDemanda` (hash de la
+    foto + geometría + parámetros de la mesa) y un resumen (cortes, capas, tela, excedente).
+  - `Tizada` (un corte): optimización, número, tipo de tela, largo, eficiencia, tela, estado
+    (COMPLETO / LIMITE_DE_TIEMPO), semilla ganadora, capas, ítems y piezas con sus polígonos
+    (LONGTEXT: pasa los 64 KB del TEXT que usa hoy el proyecto).
+  - "Desactualizada" se calcula al leer (huella actual de la preparación frente a la guardada) y se
+    muestra qué cambió comparando con la foto; no se guarda como estado.
+  - Reproducible con la foto + parámetros + semilla si el corte terminó por generaciones; si terminó
+    por tiempo da parecido pero no idéntico (depende de la velocidad de la máquina).
+  Preguntas abiertas: (1) una por tanda o historial con una "elegida" (sugerido: historial);
+  (2) guardado automático al terminar o botón "Guardar" (sugerido: botón, solo administrativo);
+  (3) ¿se pueden borrar? ¿y si se borra la tanda: cascada o impedir?; (4) desactualizada: solo
+  aviso o también bloquea marcarla como elegida; (5) planta en solo lectura; (6) nulos y unicidad
+  (número único dentro de la optimización; tela, foto, huella y parámetros obligatorios); y cómo se
+  aplica el esquema a la base real (¿`ddl-auto=update`?). Probar contra una copia de la base.
 - **Planta no ve Motor Tizada** (el menú es solo administrativo): sin tizadas guardadas no tendría
   nada para consultar. Habilitarlo cuando se guarden.
 - **No hay lista de trabajos**: la pantalla retoma el último trabajo de cada tanda guardando su id en
