@@ -32,10 +32,11 @@ COLUMNAS_CORTE = [
     "corte", "tela", "capas", "talles", "entradas", "presupuesto_s", "estado", "reinicios",
     "semilla_ganadora", "largo_estimado_cm", "largo_primera_cm", "largo_mejor_cm", "largo_peor_cm",
     "largo_sin_compactar_cm", "largo_final_cm", "eficiencia_real", "eficiencia_supuesta",
-    "largo_final_vs_estimado", "segundos", "verificacion_ok",
+    "largo_final_vs_estimado", "capas_totales", "tela_estimada_cm", "tela_primera_cm", "tela_final_cm",
+    "segundos", "verificacion_ok",
 ]
-COLUMNAS_CORRIDA = ["corte", "reinicio", "semilla", "largo_cm", "generaciones", "segundos", "estado",
-                    "verificacion_ok"]
+COLUMNAS_CORRIDA = ["corte", "reinicio", "semilla", "largo_cm", "generaciones", "motivo_fin", "segundos",
+                    "estado", "verificacion_ok"]
 
 
 def _orden(talle):
@@ -145,18 +146,23 @@ def main():
             "largo_sin_compactar_cm": round(tz.largo_sin_compactar_cm, 1), "largo_final_cm": round(tz.largo_usado_cm, 1),
             "eficiencia_real": round(tz.eficiencia, 4), "eficiencia_supuesta": p.eficiencia_estimada,
             "largo_final_vs_estimado": round(tz.largo_usado_cm / corte.largo_estimado_cm - 1, 4),
+            "capas_totales": corte.capas_totales,
+            "tela_estimada_cm": round(corte.largo_estimado_cm * corte.capas_totales, 1),
+            "tela_primera_cm": round(largos[0] * corte.capas_totales, 1),
+            "tela_final_cm": round(tz.largo_usado_cm * corte.capas_totales, 1),
             "segundos": round(tz.segundos, 1), "verificacion_ok": tz.verificacion_ok,
         }
         filas_corte.append(fila)
         for indice, c in enumerate(tz.corridas, start=1):
             filas_corrida.append({"corte": numero, "reinicio": indice, "semilla": c.semilla,
                                   "largo_cm": round(c.largo_cm, 1), "generaciones": c.generaciones,
-                                  "segundos": round(c.segundos, 1), "estado": c.estado,
+                                  "motivo_fin": c.motivo_fin, "segundos": round(c.segundos, 1), "estado": c.estado,
                                   "verificacion_ok": c.verificacion_ok})
         print(f"corte {numero}: {corte.codigo_tela:6} [{capas}] {fila['talles']:22} {len(entradas):2} entradas"
               f" | {tz.estado:16} {tz.reinicios} corrida(s), gana semilla {tz.semilla_ganadora}"
               f" | primera {largos[0]:5.0f} · mejor {min(largos):5.0f} · peor {max(largos):5.0f}"
               f" · final {tz.largo_usado_cm:5.0f} cm (est. {corte.largo_estimado_cm:4.0f})"
+              f" × {corte.capas_totales} capa(s) = tela {fila['tela_final_cm']:6.0f} cm"
               f" | efic. real {tz.eficiencia:5.1%} | {tz.segundos:5.0f} s | verif. {'ok' if tz.verificacion_ok else 'FALLÓ'}",
               flush=True)
         for advertencia in tz.advertencias:
@@ -179,6 +185,12 @@ def main():
               f" {sum(f['largo_final_cm'] for f in filas_corte):.0f} cm frente a"
               f" {sum(f['largo_primera_cm'] for f in filas_corte):.0f} cm de una sola corrida"
               f" y {sum(f['largo_estimado_cm'] for f in filas_corte):.0f} cm estimados")
+        print(f"Tela (largo × capas): final {sum(f['tela_final_cm'] for f in filas_corte):.0f} cm frente a"
+              f" {sum(f['tela_primera_cm'] for f in filas_corte):.0f} cm de una sola corrida"
+              f" y {sum(f['tela_estimada_cm'] for f in filas_corte):.0f} cm estimados")
+        al_limite = [str(f["corte"]) for f in filas_corte if f["estado"] == "LIMITE_DE_TIEMPO"]
+        print(f"Cortes que llegaron al límite de tiempo ({p.presupuesto_segundos:.0f} s): "
+              + (", ".join(al_limite) if al_limite else "ninguno"))
     print(f"CSV: {args.csv}_cortes.csv y {args.csv}_corridas.csv")
 
     print(f"\nAgrupación de talles del planificador (referencia manual: {REFERENCIA_MANUAL}):")
