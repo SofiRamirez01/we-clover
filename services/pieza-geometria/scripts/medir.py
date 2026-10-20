@@ -1,20 +1,20 @@
-"""Medición del algoritmo genético sobre los cortes del plan (Parte 3, punto de control).
+"""Medición del algoritmo sobre los cortes del plan de una tanda (Módulo 4, paso 3).
 
-Uso: python scripts/medir.py preparacion.json [--poblacion 100] [--generaciones 200]
-                             [--limite 120] [--ampliar] [--comparar-v100 N]
+Uso:
+  python scripts/medir.py preparacion.json [--modo COMPLETO|RAPIDO] [--presupuesto S]
+                          [--semilla 1] [--csv salida] [--cortes 1 4] [--comparar-v100 N]
 
-Por cada corte: entradas, tiempo, generaciones, largo usado frente al estimado, eficiencia y
-verificación. Con --limite, un corte que pasa esos segundos se cancela y se reporta la
-proyección a todas las generaciones. Con --ampliar, si un corte no arma la población inicial en
-800 cm se mide con el lienzo al doble (solo para ver hasta dónde compacta). Al final: talles
-agrupados frente a la referencia manual y sustituciones candidatas (sin aplicar).
+Reproducible: la semilla base es fija (por defecto 1) y cada reinicio usa semilla + n. Escribe
+dos CSV: <salida>_cortes.csv (una fila por corte) y <salida>_corridas.csv (una fila por
+reinicio), por defecto en scripts/resultados/. Por pantalla: por corte, la primera corrida (lo que daba una sola corrida), la mejor
+y la peor, el largo final después de compactar, la eficiencia real (área de piezas / (ancho ×
+largo)) frente a la supuesta y el largo estimado del planificador, y los tiempos.
 """
 import argparse
-import dataclasses
+import csv
 import json
 import subprocess
 import sys
-import threading
 import time
 from pathlib import Path
 
@@ -27,61 +27,31 @@ from app.corte.residuo import buscar_candidatas  # noqa: E402
 from app.corte.tizada import NoSeUbica, armar_entradas, ga, limites_mm, ubicar_corte  # noqa: E402
 
 REFERENCIA_MANUAL = "T6+T7 por un lado y T5+T4+T3 por otro"
+RESULTADOS = RAIZ / "scripts" / "resultados"
+COLUMNAS_CORTE = [
+    "corte", "tela", "capas", "talles", "entradas", "presupuesto_s", "estado", "reinicios",
+    "semilla_ganadora", "largo_estimado_cm", "largo_primera_cm", "largo_mejor_cm", "largo_peor_cm",
+    "largo_sin_compactar_cm", "largo_final_cm", "eficiencia_real", "eficiencia_supuesta",
+    "largo_final_vs_estimado", "segundos", "verificacion_ok",
+]
+COLUMNAS_CORRIDA = ["corte", "reinicio", "semilla", "largo_cm", "generaciones", "segundos", "estado",
+                    "verificacion_ok"]
 
 
 def _orden(talle):
     return (0, int(talle)) if str(talle).isdigit() else (1, str(talle))
 
 
-def medir_corte(corte, p, limite):
-    cancelado = threading.Event()
-    avance = {"gen": 0, "largo": None, "t_gen0": None}
-    inicio = time.perf_counter()
-
-    def on_generation(gen, total, fitness, largo_cm):
-        ahora = time.perf_counter()
-        if avance["t_gen0"] is None:
-            avance["t_gen0"] = ahora  # fin de la población inicial + generación 0
-        avance.update(gen=gen + 1, largo=largo_cm)
-        if limite and ahora - inicio > limite:
-            cancelado.set()
-
-    try:
-        tizada = ubicar_corte(corte, p, on_generation=on_generation, cancelado=cancelado)
-        return {"estado": "OK", "tizada": tizada, "segundos": tizada.segundos, "avance": avance}
-    except ga.CorteCancelado:
-        return {"estado": "CANCELADO", "segundos": time.perf_counter() - inicio, "avance": avance}
-    except NoSeUbica as error:
-        return {"estado": "NO_SE_UBICA", "segundos": time.perf_counter() - inicio, "avance": avance,
-                "items": [f"{ic.item.geo.nombre} T{ic.item.geo.talle}" for ic in error.items[:3]]}
-
-
-def _linea(numero, corte, p, medicion, colores):
-    capas = ",".join(f"{colores[c]}={l}" for c, l in corte.capas.items())
-    talles = "+".join("T" + t for t in sorted({ic.item.geo.talle for ic in corte.items}, key=_orden))
-    entradas, _ = armar_entradas(corte, p)
-    cabeza = (f"corte {numero}: {corte.codigo_tela:6} [{capas}] {talles:22} {len(entradas):3} entradas"
-              f" | est. {corte.largo_estimado_cm:5.0f} cm")
-    av = medicion["avance"]
-    if medicion["estado"] == "OK":
-        tz = medicion["tizada"]
-        return (cabeza + f" | {tz.segundos:6.1f} s ({tz.generaciones} gen) | largo {tz.largo_usado_cm:5.0f} cm"
-                f" | efic. {tz.eficiencia:5.1%} | verif. {'ok' if tz.verificacion_ok else 'FALLÓ'}"
-                f" (intentos {tz.intentos})")
-    if medicion["estado"] == "CANCELADO":
-        por_gen = medicion["segundos"] / max(av["gen"], 1)
-        area = sum(ic.area_por_capa_cm2 for ic in corte.items)
-        return (cabeza + f" | CANCELADO a los {medicion['segundos']:.0f} s en gen {av['gen']}/{p.generaciones}"
-                f" (~{por_gen:.1f} s/gen → ~{por_gen * p.generaciones / 60:.0f} min las {p.generaciones})"
-                f" | mejor largo hasta ahí {av['largo'] or 0:5.0f} cm")
-    return cabeza + (f" | NO ARMA LA POBLACIÓN INICIAL ({medicion['segundos']:.0f} s); fallan sobre todo:"
-                     f" {', '.join(medicion['items'])}")
+def _talles(corte):
+    return "+".join("T" + t for t in sorted({ic.item.geo.talle for ic in corte.items}, key=_orden))
 
 
 def comparar_v100(corte, p):
-    """Validación de v1.0.0 frente a la nueva, con las mismas piezas (todas enteras: v1.0.0 no
-    conoce las mitades) y la misma semilla: individuos inválidos, tiempo y largo final."""
+    """Validación de v1.0.0 frente a la actual, con las mismas piezas (todas enteras: v1.0.0 no
+    conoce las mitades), la misma semilla y una sola corrida: inválidos, tiempo y largo final."""
+    import contextlib
     import importlib.util
+    import io
     import random
 
     codigo = subprocess.run(["git", "show", "c703f7b:./algorpatronsnap.py"], cwd=RAIZ / "vendor/OptimizacionCorteTextil",
@@ -98,21 +68,19 @@ def comparar_v100(corte, p):
                    for e in entradas if "polygon" in e]
         x_bounds, y_bounds, _ = limites_mm(enteras, p)
         filas = []
-        for nombre, modulo, extra in (("v1.0.0", v100, {}), ("nueva", ga, {"verbose": False, "mutation_rate_modo": 0})):
-            evaluaciones = {"total": 0, "invalidas": 0}
+        for nombre, modulo, extra in (("v1.0.0", v100, {}), ("actual", ga, {"verbose": False, "mutation_rate_modo": 0})):
+            cuenta = {"total": 0, "invalidas": 0}
             original = modulo.score_margin_positions
 
             def contar(*args, _original=original, **kwargs):
                 valor = _original(*args, **kwargs)
-                evaluaciones["total"] += 1
-                evaluaciones["invalidas"] += valor <= -30000000000
+                cuenta["total"] += 1
+                cuenta["invalidas"] += valor <= -30000000000
                 return valor
 
             modulo.score_margin_positions = contar
             random.seed(p.semilla or 0)
             inicio = time.perf_counter()
-            import contextlib
-            import io
             with contextlib.redirect_stdout(io.StringIO()):
                 mejor, _, _ = modulo.genetic_algorithm_margin_placement(
                     enteras, x_bounds=x_bounds, y_bounds=y_bounds, population_size=p.poblacion,
@@ -122,10 +90,9 @@ def comparar_v100(corte, p):
                     crossover_prob=p.probabilidad_cruce, mutation_rate_flip=p.tasa_rotacion, **extra)
             segundos = time.perf_counter() - inicio
             modulo.score_margin_positions = original
-            largo = modulo._individual_max_y(mejor) / 10
             filas.append(f"  {nombre:7} | {len(enteras)} piezas | {segundos:6.1f} s | individuos inválidos "
-                         f"{evaluaciones['invalidas']}/{evaluaciones['total']} "
-                         f"({evaluaciones['invalidas'] / max(evaluaciones['total'], 1):.1%}) | largo final {largo:.0f} cm")
+                         f"{cuenta['invalidas']}/{cuenta['total']} ({cuenta['invalidas'] / max(cuenta['total'], 1):.1%})"
+                         f" | largo final {modulo._individual_max_y(mejor) / 10:.0f} cm")
         return filas
     finally:
         destino.unlink(missing_ok=True)
@@ -134,39 +101,89 @@ def comparar_v100(corte, p):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("preparacion")
-    parser.add_argument("--poblacion", type=int, default=100)
-    parser.add_argument("--generaciones", type=int, default=200)
-    parser.add_argument("--limite", type=float, default=0, help="segundos máximos por corte (0 = sin límite)")
-    parser.add_argument("--ampliar", action="store_true")
+    parser.add_argument("--modo", default="COMPLETO", choices=["COMPLETO", "RAPIDO"])
+    parser.add_argument("--presupuesto", type=float, help="segundos por corte (manda sobre --modo)")
+    parser.add_argument("--semilla", type=int, default=1)
+    parser.add_argument("--csv", help="prefijo de los CSV (default: scripts/resultados/medicion_tanda<id>_<fecha>)")
     parser.add_argument("--cortes", type=int, nargs="*", help="números de corte a medir (default: todos)")
     parser.add_argument("--comparar-v100", type=int, metavar="N", help="número de corte para comparar con v1.0.0")
-    parser.add_argument("--semilla", type=int, default=1)
     args = parser.parse_args()
 
     preparacion = json.loads(Path(args.preparacion).read_text(encoding="utf-8"))
-    p = ParametrosCorte.desde_dict(preparacion["parametros"], poblacion=args.poblacion,
-                                   generaciones=args.generaciones, semilla=args.semilla)
+    if args.csv is None:
+        RESULTADOS.mkdir(parents=True, exist_ok=True)
+        args.csv = str(RESULTADOS / f"medicion_tanda{preparacion['idTanda']}_{time.strftime('%Y%m%d_%H%M')}")
+    p = ParametrosCorte.desde_dict(preparacion["parametros"], modo_tiempo=args.modo, semilla=args.semilla,
+                                   presupuesto_segundos_por_corte=args.presupuesto)
     plan = planificar(preparacion, p)
     colores = {c["idPaletaColor"]: c["nombreColor"]
                for g in preparacion["grupos"] for it in g["items"] for c in it["porColor"]}
-    print(f"Tanda {preparacion['nombreTanda']}: {len(plan.cortes)} cortes | población {p.poblacion},"
-          f" {p.generaciones} generaciones, límite {args.limite or 'sin'} s por corte", flush=True)
+    print(f"Tanda {preparacion['nombreTanda']}: {len(plan.cortes)} cortes | modo {p.modo_tiempo}, presupuesto"
+          f" {p.presupuesto_segundos:.0f} s por corte, semilla base {p.semilla}, población {p.poblacion},"
+          f" {p.generaciones} generaciones por corrida, corte anticipado tras {p.reinicios_sin_mejora}"
+          f" reinicios sin mejorar más de {p.mejora_minima_reinicio:.0%}", flush=True)
+
+    filas_corte, filas_corrida = [], []
+    inicio_tanda = time.perf_counter()
     for numero, corte in enumerate(plan.cortes, start=1):
         if args.cortes and numero not in args.cortes:
             continue
-        medicion = medir_corte(corte, p, args.limite)
-        print(_linea(numero, corte, p, medicion, colores), flush=True)
-        if medicion["estado"] == "NO_SE_UBICA" and args.ampliar:
-            ampliado = dataclasses.replace(p, largo_maximo_cm=p.largo_maximo_cm * 2)
-            medicion = medir_corte(corte, ampliado, args.limite)
-            print("   con lienzo de 1600 cm → " + _linea(numero, corte, ampliado, medicion, colores).split(" | ", 2)[-1],
-                  flush=True)
+        capas = ",".join(f"{colores[c]}={l}" for c, l in corte.capas.items())
+        entradas, _ = armar_entradas(corte, p)
+        try:
+            tz = ubicar_corte(corte, p)
+        except NoSeUbica as error:
+            print(f"corte {numero}: NO SE UBICA ({', '.join(ic.item.geo.nombre for ic in error.items[:3])})", flush=True)
+            continue
+        largos = [c.largo_cm for c in tz.corridas]
+        fila = {
+            "corte": numero, "tela": corte.codigo_tela, "capas": capas, "talles": _talles(corte),
+            "entradas": len(entradas), "presupuesto_s": tz.presupuesto_segundos, "estado": tz.estado,
+            "reinicios": tz.reinicios, "semilla_ganadora": tz.semilla_ganadora,
+            "largo_estimado_cm": round(corte.largo_estimado_cm, 1), "largo_primera_cm": round(largos[0], 1),
+            "largo_mejor_cm": round(min(largos), 1), "largo_peor_cm": round(max(largos), 1),
+            "largo_sin_compactar_cm": round(tz.largo_sin_compactar_cm, 1), "largo_final_cm": round(tz.largo_usado_cm, 1),
+            "eficiencia_real": round(tz.eficiencia, 4), "eficiencia_supuesta": p.eficiencia_estimada,
+            "largo_final_vs_estimado": round(tz.largo_usado_cm / corte.largo_estimado_cm - 1, 4),
+            "segundos": round(tz.segundos, 1), "verificacion_ok": tz.verificacion_ok,
+        }
+        filas_corte.append(fila)
+        for indice, c in enumerate(tz.corridas, start=1):
+            filas_corrida.append({"corte": numero, "reinicio": indice, "semilla": c.semilla,
+                                  "largo_cm": round(c.largo_cm, 1), "generaciones": c.generaciones,
+                                  "segundos": round(c.segundos, 1), "estado": c.estado,
+                                  "verificacion_ok": c.verificacion_ok})
+        print(f"corte {numero}: {corte.codigo_tela:6} [{capas}] {fila['talles']:22} {len(entradas):2} entradas"
+              f" | {tz.estado:16} {tz.reinicios} corrida(s), gana semilla {tz.semilla_ganadora}"
+              f" | primera {largos[0]:5.0f} · mejor {min(largos):5.0f} · peor {max(largos):5.0f}"
+              f" · final {tz.largo_usado_cm:5.0f} cm (est. {corte.largo_estimado_cm:4.0f})"
+              f" | efic. real {tz.eficiencia:5.1%} | {tz.segundos:5.0f} s | verif. {'ok' if tz.verificacion_ok else 'FALLÓ'}",
+              flush=True)
+        for advertencia in tz.advertencias:
+            print(f"   ADVERTENCIA: {advertencia}", flush=True)
+    total = time.perf_counter() - inicio_tanda
+
+    with open(f"{args.csv}_cortes.csv", "w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.DictWriter(archivo, fieldnames=COLUMNAS_CORTE)
+        escritor.writeheader()
+        escritor.writerows(filas_corte)
+    with open(f"{args.csv}_corridas.csv", "w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.DictWriter(archivo, fieldnames=COLUMNAS_CORRIDA)
+        escritor.writeheader()
+        escritor.writerows(filas_corrida)
+
+    if filas_corte:
+        efic = [f["eficiencia_real"] for f in filas_corte]
+        print(f"\nTanda: {total:.0f} s ({total / 60:.1f} min) | eficiencia real de {min(efic):.1%} a {max(efic):.1%}"
+              f" (supuesta {p.eficiencia_estimada:.0%}) | largo total final"
+              f" {sum(f['largo_final_cm'] for f in filas_corte):.0f} cm frente a"
+              f" {sum(f['largo_primera_cm'] for f in filas_corte):.0f} cm de una sola corrida"
+              f" y {sum(f['largo_estimado_cm'] for f in filas_corte):.0f} cm estimados")
+    print(f"CSV: {args.csv}_cortes.csv y {args.csv}_corridas.csv")
 
     print(f"\nAgrupación de talles del planificador (referencia manual: {REFERENCIA_MANUAL}):")
     for numero, corte in enumerate(plan.cortes, start=1):
-        talles = "+".join("T" + t for t in sorted({ic.item.geo.talle for ic in corte.items}, key=_orden))
-        print(f"  corte {numero}: {corte.codigo_tela:6} {talles}")
-
+        print(f"  corte {numero}: {corte.codigo_tela:6} {_talles(corte)}")
     print("\nSustituciones candidatas sobre el residuo (NO aplicadas):")
     candidatas = buscar_candidatas(plan, p)
     for c in candidatas:
@@ -175,9 +192,8 @@ def main():
               f" {c['desperdicioCm2']:.0f} cm² | recorte {c['largoRecorteCm']:.0f} cm")
     if not candidatas:
         print("  ninguna")
-
     if args.comparar_v100:
-        print(f"\nValidación v1.0.0 frente a la nueva (corte {args.comparar_v100}, todas enteras, misma semilla):")
+        print(f"\nValidación v1.0.0 frente a la actual (corte {args.comparar_v100}, todas enteras, una corrida):")
         for fila in comparar_v100(plan.cortes[args.comparar_v100 - 1], p):
             print(fila, flush=True)
 
