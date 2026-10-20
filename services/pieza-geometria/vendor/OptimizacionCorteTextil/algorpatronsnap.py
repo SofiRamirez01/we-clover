@@ -1,6 +1,7 @@
 ﻿from math import hypot
-from functools import lru_cache
+from collections import OrderedDict
 import random
+import shapely
 from shapely.affinity import translate, rotate
 from shapely.geometry import Polygon, box
 from shapely.geometry.polygon import orient
@@ -33,12 +34,29 @@ class SinUbicacionValida(RuntimeError):
         self.indices_entrada = list(indices_entrada)
 
 
-@lru_cache(maxsize=4096)
+_PROPIEDADES = OrderedDict()
+_PROPIEDADES_MAX = 4096
+
+
 def _polygon_properties(polygon):
-    """Cache immutable geometry properties reused throughout the search."""
+    """Cache immutable geometry properties reused throughout the search.
+
+    La caché es por identidad del objeto (v1.0.0 usaba lru_cache, que para buscar compara y
+    hashea las coordenadas del polígono y costaba más de lo que ahorraba). Guarda una referencia
+    al polígono, así su id no se reutiliza mientras esté en la caché.
+    """
+    clave = id(polygon)
+    guardado = _PROPIEDADES.get(clave)
+    if guardado is not None and guardado[0] is polygon:
+        _PROPIEDADES.move_to_end(clave)
+        return guardado[1]
     minx, miny, maxx, maxy = polygon.bounds
     center = polygon.centroid
-    return minx, miny, maxx, maxy, center.x, center.y
+    propiedades = (minx, miny, maxx, maxy, center.x, center.y)
+    _PROPIEDADES[clave] = (polygon, propiedades)
+    if len(_PROPIEDADES) > _PROPIEDADES_MAX:
+        _PROPIEDADES.popitem(last=False)
+    return propiedades
 
 
 def create_half_polygons(base_polygon, offset):
@@ -294,7 +312,27 @@ def _move_margin_entry(entry):
         poly_maxx + x_offset,
         poly_maxy + y_offset,
     )
-    return translate(poly, xoff=x_offset, yoff=y_offset), bounds
+    return _trasladar(poly, x_offset, y_offset), bounds
+
+
+_ANILLOS = OrderedDict()
+
+
+def _trasladar(polygon, dx, dy):
+    """Igual que shapely.affinity.translate para un polígono, sin armar la matriz afín en cada
+    llamada: suma el desplazamiento a las coordenadas (guardadas por identidad) y construye el
+    polígono de una vez."""
+    clave = id(polygon)
+    guardado = _ANILLOS.get(clave)
+    if guardado is None or guardado[0] is not polygon:
+        coordenadas = None if len(polygon.interiors) else shapely.get_coordinates(polygon.exterior)
+        guardado = (polygon, coordenadas)
+        _ANILLOS[clave] = guardado
+        if len(_ANILLOS) > _PROPIEDADES_MAX:
+            _ANILLOS.popitem(last=False)
+    if guardado[1] is None:  # con agujeros: el camino de v1.0.0
+        return translate(polygon, xoff=dx, yoff=dy)
+    return shapely.polygons(guardado[1] + (dx, dy))
 
 
 def _placement_is_valid(candidate, placed, x_bounds, y_bounds):
