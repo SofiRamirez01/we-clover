@@ -440,53 +440,151 @@ def _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez, attempts, e
     return None
 
 
+_HOLGURA_ABAJO_IZQUIERDA = 1e-3  # mm
+
+
+def _ubicar_abajo_izquierda(gene, placed_data, x_bounds, y_bounds, doblez):
+    """Respaldo determinístico cuando ubicar al azar no alcanza (cortes densos): prueba como
+    centroide el piso y los bordes superior y laterales de las piezas ya ubicadas, de abajo hacia
+    arriba y de izquierda a derecha, y devuelve la primera posición válida (o None)."""
+    polygon = gene["polygon"]
+    limites_x = _limites_x(gene, x_bounds, doblez)
+    min_x, max_x, min_y, max_y = get_margin_position_bounds(polygon, limites_x, y_bounds)
+    if min_x > max_x + _EPS or min_y > max_y + _EPS:
+        return None
+    pminx, pminy, pmaxx, pmaxy, center_x, center_y = _polygon_properties(polygon)
+    ocupados = [placed[1] for placed in placed_data if placed is not None]
+    # Los candidatos quedan a _HOLGURA_ABAJO_IZQUIERDA de la pieza vecina y no pegados: así sus
+    # cajas no se tocan y no hace falta calcular la intersección de los polígonos.
+    h = _HOLGURA_ABAJO_IZQUIERDA
+    ys = sorted({min_y} | {b[3] + (center_y - pminy) + h for b in ocupados if b[3] + (center_y - pminy) + h <= max_y + _EPS})
+    if gene["modo"] == MITAD:
+        xs = [_x_mitad(polygon, gene["rotacion"], doblez)]
+    else:
+        xs = sorted({min_x, max_x}
+                    | {x for b in ocupados for x in (b[2] + (center_x - pminx) + h, b[0] - (pmaxx - center_x) - h)
+                       if min_x - _EPS <= x <= max_x + _EPS})
+    import numpy as np  # llega con shapely; se importa acá como el resto de numpy del vendor
+
+    # Todos los candidatos en orden (y, x), y de una vez qué cajas ocupadas se superponen con cada
+    # uno: solo hace falta mirar polígonos donde hay superposición de cajas.
+    cx = np.clip(np.array(xs, dtype=float), min_x, max_x)
+    cy = np.minimum(np.array(ys, dtype=float), max_y)
+    grilla_y, grilla_x = np.meshgrid(cy, cx, indexing="ij")
+    grilla_x, grilla_y = grilla_x.ravel(), grilla_y.ravel()
+    caja = np.column_stack((grilla_x + (pminx - center_x), grilla_y + (pminy - center_y),
+                            grilla_x + (pmaxx - center_x), grilla_y + (pmaxy - center_y)))
+    indices = [i for i, placed in enumerate(placed_data) if placed is not None]
+    if indices:
+        ocupadas = np.array([placed_data[i][1] for i in indices], dtype=float)
+        se_superponen = ~((caja[:, None, 2] < ocupadas[None, :, 0]) | (ocupadas[None, :, 2] < caja[:, None, 0])
+                          | (caja[:, None, 3] < ocupadas[None, :, 1]) | (ocupadas[None, :, 3] < caja[:, None, 1]))
+    else:
+        se_superponen = np.zeros((len(caja), 0), dtype=bool)
+    for k in range(len(caja)):
+        candidate = {**gene, "x": float(grilla_x[k]), "y": float(grilla_y[k])}
+        vecinos = se_superponen[k]
+        if not vecinos.any():
+            return candidate, _move_margin_entry(candidate)
+        cercanos = [placed_data[indices[j]] for j in np.flatnonzero(vecinos)]
+        valido = _valido_perezoso(candidate, cercanos, limites_x, y_bounds)
+        if valido is not None:
+            return candidate, (valido[0] or _move_margin_entry(candidate)[0], valido[1])
+    return None
+
+
+DENSIDAD_CONSTRUCTIVA = 0.3
+# En modo constructivo se arma esta fracción de la población abajo a la izquierda (cuesta ~1 s
+# por individuo en un corte grande) y el resto son variantes mutadas de esos (milisegundos).
+FRACCION_CONSTRUCTIVA = 0.2
+
+
+def _unidades(plantillas):
+    """Índices de plantillas agrupados: una ranura (rol 0 y rol 1) se ubica como una unidad."""
+    unidades, i = [], 0
+    while i < len(plantillas):
+        largo = 2 if plantillas[i]["ranura"] is not None else 1
+        unidades.append(list(range(i, i + largo)))
+        i += largo
+    return unidades
+
+
+def _densidad(plantillas, x_bounds, y_bounds):
+    area = 0.0
+    for plantilla in plantillas:
+        if plantilla["rol"] == 1:
+            continue
+        forma = plantilla["formas"].get((ENTERA, 0)) or plantilla["formas"][(MITAD, 0)]
+        area += forma.area
+    return area / max((x_bounds[1] - x_bounds[0]) * (y_bounds[1] - y_bounds[0]), 1e-9)
+
+
+def _armar_individuo(plantillas, orden, x_bounds, y_bounds, doblez, constructivo, attempts):
+    """Ubica las unidades en `orden`. En modo constructivo va directo abajo a la izquierda; si
+    no, prueba al azar y, si no entra, pasa a abajo a la izquierda para el resto del individuo.
+    Devuelve (genes en orden de plantillas, None) o (None, indice_entrada que no entró)."""
+    genes = [None] * len(plantillas)
+    placed = [None] * len(plantillas)
+    denso = constructivo
+    for unidad in orden:
+        primera = plantillas[unidad[0]]
+        modos = random.sample([ENTERA, MITAD], 2) if primera["ranura"] is not None else [primera["modo_entrada"]]
+        ok = False
+        for modo in modos:
+            indices = unidad if (len(unidad) == 2 and modo == MITAD) else unidad[:1]
+            colocados = []
+            for i in indices:
+                gene = _nuevo_gen(plantillas[i], modo, random.choice(ROTACIONES))
+                ubicado = None
+                if not denso:
+                    ubicado = _buscar_ubicacion(gene, placed, x_bounds, y_bounds, doblez, attempts)
+                if ubicado is None:
+                    ubicado = _ubicar_abajo_izquierda(gene, placed, x_bounds, y_bounds, doblez)
+                    denso = denso or ubicado is not None
+                if ubicado is None:
+                    break
+                genes[i], placed[i] = ubicado
+                colocados.append(i)
+            if len(colocados) == len(indices):
+                ok = True
+                break
+            for i in colocados:  # la ranura no entró en este modo: se deshace y se prueba el otro
+                genes[i] = placed[i] = None
+        if not ok:
+            return None, primera["indice_entrada"]
+        if len(unidad) == 2 and genes[unidad[1]] is None:
+            genes[unidad[1]] = _nuevo_gen(plantillas[unidad[1]], ENTERA, 0, activo=False)
+    return genes, None
+
+
 def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_individual_attempts=500,
-                             max_placement_attempts=200, doblez=None, cancelado=None):
-    """Create a population of valid individuals with non-overlapping in-bounds margin polygons."""
+                             max_placement_attempts=200, doblez=None, cancelado=None,
+                             densidad_constructiva=DENSIDAD_CONSTRUCTIVA):
+    """Create a population of valid individuals with non-overlapping in-bounds margin polygons.
+
+    Si el área de las piezas pasa `densidad_constructiva` del área disponible, cada individuo se
+    arma abajo a la izquierda, con orden de piezas, rotaciones y modos al azar: ubicando al azar
+    las primeras piezas quedan desparramadas y las últimas no entran.
+    """
     doblez = doblez or x_bounds
     plantillas = _preparar_entradas(margin_polygons)
+    unidades = _unidades(plantillas)
+    constructivo = _densidad(plantillas, x_bounds, y_bounds) > densidad_constructiva
     population = []
     fallas = {}
-    for _ in range(size):
+    construidos = max(1, round(size * FRACCION_CONSTRUCTIVA)) if constructivo else size
+    for _ in range(construidos):
         _revisar_cancelacion(cancelado)
         for _ in range(max_individual_attempts):
-            individual = []
-            placed_data = []
-            valid = True
-            modo_ranura = {}
-            for plantilla in plantillas:
-                ranura = plantilla["ranura"]
-                if ranura is not None and plantilla["rol"] == 1 and modo_ranura[ranura] == ENTERA:
-                    individual.append(_nuevo_gen(plantilla, ENTERA, 0, activo=False))
-                    placed_data.append(None)
-                    continue
-
-                if ranura is None:
-                    modos = [plantilla["modo_entrada"]]
-                elif plantilla["rol"] == 0:
-                    modos = random.sample([ENTERA, MITAD], 2)
-                else:
-                    modos = [MITAD]
-
-                ubicado = None
-                for modo in modos:
-                    gene = _nuevo_gen(plantilla, modo, random.choice(ROTACIONES))
-                    ubicado = _buscar_ubicacion(gene, placed_data, x_bounds, y_bounds, doblez,
-                                                max_placement_attempts)
-                    if ubicado is not None:
-                        break
-                if ubicado is None:
-                    indice = plantilla["indice_entrada"]
-                    fallas[indice] = fallas.get(indice, 0) + 1
-                    valid = False
-                    break
-                gene, moved = ubicado
-                if ranura is not None and plantilla["rol"] == 0:
-                    modo_ranura[ranura] = gene["modo"]
-                individual.append(gene)
-                placed_data.append(moved)
-
-            if valid and score_margin_positions(individual, x_bounds, y_bounds, doblez) > -30000000000:
+            orden = list(unidades)
+            if constructivo:
+                random.shuffle(orden)
+            individual, fallida = _armar_individuo(plantillas, orden, x_bounds, y_bounds, doblez,
+                                                   constructivo, max_placement_attempts)
+            if individual is None:
+                fallas[fallida] = fallas.get(fallida, 0) + 1
+                continue
+            if score_margin_positions(individual, x_bounds, y_bounds, doblez) > -30000000000:
                 population.append(individual)
                 break
         else:
@@ -494,6 +592,13 @@ def create_margin_population(size, margin_polygons, x_bounds, y_bounds, max_indi
                 f"Unable to generate a valid starting individual after {max_individual_attempts} attempts",
                 sorted(fallas, key=lambda indice: -fallas[indice]),
             )
+    alto = y_bounds[1] - y_bounds[0]
+    while len(population) < size:
+        _revisar_cancelacion(cancelado)
+        padre = random.choice(population[:construidos])
+        population.append(mutate_margin_individual(
+            padre, 0.3, 0.99, x_bounds, y_bounds, (x_bounds[1] - x_bounds[0]) / 4, 1, alto / 10,
+            mutation_rate_flip=0.15, doblez=doblez, mutation_rate_modo=0.1))
     return population
 
 
