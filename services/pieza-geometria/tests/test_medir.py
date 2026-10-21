@@ -53,4 +53,15 @@ def test_comparar_estancamiento_corre_cada_variante_con_las_mismas_semillas(tmp_
         filas = list(csv.DictReader(archivo))
     assert [(f["semilla"], f["variante"]) for f in filas] == [("3", "sin"), ("3", "N=50"), ("7", "sin"), ("7", "N=50")]
     assert all(f["diferencia_vs_sin"] == "0.0" for f in filas if f["variante"] == "sin")
+    assert all(float(f["segundos_por_generacion"]) > 0 for f in filas)
     assert "| corte | variante |" in salida.stdout
+    # Si se vuelve a correr (medición cortada), saltea lo ya medido y no repite filas.
+    otra = subprocess.run(
+        [sys.executable, str(RAIZ / "scripts" / "medir.py"), str(entrada), "--presupuesto", "2",
+         "--semillas", "3", "7", "--comparar-estancamiento", "50", "--csv", str(prefijo)],
+        capture_output=True, text=True, encoding="utf-8", timeout=180,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+    assert otra.returncode == 0, otra.stderr
+    assert "Retomando: 4 mediciones" in otra.stdout
+    with open(f"{prefijo}_estancamiento.csv", encoding="utf-8") as archivo:
+        assert len(list(csv.DictReader(archivo))) == 4

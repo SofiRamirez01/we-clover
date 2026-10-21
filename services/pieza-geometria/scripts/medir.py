@@ -104,7 +104,8 @@ def comparar_v100(corte, p):
 
 
 COLUMNAS_ESTANCAMIENTO = ["corte", "tela", "capas", "entradas", "semilla", "variante", "corridas", "motivos",
-                          "estado", "largo_cm", "tela_cm", "segundos", "verificacion_ok", "diferencia_vs_sin"]
+                          "estado", "largo_cm", "tela_cm", "segundos", "segundos_por_generacion", "verificacion_ok",
+                          "diferencia_vs_sin"]
 
 
 def _motivos(tz):
@@ -114,39 +115,57 @@ def _motivos(tz):
 
 def comparar_estancamiento(plan, p, args, colores):
     """Cada corte elegido, con cada semilla, sin estancamiento y con cada N pedido (umbral
-    --umbral-estancamiento-cm), de a una corrida por vez. Escribe <csv>_estancamiento.csv."""
+    --umbral-estancamiento-cm), de a una corrida por vez. Escribe <csv>_estancamiento.csv; si ya
+    existe, saltea lo medido y sigue (para retomar una medición cortada)."""
     from dataclasses import replace
 
     variantes = [("sin", 0)] + [(f"N={n}", n) for n in args.comparar_estancamiento]
-    filas = []
     ruta = f"{args.csv}_estancamiento.csv"
-    with open(ruta, "w", newline="", encoding="utf-8") as archivo:
+    filas = []
+    if Path(ruta).exists():
+        with open(ruta, encoding="utf-8") as archivo:
+            filas = list(csv.DictReader(archivo))
+        for fila in filas:
+            fila["corte"], fila["semilla"], fila["corridas"] = int(fila["corte"]), int(fila["semilla"]), int(fila["corridas"])
+            for clave in ("largo_cm", "tela_cm", "segundos", "diferencia_vs_sin"):
+                fila[clave] = float(fila[clave])
+        print(f"Retomando: {len(filas)} mediciones ya hechas en {ruta}", flush=True)
+    hechas = {(f["corte"], f["semilla"], f["variante"]): f for f in filas}
+    with open(ruta, "a", newline="", encoding="utf-8") as archivo:
         escritor = csv.DictWriter(archivo, fieldnames=COLUMNAS_ESTANCAMIENTO)
-        escritor.writeheader()
+        if not filas:
+            escritor.writeheader()
         for numero, corte in enumerate(plan.cortes, start=1):
             if args.cortes and numero not in args.cortes:
                 continue
             capas = ",".join(f"{colores[c]}={l}" for c, l in corte.capas.items())
             entradas, _ = armar_entradas(corte, p)
             for semilla in args.semillas:
-                base = None
+                previa = hechas.get((numero, semilla, "sin"))
+                base = previa["tela_cm"] if previa else None
                 for nombre, n in variantes:
+                    if (numero, semilla, nombre) in hechas:
+                        continue
                     pv = replace(p, semilla=semilla, generaciones_estancamiento=n,
                                  umbral_estancamiento_cm=args.umbral_estancamiento_cm)
                     tz = ubicar_corte(corte, pv)
                     tela = tz.largo_usado_cm * corte.capas_totales
                     base = tela if base is None else base
+                    generaciones = sum(c.generaciones for c in tz.corridas)
                     fila = {"corte": numero, "tela": corte.codigo_tela, "capas": capas, "entradas": len(entradas),
                             "semilla": semilla, "variante": nombre, "corridas": tz.reinicios, "motivos": _motivos(tz),
                             "estado": tz.estado, "largo_cm": round(tz.largo_usado_cm, 2), "tela_cm": round(tela, 2),
-                            "segundos": round(tz.segundos, 1), "verificacion_ok": tz.verificacion_ok,
+                            "segundos": round(tz.segundos, 1),
+                            "segundos_por_generacion": round(sum(c.segundos for c in tz.corridas) / max(generaciones, 1), 3),
+                            "verificacion_ok": tz.verificacion_ok,
                             "diferencia_vs_sin": round(tela / base - 1, 4)}
                     escritor.writerow(fila)
                     archivo.flush()
                     filas.append(fila)
                     print(f"corte {numero} {corte.codigo_tela:6} [{capas}] semilla {semilla:>4} {nombre:5} | {tz.reinicios:2}"
                           f" corrida(s) {fila['motivos']:44} | largo {tz.largo_usado_cm:6.1f} cm, tela {tela:7.1f} cm"
-                          f" ({fila['diferencia_vs_sin']:+.1%}) | {tz.segundos:4.0f} s | {tz.estado}"
+                          f" ({fila['diferencia_vs_sin']:+.1%}) | {tz.segundos:4.0f} s"
+                          f" ({fila['segundos_por_generacion']:.2f} s/gen) | {tz.estado}"
                           f" | verif {'ok' if tz.verificacion_ok else 'FALLÓ'}", flush=True)
     print(f"\nCSV: {ruta}")
     print("\n| corte | variante | corridas | mejor largo (cm) | tela (cm) | tiempo (s) | vs sin |")
