@@ -465,3 +465,58 @@ def test_cambio11_el_corte_tiene_que_ser_mayor_que_el_stagnation_limit():
     with pytest.raises(ValueError):
         _correr([{"name": "c", "polygon": _margen(ASIMETRICA)}], generations=5,
                 corte_estancamiento=40, stagnation_limit=40)
+
+
+def _largo_por_generacion(monkeypatch, paso):
+    """Hace que el largo del mejor individuo baje `paso` por generación (lo actualiza on_generation,
+    que el vendor llama antes de revisar el estancamiento)."""
+    estado = {"largo": 1000.0}
+    monkeypatch.setattr(ga, "_individual_max_y", lambda individuo: estado["largo"])
+
+    def avance(generacion, *args):
+        estado["largo"] = 1000.0 - generacion * paso
+    return avance
+
+
+def test_cambio11_no_corta_si_el_largo_baja_al_menos_el_umbral(monkeypatch):
+    entradas = [{"name": f"c{i}", "polygon": _margen(ASIMETRICA)} for i in range(2)]
+    fin = {}
+    _correr(entradas, generations=150, corte_estancamiento=45, generaciones_minimas=10, umbral_estancamiento=1.0,
+            on_generation=_largo_por_generacion(monkeypatch, paso=1.0), resultado=fin)
+    assert fin == {"motivo": "GENERACIONES", "generaciones": 150}
+
+
+def test_cambio11_una_mejora_acumulada_menor_al_umbral_no_reinicia_la_cuenta(monkeypatch):
+    # Baja 0,01 por generación: en 45 generaciones acumula 0,45 < 1, así que corta en la 46.
+    entradas = [{"name": f"c{i}", "polygon": _margen(ASIMETRICA)} for i in range(2)]
+    fin = {}
+    _correr(entradas, generations=300, corte_estancamiento=45, generaciones_minimas=10, umbral_estancamiento=1.0,
+            on_generation=_largo_por_generacion(monkeypatch, paso=0.01), resultado=fin)
+    assert fin == {"motivo": "ESTANCAMIENTO", "generaciones": 46}
+
+
+def test_cambio11_encendido_sin_llegar_a_cortar_da_lo_mismo_que_apagado():
+    entradas = [{"name": f"c{i}", "polygon": _margen(ASIMETRICA)} for i in range(3)]
+    apagado = _correr(entradas, generations=25)
+    encendido = _correr(entradas, generations=25, corte_estancamiento=1000, generaciones_minimas=0,
+                        umbral_estancamiento=1.0, resultado={})
+    assert apagado[1] == encendido[1]
+    assert [(g["x"], g["y"], g["rotacion"], g["modo"]) for g in apagado[0]] == \
+        [(g["x"], g["y"], g["rotacion"], g["modo"]) for g in encendido[0]]
+
+
+def test_cambio11_convive_con_la_cancelacion_y_el_limite_de_tiempo(monkeypatch):
+    import time as reloj
+
+    entradas = [{"name": f"c{i}", "polygon": _margen(ASIMETRICA)} for i in range(2)]
+    # El largo baja siempre: nunca se estanca y manda el límite de tiempo.
+    fin = {}
+    _correr(entradas, generations=100000, corte_estancamiento=45, umbral_estancamiento=1.0,
+            limite_tiempo=reloj.monotonic() + 0.3, on_generation=_largo_por_generacion(monkeypatch, paso=5.0),
+            resultado=fin)
+    assert fin["motivo"] == "LIMITE_DE_TIEMPO"
+    # Con el estancamiento encendido, la cancelación sigue cortando sin devolver resultado.
+    cancelado = threading.Event()
+    cancelado.set()
+    with pytest.raises(ga.CorteCancelado):
+        _correr(entradas, generations=300, corte_estancamiento=45, cancelado=cancelado, resultado={})
