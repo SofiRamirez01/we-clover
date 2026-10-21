@@ -1,0 +1,1541 @@
+pieza_a,talle_a,pieza_b,talle_b,area_a_cm2,area_b_cm2,dif_simetrica,hausdorff_cm,giro,alineacion,b_fuera_de_a,a_fuera_de_b
+Espalda Buzo T2,1,Espalda Buzo T2,2,2548.52,2654.7,0.042051,1.0,0,centroide,0.040605,0.00063
+Espalda Buzo T2,1,Espalda Buzo T2,3,2548.52,2967.68,0.151976,3.1508,0,centroide,0.141243,0.0
+Espalda Buzo T2,1,Espalda Buzo T2,4,2548.52,3286.24,0.252874,5.6913,180,centroide,0.22449,0.0
+Espalda Buzo T2,1,Espalda Buzo T2,5,2548.52,3511.66,0.31786,7.0438,180,centroide,0.274271,0.0
+Espalda Buzo T2,1,Espalda Buzo T2,6,2548.52,3806.94,0.396013,8.0897,0,centroide,0.33056,0.0
+Espalda Buzo T2,1,Espalda Buzo T2,7,2548.52,4497.16,0.553146,12.8164,180,centroide,0.433306,0.0
+Espalda Buzo T2,1,Frente Buzo T2,1,2548.52,2473.21,0.02999,5.0,0,esquina,0.0,0.029547
+Espalda Buzo T2,1,Frente Buzo T2,2,2548.52,2576.26,0.075721,5.0488,0,esquina,0.043042,0.032622
+Espalda Buzo T2,1,Frente Buzo T2,3,2548.52,2879.99,0.163099,3.4525,0,centroide,0.134404,0.021819
+Espalda Buzo T2,1,Frente Buzo T2,4,2548.52,3189.14,0.236965,9.746,0,esquina,0.207021,0.007688
+Espalda Buzo T2,1,Frente Buzo T2,5,2548.52,3407.9,0.297192,6.7448,0,centroide,0.255947,0.005045
+Espalda Buzo T2,1,Frente Buzo T2,6,2548.52,3694.45,0.368667,8.473,0,centroide,0.310834,0.000952
+Espalda Buzo T2,1,Frente Buzo T2,7,2548.52,4364.28,0.525335,12.3496,180,centroide,0.416052,0.0
+Espalda Buzo T2,1,Cintura Buzo T2,1,2548.52,1092.0,1.278465,22.5493,0,centroide,0.398636,0.742325
+Espalda Buzo T2,1,Cintura Buzo T2,2,2548.52,1148.0,1.289396,22.5493,0,centroide,0.42797,0.742325
+Espalda Buzo T2,1,Cintura Buzo T2,3,2548.52,1204.0,1.3,22.5493,0,centroide,0.454577,0.742325
+Espalda Buzo T2,1,Cintura Buzo T2,4,2548.52,1344.0,1.325177,24.9122,0,centroide,0.511391,0.742325
+Espalda Buzo T2,1,Cintura Buzo T2,5,2548.52,1400.0,1.334748,26.9115,0,centroide,0.530936,0.742325
+Espalda Buzo T2,1,Cintura Buzo T2,6,2548.52,1456.0,1.344051,28.9108,0,centroide,0.548977,0.742325
+Espalda Buzo T2,1,Cintura Buzo T2,7,2548.52,1540.0,1.357527,31.9098,0,centroide,0.573578,0.742325
+Espalda Buzo T2,1,Bolsillo T1-2,1,2548.52,782.0,1.060806,19.5708,180,centroide,0.0,0.693155
+Espalda Buzo T2,1,Bolsillo T1-2,2,2548.52,782.0,1.060806,19.5708,180,centroide,0.0,0.693155
+Espalda Buzo T2,1,Bolsillo T1-2,3,2548.52,865.19,0.986309,18.7393,180,centroide,9.3e-05,0.660543
+Espalda Buzo T2,1,Bolsillo T1-2,4,2548.52,865.19,0.986309,18.7393,180,centroide,9.3e-05,0.660543
+Espalda Buzo T2,1,Bolsillo T1-2,5,2548.52,951.16,0.913732,17.9078,180,centroide,0.0008,0.627079
+Espalda Buzo T2,1,Bolsillo T1-2,6,2548.52,951.16,0.913732,17.9078,180,centroide,0.0008,0.627079
+Espalda Buzo T2,1,Bolsillo T1-2,7,2548.52,951.16,0.913732,17.9078,180,centroide,0.0008,0.627079
+Espalda Buzo T2,1,Manga Buzo T2,1,2548.52,1070.82,0.816557,14.5521,0,centroide,0.0,0.579826
+Espalda Buzo T2,1,Manga Buzo T2,2,2548.52,1070.68,0.816663,14.5524,0,centroide,0.0,0.57988
+Espalda Buzo T2,1,Manga Buzo T2,3,2548.52,1253.47,0.700304,12.7507,180,centroide,0.01445,0.515265
+Espalda Buzo T2,1,Manga Buzo T2,4,2548.52,1253.47,0.700304,12.7507,180,centroide,0.01445,0.515265
+Espalda Buzo T2,1,Manga Buzo T2,5,2548.52,1450.44,0.634705,11.8325,180,centroide,0.058949,0.464418
+Espalda Buzo T2,1,Manga Buzo T2,6,2548.52,1450.44,0.634705,11.8325,180,centroide,0.058949,0.464418
+Espalda Buzo T2,1,Manga Buzo T2,7,2548.52,1609.81,0.582027,10.9224,180,centroide,0.084303,0.421585
+Espalda Buzo T2,1,Capucha Buzo T2,1,2548.52,971.94,0.895665,19.5819,180,centroide,0.0,0.618625
+Espalda Buzo T2,1,Capucha Buzo T2,2,2548.52,1000.0,0.87277,18.8059,0,centroide,0.0,0.607616
+Espalda Buzo T2,1,Capucha Buzo T2,3,2548.52,1029.44,0.849133,18.5628,0,centroide,0.0,0.596064
+Espalda Buzo T2,1,Capucha Buzo T2,4,2548.52,1058.8,0.825941,18.3207,0,centroide,0.0,0.584542
+Espalda Buzo T2,1,Capucha Buzo T2,5,2548.52,1088.57,0.802808,18.6095,180,centroide,0.0,0.57286
+Espalda Buzo T2,1,Capucha Buzo T2,6,2548.52,1118.76,0.779739,17.8366,0,centroide,0.0,0.561016
+Espalda Buzo T2,1,Capucha Buzo T2,7,2548.52,1149.35,0.756742,18.1236,180,centroide,0.0,0.549012
+Espalda Buzo T2,1,Puño T1-2,1,2548.52,266.0,1.62196,25.0695,0,centroide,0.0,0.895626
+Espalda Buzo T2,1,Puño T1-2,2,2548.52,280.0,1.604033,24.7837,0,centroide,0.0,0.890132
+Espalda Buzo T2,1,Puño T1-2,3,2548.52,294.0,1.586282,24.5047,0,centroide,0.0,0.884639
+Espalda Buzo T2,1,Puño T1-2,4,2548.52,308.0,1.568705,24.2328,0,centroide,0.0,0.879145
+Espalda Buzo T2,1,Puño T1-2,5,2548.52,322.0,1.5513,23.9683,0,centroide,0.0,0.873652
+Espalda Buzo T2,1,Puño T1-2,6,2548.52,336.0,1.534064,23.7114,0,centroide,0.0,0.868159
+Espalda Buzo T2,1,Puño T1-2,7,2548.52,350.0,1.516994,23.4623,0,centroide,0.0,0.862665
+Espalda Buzo T2,1,Capucha interior Buzo T2,1,2548.52,971.94,0.895665,19.5819,180,centroide,0.0,0.618625
+Espalda Buzo T2,1,Capucha interior Buzo T2,2,2548.52,1000.0,0.87277,18.8059,0,centroide,0.0,0.607616
+Espalda Buzo T2,1,Capucha interior Buzo T2,3,2548.52,1029.44,0.849133,18.5628,0,centroide,0.0,0.596064
+Espalda Buzo T2,1,Capucha interior Buzo T2,4,2548.52,1058.8,0.825941,18.3207,0,centroide,0.0,0.584542
+Espalda Buzo T2,1,Capucha interior Buzo T2,5,2548.52,1088.57,0.802808,18.6095,180,centroide,0.0,0.57286
+Espalda Buzo T2,1,Capucha interior Buzo T2,6,2548.52,1118.76,0.779739,17.8366,0,centroide,0.0,0.561016
+Espalda Buzo T2,1,Capucha interior Buzo T2,7,2548.52,1149.35,0.756742,18.1236,180,centroide,0.0,0.549012
+Espalda Buzo T2,2,Espalda Buzo T2,3,2654.7,2967.68,0.111332,2.2198,0,centroide,0.105461,0.0
+Espalda Buzo T2,2,Espalda Buzo T2,4,2654.7,3286.24,0.212606,4.1653,0,centroide,0.192177,0.0
+Espalda Buzo T2,2,Espalda Buzo T2,5,2654.7,3511.66,0.277946,5.5537,0,centroide,0.244032,0.0
+Espalda Buzo T2,2,Espalda Buzo T2,6,2654.7,3806.94,0.356638,7.3105,0,centroide,0.302667,0.0
+Espalda Buzo T2,2,Espalda Buzo T2,7,2654.7,4497.16,0.515238,12.0057,180,centroide,0.409693,0.0
+Espalda Buzo T2,2,Frente Buzo T2,1,2654.7,2473.21,0.073636,5.0404,0,esquina,0.001478,0.069742
+Espalda Buzo T2,2,Frente Buzo T2,2,2654.7,2576.26,0.02999,5.0,0,esquina,0.0,0.029547
+Espalda Buzo T2,2,Frente Buzo T2,3,2654.7,2879.99,0.120454,3.4525,0,centroide,0.096984,0.020351
+Espalda Buzo T2,2,Frente Buzo T2,4,2654.7,3189.14,0.192875,8.2518,0,esquina,0.172148,0.005486
+Espalda Buzo T2,2,Frente Buzo T2,5,2654.7,3407.9,0.256396,6.0991,0,centroide,0.224539,0.004524
+Espalda Buzo T2,2,Frente Buzo T2,6,2654.7,3694.45,0.3289,7.7932,0,centroide,0.282027,0.000823
+Espalda Buzo T2,2,Frente Buzo T2,7,2654.7,4364.28,0.48713,11.5061,180,centroide,0.39172,0.0
+Espalda Buzo T2,2,Cintura Buzo T2,1,2654.7,1092.0,1.269703,22.5493,0,centroide,0.373579,0.742325
+Espalda Buzo T2,2,Cintura Buzo T2,2,2654.7,1148.0,1.280457,22.5493,0,centroide,0.404136,0.742325
+Espalda Buzo T2,2,Cintura Buzo T2,3,2654.7,1204.0,1.2909,22.5493,0,centroide,0.431851,0.742325
+Espalda Buzo T2,2,Cintura Buzo T2,4,2654.7,1344.0,1.315726,23.9502,0,centroide,0.491033,0.742325
+Espalda Buzo T2,2,Cintura Buzo T2,5,2654.7,1400.0,1.325177,25.9494,0,centroide,0.511391,0.742325
+Espalda Buzo T2,2,Cintura Buzo T2,6,2654.7,1456.0,1.33437,27.9487,0,centroide,0.530184,0.742325
+Espalda Buzo T2,2,Cintura Buzo T2,7,2654.7,1540.0,1.347699,30.9476,0,centroide,0.55581,0.742325
+Espalda Buzo T2,2,Bolsillo T1-2,1,2654.7,782.0,1.089826,19.1115,0,centroide,0.0,0.705429
+Espalda Buzo T2,2,Bolsillo T1-2,2,2654.7,782.0,1.089826,19.1115,0,centroide,0.0,0.705429
+Espalda Buzo T2,2,Bolsillo T1-2,3,2654.7,865.19,1.016799,18.1389,0,centroide,0.0,0.674091
+Espalda Buzo T2,2,Bolsillo T1-2,4,2654.7,865.19,1.016799,18.1389,0,centroide,0.0,0.674091
+Espalda Buzo T2,2,Bolsillo T1-2,5,2654.7,951.16,0.944878,17.9078,180,centroide,0.0,0.641709
+Espalda Buzo T2,2,Bolsillo T1-2,6,2654.7,951.16,0.944878,17.9078,180,centroide,0.0,0.641709
+Espalda Buzo T2,2,Bolsillo T1-2,7,2654.7,951.16,0.944878,17.9078,180,centroide,0.0,0.641709
+Espalda Buzo T2,2,Manga Buzo T2,1,2654.7,1070.82,0.850288,15.5488,0,centroide,0.0,0.596633
+Espalda Buzo T2,2,Manga Buzo T2,2,2654.7,1070.68,0.850393,15.549,0,centroide,0.0,0.596685
+Espalda Buzo T2,2,Manga Buzo T2,3,2654.7,1253.47,0.736326,13.7498,180,centroide,0.015002,0.534915
+Espalda Buzo T2,2,Manga Buzo T2,4,2654.7,1253.47,0.736326,13.7498,180,centroide,0.015002,0.534915
+Espalda Buzo T2,2,Manga Buzo T2,5,2654.7,1450.44,0.671435,12.8316,180,centroide,0.059949,0.486388
+Espalda Buzo T2,2,Manga Buzo T2,6,2654.7,1450.44,0.671435,12.8316,180,centroide,0.059949,0.486388
+Espalda Buzo T2,2,Manga Buzo T2,7,2654.7,1609.81,0.618582,11.9214,180,centroide,0.085129,0.445223
+Espalda Buzo T2,2,Capucha Buzo T2,1,2654.7,971.94,0.928,19.6577,0,centroide,0.0,0.63388
+Espalda Buzo T2,2,Capucha Buzo T2,2,2654.7,1000.0,0.905522,19.4164,0,centroide,0.0,0.623311
+Espalda Buzo T2,2,Capucha Buzo T2,3,2654.7,1029.44,0.882304,19.1716,0,centroide,0.0,0.612221
+Espalda Buzo T2,2,Capucha Buzo T2,4,2654.7,1058.8,0.859513,18.9287,0,centroide,0.0,0.601161
+Espalda Buzo T2,2,Capucha Buzo T2,5,2654.7,1088.57,0.836769,18.6858,0,centroide,0.0,0.589945
+Espalda Buzo T2,2,Capucha Buzo T2,6,2654.7,1118.76,0.814078,18.4429,0,centroide,0.0,0.578575
+Espalda Buzo T2,2,Capucha Buzo T2,7,2654.7,1149.35,0.791446,18.2002,0,centroide,0.0,0.567051
+Espalda Buzo T2,2,Puño T1-2,1,2654.7,266.0,1.635704,25.6609,0,centroide,0.0,0.899801
+Espalda Buzo T2,2,Puño T1-2,2,2654.7,280.0,1.61836,25.362,0,centroide,0.0,0.894527
+Espalda Buzo T2,2,Puño T1-2,3,2654.7,294.0,1.601181,25.0695,0,centroide,0.0,0.889253
+Espalda Buzo T2,2,Puño T1-2,4,2654.7,308.0,1.584164,24.7837,0,centroide,0.0,0.88398
+Espalda Buzo T2,2,Puño T1-2,5,2654.7,322.0,1.567307,24.5047,0,centroide,0.0,0.878706
+Espalda Buzo T2,2,Puño T1-2,6,2654.7,336.0,1.550608,24.2328,0,centroide,0.0,0.873432
+Espalda Buzo T2,2,Puño T1-2,7,2654.7,350.0,1.534064,23.9683,0,centroide,0.0,0.868159
+Espalda Buzo T2,2,Capucha interior Buzo T2,1,2654.7,971.94,0.928,19.6577,0,centroide,0.0,0.63388
+Espalda Buzo T2,2,Capucha interior Buzo T2,2,2654.7,1000.0,0.905522,19.4164,0,centroide,0.0,0.623311
+Espalda Buzo T2,2,Capucha interior Buzo T2,3,2654.7,1029.44,0.882304,19.1716,0,centroide,0.0,0.612221
+Espalda Buzo T2,2,Capucha interior Buzo T2,4,2654.7,1058.8,0.859513,18.9287,0,centroide,0.0,0.601161
+Espalda Buzo T2,2,Capucha interior Buzo T2,5,2654.7,1088.57,0.836769,18.6858,0,centroide,0.0,0.589945
+Espalda Buzo T2,2,Capucha interior Buzo T2,6,2654.7,1118.76,0.814078,18.4429,0,centroide,0.0,0.578575
+Espalda Buzo T2,2,Capucha interior Buzo T2,7,2654.7,1149.35,0.791446,18.2002,0,centroide,0.0,0.567051
+Espalda Buzo T2,3,Espalda Buzo T2,4,2967.68,3286.24,0.101877,2.1705,0,centroide,0.096939,0.0
+Espalda Buzo T2,3,Espalda Buzo T2,5,2967.68,3511.66,0.167913,3.5142,0,centroide,0.154907,0.0
+Espalda Buzo T2,3,Espalda Buzo T2,6,2967.68,3806.94,0.247766,5.2051,0,centroide,0.220455,0.0
+Espalda Buzo T2,3,Espalda Buzo T2,7,2967.68,4497.16,0.409783,9.8749,180,centroide,0.340099,0.0
+Espalda Buzo T2,3,Frente Buzo T2,1,2967.68,2473.21,0.181988,5.167,0,centroide,0.000126,0.166722
+Espalda Buzo T2,3,Frente Buzo T2,2,2967.68,2576.26,0.141255,5.167,0,centroide,2.7e-05,0.131916
+Espalda Buzo T2,3,Frente Buzo T2,3,2967.68,2879.99,0.02999,5.1754,0,esquina,0.0,0.029547
+Espalda Buzo T2,3,Frente Buzo T2,4,2967.68,3189.14,0.090375,4.3288,0,esquina,0.07834,0.009561
+Espalda Buzo T2,3,Frente Buzo T2,5,2967.68,3407.9,0.145362,6.9917,0,esquina,0.132575,0.003902
+Espalda Buzo T2,3,Frente Buzo T2,6,2967.68,3694.45,0.226361,10.327,0,esquina,0.200408,0.004591
+Espalda Buzo T2,3,Frente Buzo T2,7,2967.68,4364.28,0.380963,9.5263,0,centroide,0.320007,0.0
+Espalda Buzo T2,3,Cintura Buzo T2,1,2967.68,1092.0,1.272106,23.5861,0,centroide,0.323485,0.751067
+Espalda Buzo T2,3,Cintura Buzo T2,2,2967.68,1148.0,1.28201,23.5861,0,centroide,0.356486,0.751067
+Espalda Buzo T2,3,Cintura Buzo T2,3,2967.68,1204.0,1.291648,23.5861,0,centroide,0.386416,0.751067
+Espalda Buzo T2,3,Cintura Buzo T2,4,2967.68,1344.0,1.314648,23.5861,0,centroide,0.450331,0.751067
+Espalda Buzo T2,3,Cintura Buzo T2,5,2967.68,1400.0,1.323435,24.0189,0,centroide,0.472318,0.751067
+Espalda Buzo T2,3,Cintura Buzo T2,6,2967.68,1456.0,1.332,26.0177,0,centroide,0.492614,0.751067
+Espalda Buzo T2,3,Cintura Buzo T2,7,2967.68,1540.0,1.344448,29.0158,0,centroide,0.520289,0.751067
+Espalda Buzo T2,3,Bolsillo T1-2,1,2967.68,782.0,1.165795,21.1628,0,centroide,0.0,0.736494
+Espalda Buzo T2,3,Bolsillo T1-2,2,2967.68,782.0,1.165795,21.1628,0,centroide,0.0,0.736494
+Espalda Buzo T2,3,Bolsillo T1-2,3,2967.68,865.19,1.097083,20.9714,180,centroide,0.0,0.708462
+Espalda Buzo T2,3,Bolsillo T1-2,4,2967.68,865.19,1.097083,20.9714,180,centroide,0.0,0.708462
+Espalda Buzo T2,3,Bolsillo T1-2,5,2967.68,951.16,1.029144,19.2873,0,centroide,0.0,0.679495
+Espalda Buzo T2,3,Bolsillo T1-2,6,2967.68,951.16,1.029144,19.2873,0,centroide,0.0,0.679495
+Espalda Buzo T2,3,Bolsillo T1-2,7,2967.68,951.16,1.029144,19.2873,0,centroide,0.0,0.679495
+Espalda Buzo T2,3,Manga Buzo T2,1,2967.68,1070.82,0.939389,17.637,0,centroide,0.0,0.639173
+Espalda Buzo T2,3,Manga Buzo T2,2,2967.68,1070.68,0.939488,17.6374,0,centroide,0.0,0.639219
+Espalda Buzo T2,3,Manga Buzo T2,3,2967.68,1253.47,0.813046,16.6666,0,centroide,0.000711,0.577927
+Espalda Buzo T2,3,Manga Buzo T2,4,2967.68,1253.47,0.813046,16.6666,0,centroide,0.000711,0.577927
+Espalda Buzo T2,3,Manga Buzo T2,5,2967.68,1450.44,0.733877,14.8395,180,centroide,0.03583,0.528766
+Espalda Buzo T2,3,Manga Buzo T2,6,2967.68,1450.44,0.733877,14.8395,180,centroide,0.03583,0.528766
+Espalda Buzo T2,3,Manga Buzo T2,7,2967.68,1609.81,0.675908,13.9296,180,centroide,0.058737,0.489414
+Espalda Buzo T2,3,Capucha Buzo T2,1,2967.68,971.94,1.013163,21.6442,0,centroide,0.0,0.672491
+Espalda Buzo T2,3,Capucha Buzo T2,2,2967.68,1000.0,0.991856,21.4024,0,centroide,0.0,0.663037
+Espalda Buzo T2,3,Capucha Buzo T2,3,2967.68,1029.44,0.96982,21.1557,0,centroide,0.0,0.653117
+Espalda Buzo T2,3,Capucha Buzo T2,4,2967.68,1058.8,0.948163,20.9115,0,centroide,0.0,0.643223
+Espalda Buzo T2,3,Capucha Buzo T2,5,2967.68,1088.57,0.926523,20.6673,0,centroide,0.0,0.63319
+Espalda Buzo T2,3,Capucha Buzo T2,6,2967.68,1118.76,0.904907,20.4232,0,centroide,0.0,0.623019
+Espalda Buzo T2,3,Capucha Buzo T2,7,2967.68,1149.35,0.88332,20.1791,0,centroide,0.0,0.612711
+Espalda Buzo T2,3,Puño T1-2,1,2967.68,266.0,1.670963,27.6551,0,centroide,0.0,0.910368
+Espalda Buzo T2,3,Puño T1-2,2,2967.68,280.0,1.655138,27.3414,0,centroide,0.0,0.90565
+Espalda Buzo T2,3,Puño T1-2,3,2967.68,294.0,1.63945,27.0334,0,centroide,0.0,0.900933
+Espalda Buzo T2,3,Puño T1-2,4,2967.68,308.0,1.623895,26.7311,0,centroide,0.0,0.896215
+Espalda Buzo T2,3,Puño T1-2,5,2967.68,322.0,1.608473,26.4349,0,centroide,0.0,0.891498
+Espalda Buzo T2,3,Puño T1-2,6,2967.68,336.0,1.593181,26.1449,0,centroide,0.0,0.88678
+Espalda Buzo T2,3,Puño T1-2,7,2967.68,350.0,1.578018,25.8612,0,centroide,0.0,0.882063
+Espalda Buzo T2,3,Capucha interior Buzo T2,1,2967.68,971.94,1.013163,21.6442,0,centroide,0.0,0.672491
+Espalda Buzo T2,3,Capucha interior Buzo T2,2,2967.68,1000.0,0.991856,21.4024,0,centroide,0.0,0.663037
+Espalda Buzo T2,3,Capucha interior Buzo T2,3,2967.68,1029.44,0.96982,21.1557,0,centroide,0.0,0.653117
+Espalda Buzo T2,3,Capucha interior Buzo T2,4,2967.68,1058.8,0.948163,20.9115,0,centroide,0.0,0.643223
+Espalda Buzo T2,3,Capucha interior Buzo T2,5,2967.68,1088.57,0.926523,20.6673,0,centroide,0.0,0.63319
+Espalda Buzo T2,3,Capucha interior Buzo T2,6,2967.68,1118.76,0.904907,20.4232,0,centroide,0.0,0.623019
+Espalda Buzo T2,3,Capucha interior Buzo T2,7,2967.68,1149.35,0.88332,20.1791,0,centroide,0.0,0.612711
+Espalda Buzo T2,4,Espalda Buzo T2,5,3286.24,3511.66,0.06632,1.3884,0,centroide,0.064191,0.0
+Espalda Buzo T2,4,Espalda Buzo T2,6,3286.24,3806.94,0.146815,3.1561,0,centroide,0.136775,0.0
+Espalda Buzo T2,4,Espalda Buzo T2,7,3286.24,4497.16,0.311154,8.0442,180,centroide,0.269263,0.0
+Espalda Buzo T2,4,Frente Buzo T2,1,3286.24,2473.21,0.282329,8.0263,180,centroide,0.0,0.247404
+Espalda Buzo T2,4,Frente Buzo T2,2,3286.24,2576.26,0.24221,8.0263,180,centroide,0.0,0.216046
+Espalda Buzo T2,4,Frente Buzo T2,3,3286.24,2879.99,0.131766,6.2472,0,centroide,0.0,0.123622
+Espalda Buzo T2,4,Frente Buzo T2,4,3286.24,3189.14,0.02999,5.5263,0,esquina,0.0,0.029547
+Espalda Buzo T2,4,Frente Buzo T2,5,3286.24,3407.9,0.074629,3.8983,0,centroide,0.054498,0.019495
+Espalda Buzo T2,4,Frente Buzo T2,6,3286.24,3694.45,0.142278,6.2375,0,esquina,0.122455,0.013448
+Espalda Buzo T2,4,Frente Buzo T2,7,3286.24,4364.28,0.293711,14.0672,0,esquina,0.252225,0.00692
+Espalda Buzo T2,4,Cintura Buzo T2,1,3286.24,1092.0,1.299778,49.0,0,esquina,0.298136,0.766775
+Espalda Buzo T2,4,Cintura Buzo T2,2,3286.24,1148.0,1.308621,49.0,0,esquina,0.332373,0.766775
+Espalda Buzo T2,4,Cintura Buzo T2,3,3286.24,1204.0,1.317244,49.0,0,esquina,0.363426,0.766775
+Espalda Buzo T2,4,Cintura Buzo T2,4,3286.24,1344.0,1.337888,49.0,0,esquina,0.429735,0.766775
+Espalda Buzo T2,4,Cintura Buzo T2,5,3286.24,1400.0,1.3458,49.0,0,esquina,0.452546,0.766775
+Espalda Buzo T2,4,Cintura Buzo T2,6,3286.24,1456.0,1.353525,49.0145,0,esquina,0.473602,0.766775
+Espalda Buzo T2,4,Cintura Buzo T2,7,3286.24,1540.0,1.364777,55.0079,0,esquina,0.502315,0.766775
+Espalda Buzo T2,4,Bolsillo T1-2,1,3286.24,782.0,1.231118,23.1986,0,centroide,0.0,0.762038
+Espalda Buzo T2,4,Bolsillo T1-2,2,3286.24,782.0,1.231118,23.1986,0,centroide,0.0,0.762038
+Espalda Buzo T2,4,Bolsillo T1-2,3,3286.24,865.19,1.166369,22.2234,0,centroide,0.0,0.736723
+Espalda Buzo T2,4,Bolsillo T1-2,4,3286.24,865.19,1.166369,22.2234,0,centroide,0.0,0.736723
+Espalda Buzo T2,4,Bolsillo T1-2,5,3286.24,951.16,1.102132,21.2701,0,centroide,0.0,0.710564
+Espalda Buzo T2,4,Bolsillo T1-2,6,3286.24,951.16,1.102132,21.2701,0,centroide,0.0,0.710564
+Espalda Buzo T2,4,Bolsillo T1-2,7,3286.24,951.16,1.102132,21.2701,0,centroide,0.0,0.710564
+Espalda Buzo T2,4,Manga Buzo T2,1,3286.24,1070.82,1.016935,18.9532,0,centroide,0.0,0.674151
+Espalda Buzo T2,4,Manga Buzo T2,2,3286.24,1070.68,1.017029,18.9539,0,centroide,0.0,0.674193
+Espalda Buzo T2,4,Manga Buzo T2,3,3286.24,1253.47,0.895553,17.7986,0,centroide,0.0,0.618571
+Espalda Buzo T2,4,Manga Buzo T2,4,3286.24,1253.47,0.895553,17.7986,0,centroide,0.0,0.618571
+Espalda Buzo T2,4,Manga Buzo T2,5,3286.24,1450.44,0.776455,16.8364,0,centroide,0.001071,0.559105
+Espalda Buzo T2,4,Manga Buzo T2,6,3286.24,1450.44,0.776455,16.8364,0,centroide,0.001071,0.559105
+Espalda Buzo T2,4,Manga Buzo T2,7,3286.24,1609.81,0.704993,14.9488,180,centroide,0.015346,0.517654
+Espalda Buzo T2,4,Capucha Buzo T2,1,3286.24,971.94,1.08699,23.7311,0,centroide,0.0,0.70424
+Espalda Buzo T2,4,Capucha Buzo T2,2,3286.24,1000.0,1.066784,23.4895,0,centroide,0.0,0.695702
+Espalda Buzo T2,4,Capucha Buzo T2,3,3286.24,1029.44,1.045863,23.2439,0,centroide,0.0,0.686744
+Espalda Buzo T2,4,Capucha Buzo T2,4,3286.24,1058.8,1.02528,23.0004,0,centroide,0.0,0.677808
+Espalda Buzo T2,4,Capucha Buzo T2,5,3286.24,1088.57,1.004691,22.7569,0,centroide,0.0,0.668748
+Espalda Buzo T2,4,Capucha Buzo T2,6,3286.24,1118.76,0.984103,22.5135,0,centroide,0.0,0.659563
+Espalda Buzo T2,4,Capucha Buzo T2,7,3286.24,1149.35,0.96352,22.2702,0,centroide,0.0,0.650254
+Espalda Buzo T2,4,Puño T1-2,1,3286.24,266.0,1.700471,29.7828,0,centroide,0.0,0.919057
+Espalda Buzo T2,4,Puño T1-2,2,3286.24,280.0,1.685944,29.4748,0,centroide,0.0,0.914796
+Espalda Buzo T2,4,Puño T1-2,3,3286.24,294.0,1.671531,29.1722,0,centroide,0.0,0.910536
+Espalda Buzo T2,4,Puño T1-2,4,3286.24,308.0,1.65723,28.875,0,centroide,0.0,0.906276
+Espalda Buzo T2,4,Puño T1-2,5,3286.24,322.0,1.64304,28.5835,0,centroide,0.0,0.902016
+Espalda Buzo T2,4,Puño T1-2,6,3286.24,336.0,1.628959,28.2978,0,centroide,0.0,0.897756
+Espalda Buzo T2,4,Puño T1-2,7,3286.24,350.0,1.614987,28.0181,0,centroide,0.0,0.893495
+Espalda Buzo T2,4,Capucha interior Buzo T2,1,3286.24,971.94,1.08699,23.7311,0,centroide,0.0,0.70424
+Espalda Buzo T2,4,Capucha interior Buzo T2,2,3286.24,1000.0,1.066784,23.4895,0,centroide,0.0,0.695702
+Espalda Buzo T2,4,Capucha interior Buzo T2,3,3286.24,1029.44,1.045863,23.2439,0,centroide,0.0,0.686744
+Espalda Buzo T2,4,Capucha interior Buzo T2,4,3286.24,1058.8,1.02528,23.0004,0,centroide,0.0,0.677808
+Espalda Buzo T2,4,Capucha interior Buzo T2,5,3286.24,1088.57,1.004691,22.7569,0,centroide,0.0,0.668748
+Espalda Buzo T2,4,Capucha interior Buzo T2,6,3286.24,1118.76,0.984103,22.5135,0,centroide,0.0,0.659563
+Espalda Buzo T2,4,Capucha interior Buzo T2,7,3286.24,1149.35,0.96352,22.2702,0,centroide,0.0,0.650254
+Espalda Buzo T2,5,Espalda Buzo T2,6,3511.66,3806.94,0.080692,1.7826,0,centroide,0.077563,0.0
+Espalda Buzo T2,5,Espalda Buzo T2,7,3511.66,4497.16,0.246104,5.7749,0,centroide,0.219138,0.0
+Espalda Buzo T2,5,Frente Buzo T2,1,3511.66,2473.21,0.347024,7.9617,0,centroide,0.0,0.295714
+Espalda Buzo T2,5,Frente Buzo T2,2,3511.66,2576.26,0.307296,8.9895,180,centroide,0.0,0.266369
+Espalda Buzo T2,5,Frente Buzo T2,3,3511.66,2879.99,0.197654,7.1787,0,centroide,0.0,0.179877
+Espalda Buzo T2,5,Frente Buzo T2,4,3511.66,3189.14,0.096265,5.6128,0,centroide,1e-06,0.091843
+Espalda Buzo T2,5,Frente Buzo T2,5,3511.66,3407.9,0.02999,5.7018,0,esquina,0.0,0.029547
+Espalda Buzo T2,5,Frente Buzo T2,6,3511.66,3694.45,0.090103,4.0469,0,centroide,0.068676,0.020197
+Espalda Buzo T2,5,Frente Buzo T2,7,3511.66,4364.28,0.235047,11.3824,0,esquina,0.203726,0.010392
+Espalda Buzo T2,5,Cintura Buzo T2,1,3511.66,1092.0,1.309951,51.0,0,esquina,0.272721,0.773843
+Espalda Buzo T2,5,Cintura Buzo T2,2,3511.66,1148.0,1.318244,51.0,0,esquina,0.308198,0.773843
+Espalda Buzo T2,5,Cintura Buzo T2,3,3511.66,1204.0,1.32634,51.0,0,esquina,0.340375,0.773843
+Espalda Buzo T2,5,Cintura Buzo T2,4,3511.66,1344.0,1.345763,51.0,0,esquina,0.409086,0.773843
+Espalda Buzo T2,5,Cintura Buzo T2,5,3511.66,1400.0,1.353222,51.0,0,esquina,0.432723,0.773843
+Espalda Buzo T2,5,Cintura Buzo T2,6,3511.66,1456.0,1.360513,51.0,0,esquina,0.454541,0.773843
+Espalda Buzo T2,5,Cintura Buzo T2,7,3511.66,1540.0,1.371147,53.0266,0,esquina,0.484293,0.773843
+Espalda Buzo T2,5,Bolsillo T1-2,1,3511.66,782.0,1.271484,24.5609,0,centroide,0.0,0.777313
+Espalda Buzo T2,5,Bolsillo T1-2,2,3511.66,782.0,1.271484,24.5609,0,centroide,0.0,0.777313
+Espalda Buzo T2,5,Bolsillo T1-2,3,3511.66,865.19,1.209303,23.5851,0,centroide,0.0,0.753623
+Espalda Buzo T2,5,Bolsillo T1-2,4,3511.66,865.19,1.209303,23.5851,0,centroide,0.0,0.753623
+Espalda Buzo T2,5,Bolsillo T1-2,5,3511.66,951.16,1.147484,22.6298,0,centroide,0.0,0.729144
+Espalda Buzo T2,5,Bolsillo T1-2,6,3511.66,951.16,1.147484,22.6298,0,centroide,0.0,0.729144
+Espalda Buzo T2,5,Bolsillo T1-2,7,3511.66,951.16,1.147484,22.6298,0,centroide,0.0,0.729144
+Espalda Buzo T2,5,Manga Buzo T2,1,3511.66,1070.82,1.065293,20.1516,0,centroide,0.0,0.695068
+Espalda Buzo T2,5,Manga Buzo T2,2,3511.66,1070.68,1.065384,20.1525,0,centroide,0.0,0.695106
+Espalda Buzo T2,5,Manga Buzo T2,3,3511.66,1253.47,0.9478,18.924,0,centroide,0.0,0.643056
+Espalda Buzo T2,5,Manga Buzo T2,4,3511.66,1253.47,0.9478,18.924,0,centroide,0.0,0.643056
+Espalda Buzo T2,5,Manga Buzo T2,5,3511.66,1450.44,0.830785,16.8669,180,centroide,0.0,0.586964
+Espalda Buzo T2,5,Manga Buzo T2,6,3511.66,1450.44,0.830785,16.8669,180,centroide,0.0,0.586964
+Espalda Buzo T2,5,Manga Buzo T2,7,3511.66,1609.81,0.744249,17.007,0,centroide,0.001235,0.542147
+Espalda Buzo T2,5,Capucha Buzo T2,1,3511.66,971.94,1.132893,25.0898,0,centroide,0.0,0.723225
+Espalda Buzo T2,5,Capucha Buzo T2,2,3511.66,1000.0,1.11341,24.8482,0,centroide,0.0,0.715235
+Espalda Buzo T2,5,Capucha Buzo T2,3,3511.66,1029.44,1.093226,24.6024,0,centroide,0.0,0.706852
+Espalda Buzo T2,5,Capucha Buzo T2,4,3511.66,1058.8,1.073353,24.3588,0,centroide,0.0,0.69849
+Espalda Buzo T2,5,Capucha Buzo T2,5,3511.66,1088.57,1.053462,24.1152,0,centroide,0.0,0.690012
+Espalda Buzo T2,5,Capucha Buzo T2,6,3511.66,1118.76,1.033558,23.8716,0,centroide,0.0,0.681416
+Espalda Buzo T2,5,Capucha Buzo T2,7,3511.66,1149.35,1.013647,23.6281,0,centroide,0.0,0.672704
+Espalda Buzo T2,5,Puño T1-2,1,3511.66,266.0,1.718344,31.1594,0,centroide,0.0,0.924252
+Espalda Buzo T2,5,Puño T1-2,2,3511.66,280.0,1.704615,30.8489,0,centroide,0.0,0.920266
+Espalda Buzo T2,5,Puño T1-2,3,3511.66,294.0,1.690987,30.5435,0,centroide,0.0,0.916279
+Espalda Buzo T2,5,Puño T1-2,4,3511.66,308.0,1.677458,30.2433,0,centroide,0.0,0.912292
+Espalda Buzo T2,5,Puño T1-2,5,3511.66,322.0,1.664029,29.9484,0,centroide,0.0,0.908306
+Espalda Buzo T2,5,Puño T1-2,6,3511.66,336.0,1.650697,29.659,0,centroide,0.0,0.904319
+Espalda Buzo T2,5,Puño T1-2,7,3511.66,350.0,1.637462,29.3753,0,centroide,0.0,0.900332
+Espalda Buzo T2,5,Capucha interior Buzo T2,1,3511.66,971.94,1.132893,25.0898,0,centroide,0.0,0.723225
+Espalda Buzo T2,5,Capucha interior Buzo T2,2,3511.66,1000.0,1.11341,24.8482,0,centroide,0.0,0.715235
+Espalda Buzo T2,5,Capucha interior Buzo T2,3,3511.66,1029.44,1.093226,24.6024,0,centroide,0.0,0.706852
+Espalda Buzo T2,5,Capucha interior Buzo T2,4,3511.66,1058.8,1.073353,24.3588,0,centroide,0.0,0.69849
+Espalda Buzo T2,5,Capucha interior Buzo T2,5,3511.66,1088.57,1.053462,24.1152,0,centroide,0.0,0.690012
+Espalda Buzo T2,5,Capucha interior Buzo T2,6,3511.66,1118.76,1.033558,23.8716,0,centroide,0.0,0.681416
+Espalda Buzo T2,5,Capucha interior Buzo T2,7,3511.66,1149.35,1.013647,23.6281,0,centroide,0.0,0.672704
+Espalda Buzo T2,6,Espalda Buzo T2,7,3806.94,4497.16,0.166237,3.9951,0,centroide,0.15348,0.0
+Espalda Buzo T2,6,Frente Buzo T2,1,3806.94,2473.21,0.424743,8.8932,0,centroide,0.0,0.35034
+Espalda Buzo T2,6,Frente Buzo T2,2,3806.94,2576.26,0.385598,8.8932,0,centroide,0.0,0.323271
+Espalda Buzo T2,6,Frente Buzo T2,3,3806.94,2879.99,0.277241,8.1103,0,centroide,0.0,0.243489
+Espalda Buzo T2,6,Frente Buzo T2,4,3806.94,3189.14,0.176612,6.5444,0,centroide,0.0,0.162281
+Espalda Buzo T2,6,Frente Buzo T2,5,3806.94,3407.9,0.110651,5.7614,0,centroide,1.9e-05,0.104835
+Espalda Buzo T2,6,Frente Buzo T2,6,3806.94,3694.45,0.02999,5.8772,0,esquina,0.0,0.029547
+Espalda Buzo T2,6,Frente Buzo T2,7,3806.94,4364.28,0.166103,7.8712,0,esquina,0.141601,0.01593
+Espalda Buzo T2,6,Cintura Buzo T2,1,3806.94,1092.0,1.317686,53.0,0,esquina,0.234749,0.780492
+Espalda Buzo T2,6,Cintura Buzo T2,2,3806.94,1148.0,1.325397,53.0,0,esquina,0.272079,0.780492
+Espalda Buzo T2,6,Cintura Buzo T2,3,3806.94,1204.0,1.332936,53.0,0,esquina,0.305935,0.780492
+Espalda Buzo T2,6,Cintura Buzo T2,4,3806.94,1344.0,1.351067,53.0,0,esquina,0.378234,0.780492
+Espalda Buzo T2,6,Cintura Buzo T2,5,3806.94,1400.0,1.358046,53.0,0,esquina,0.403104,0.780492
+Espalda Buzo T2,6,Cintura Buzo T2,6,3806.94,1456.0,1.364877,53.0,0,esquina,0.426062,0.780492
+Espalda Buzo T2,6,Cintura Buzo T2,7,3806.94,1540.0,1.374854,53.0,0,esquina,0.457368,0.780492
+Espalda Buzo T2,6,Bolsillo T1-2,1,3806.94,782.0,1.318361,26.2643,0,centroide,0.0,0.794586
+Espalda Buzo T2,6,Bolsillo T1-2,2,3806.94,782.0,1.318361,26.2643,0,centroide,0.0,0.794586
+Espalda Buzo T2,6,Bolsillo T1-2,3,3806.94,865.19,1.259275,25.2969,0,centroide,0.0,0.772733
+Espalda Buzo T2,6,Bolsillo T1-2,4,3806.94,865.19,1.259275,25.2969,0,centroide,0.0,0.772733
+Espalda Buzo T2,6,Bolsillo T1-2,5,3806.94,951.16,1.200389,24.3491,0,centroide,0.0,0.750152
+Espalda Buzo T2,6,Bolsillo T1-2,6,3806.94,951.16,1.200389,24.3491,0,centroide,0.0,0.750152
+Espalda Buzo T2,6,Bolsillo T1-2,7,3806.94,951.16,1.200389,24.3491,0,centroide,0.0,0.750152
+Espalda Buzo T2,6,Manga Buzo T2,1,3806.94,1070.82,1.121876,21.8531,0,centroide,0.0,0.718719
+Espalda Buzo T2,6,Manga Buzo T2,2,3806.94,1070.68,1.121963,21.7003,180,centroide,0.0,0.718755
+Espalda Buzo T2,6,Manga Buzo T2,3,3806.94,1253.47,1.009196,20.5724,0,centroide,0.0,0.670741
+Espalda Buzo T2,6,Manga Buzo T2,4,3806.94,1253.47,1.009196,20.5724,0,centroide,0.0,0.670741
+Espalda Buzo T2,6,Manga Buzo T2,5,3806.94,1450.44,0.896453,19.4522,0,centroide,0.0,0.619001
+Espalda Buzo T2,6,Manga Buzo T2,6,3806.94,1450.44,0.896453,19.4522,0,centroide,0.0,0.619001
+Espalda Buzo T2,6,Manga Buzo T2,7,3806.94,1609.81,0.811235,18.5489,0,centroide,0.0,0.577138
+Espalda Buzo T2,6,Capucha Buzo T2,1,3806.94,971.94,1.18647,26.7661,0,centroide,0.0,0.744692
+Espalda Buzo T2,6,Capucha Buzo T2,2,3806.94,1000.0,1.167871,26.5244,0,centroide,0.0,0.737322
+Espalda Buzo T2,6,Capucha Buzo T2,3,3806.94,1029.44,1.148588,26.2778,0,centroide,0.0,0.729589
+Espalda Buzo T2,6,Capucha Buzo T2,4,3806.94,1058.8,1.129587,26.0337,0,centroide,0.0,0.721876
+Espalda Buzo T2,6,Capucha Buzo T2,5,3806.94,1088.57,1.110554,25.7896,0,centroide,0.0,0.714055
+Espalda Buzo T2,6,Capucha Buzo T2,6,3806.94,1118.76,1.091493,25.5455,0,centroide,0.0,0.706127
+Espalda Buzo T2,6,Capucha Buzo T2,7,3806.94,1149.35,1.07241,25.3014,0,centroide,0.0,0.69809
+Espalda Buzo T2,6,Puño T1-2,1,3806.94,266.0,1.738764,32.8542,0,centroide,0.0,0.930128
+Espalda Buzo T2,6,Puño T1-2,2,3806.94,280.0,1.725956,32.5369,0,centroide,0.0,0.92645
+Espalda Buzo T2,6,Puño T1-2,3,3806.94,294.0,1.713236,32.2242,0,centroide,0.0,0.922773
+Espalda Buzo T2,6,Puño T1-2,4,3806.94,308.0,1.700603,31.9163,0,centroide,0.0,0.919095
+Espalda Buzo T2,6,Puño T1-2,5,3806.94,322.0,1.688055,31.6133,0,centroide,0.0,0.915418
+Espalda Buzo T2,6,Puño T1-2,6,3806.94,336.0,1.675593,31.3153,0,centroide,0.0,0.91174
+Espalda Buzo T2,6,Puño T1-2,7,3806.94,350.0,1.663214,31.0226,0,centroide,0.0,0.908063
+Espalda Buzo T2,6,Capucha interior Buzo T2,1,3806.94,971.94,1.18647,26.7661,0,centroide,0.0,0.744692
+Espalda Buzo T2,6,Capucha interior Buzo T2,2,3806.94,1000.0,1.167871,26.5244,0,centroide,0.0,0.737322
+Espalda Buzo T2,6,Capucha interior Buzo T2,3,3806.94,1029.44,1.148588,26.2778,0,centroide,0.0,0.729589
+Espalda Buzo T2,6,Capucha interior Buzo T2,4,3806.94,1058.8,1.129587,26.0337,0,centroide,0.0,0.721876
+Espalda Buzo T2,6,Capucha interior Buzo T2,5,3806.94,1088.57,1.110554,25.7896,0,centroide,0.0,0.714055
+Espalda Buzo T2,6,Capucha interior Buzo T2,6,3806.94,1118.76,1.091493,25.5455,0,centroide,0.0,0.706127
+Espalda Buzo T2,6,Capucha interior Buzo T2,7,3806.94,1149.35,1.07241,25.3014,0,centroide,0.0,0.69809
+Espalda Buzo T2,7,Frente Buzo T2,1,4497.16,2473.21,0.580728,12.4372,180,centroide,0.0,0.45005
+Espalda Buzo T2,7,Frente Buzo T2,2,4497.16,2576.26,0.543131,11.8791,180,centroide,0.0,0.427135
+Espalda Buzo T2,7,Frente Buzo T2,3,4497.16,2879.99,0.438426,9.9734,0,centroide,0.0,0.359598
+Espalda Buzo T2,7,Frente Buzo T2,4,4497.16,3189.14,0.34035,8.4075,0,centroide,0.0,0.290854
+Espalda Buzo T2,7,Frente Buzo T2,5,4497.16,3407.9,0.275586,7.6245,0,centroide,0.0,0.242211
+Espalda Buzo T2,7,Frente Buzo T2,6,4497.16,3694.45,0.195983,6.8416,0,centroide,0.0,0.178492
+Espalda Buzo T2,7,Frente Buzo T2,7,4497.16,4364.28,0.02999,6.2281,0,esquina,0.0,0.029547
+Espalda Buzo T2,7,Cintura Buzo T2,1,4497.16,1092.0,1.332731,57.0,0,esquina,0.146182,0.792676
+Espalda Buzo T2,7,Cintura Buzo T2,2,4497.16,1148.0,1.33935,57.0,0,esquina,0.187832,0.792676
+Espalda Buzo T2,7,Cintura Buzo T2,3,4497.16,1204.0,1.345839,57.0,0,esquina,0.225607,0.792676
+Espalda Buzo T2,7,Cintura Buzo T2,4,4497.16,1344.0,1.361518,57.0,0,esquina,0.306273,0.792676
+Espalda Buzo T2,7,Cintura Buzo T2,5,4497.16,1400.0,1.367581,57.0,0,esquina,0.334022,0.792676
+Espalda Buzo T2,7,Cintura Buzo T2,6,4497.16,1456.0,1.37353,57.0,0,esquina,0.359637,0.792676
+Espalda Buzo T2,7,Cintura Buzo T2,7,4497.16,1540.0,1.382247,57.0,0,esquina,0.394566,0.792676
+Espalda Buzo T2,7,Bolsillo T1-2,1,4497.16,782.0,1.407482,30.0339,0,centroide,0.0,0.826113
+Espalda Buzo T2,7,Bolsillo T1-2,2,4497.16,782.0,1.407482,30.0339,0,centroide,0.0,0.826113
+Espalda Buzo T2,7,Bolsillo T1-2,3,4497.16,865.19,1.354618,29.0884,0,centroide,0.0,0.807614
+Espalda Buzo T2,7,Bolsillo T1-2,4,4497.16,865.19,1.354618,29.0884,0,centroide,0.0,0.807614
+Espalda Buzo T2,7,Bolsillo T1-2,5,4497.16,951.16,1.301688,29.1465,180,centroide,0.0,0.788499
+Espalda Buzo T2,7,Bolsillo T1-2,6,4497.16,951.16,1.301688,29.1465,180,centroide,0.0,0.788499
+Espalda Buzo T2,7,Bolsillo T1-2,7,4497.16,951.16,1.301688,29.1465,180,centroide,0.0,0.788499
+Espalda Buzo T2,7,Manga Buzo T2,1,4497.16,1070.82,1.23073,25.7646,0,centroide,0.0,0.76189
+Espalda Buzo T2,7,Manga Buzo T2,2,4497.16,1070.68,1.23081,25.7656,0,centroide,0.0,0.76192
+Espalda Buzo T2,7,Manga Buzo T2,3,4497.16,1253.47,1.128118,24.4116,0,centroide,0.0,0.721276
+Espalda Buzo T2,7,Manga Buzo T2,4,4497.16,1253.47,1.128118,24.4116,0,centroide,0.0,0.721276
+Espalda Buzo T2,7,Manga Buzo T2,5,4497.16,1450.44,1.02452,23.1849,0,centroide,0.0,0.677476
+Espalda Buzo T2,7,Manga Buzo T2,6,4497.16,1450.44,1.02452,23.1849,0,centroide,0.0,0.677476
+Espalda Buzo T2,7,Manga Buzo T2,7,4497.16,1609.81,0.945592,22.2159,0,centroide,0.0,0.642039
+Espalda Buzo T2,7,Capucha Buzo T2,1,4497.16,971.94,1.28914,30.4544,0,centroide,0.0,0.783877
+Espalda Buzo T2,7,Capucha Buzo T2,2,4497.16,1000.0,1.272353,31.0536,180,centroide,0.0,0.777638
+Espalda Buzo T2,7,Capucha Buzo T2,3,4497.16,1029.44,1.254922,30.8026,180,centroide,0.0,0.771092
+Espalda Buzo T2,7,Capucha Buzo T2,4,4497.16,1058.8,1.237719,29.7178,0,centroide,0.0,0.764562
+Espalda Buzo T2,7,Capucha Buzo T2,5,4497.16,1088.57,1.220462,29.4724,0,centroide,0.0,0.757942
+Espalda Buzo T2,7,Capucha Buzo T2,6,4497.16,1118.76,1.203153,30.0627,180,centroide,0.0,0.75123
+Espalda Buzo T2,7,Capucha Buzo T2,7,4497.16,1149.35,1.185798,28.9816,0,centroide,0.0,0.744427
+Espalda Buzo T2,7,Puño T1-2,1,4497.16,266.0,1.776619,36.602,0,centroide,0.0,0.940852
+Espalda Buzo T2,7,Puño T1-2,2,4497.16,280.0,1.765551,36.2692,0,centroide,0.0,0.937739
+Espalda Buzo T2,7,Puño T1-2,3,4497.16,294.0,1.754548,35.9403,0,centroide,0.0,0.934625
+Espalda Buzo T2,7,Puño T1-2,4,4497.16,308.0,1.743609,35.6154,0,centroide,0.0,0.931512
+Espalda Buzo T2,7,Puño T1-2,5,4497.16,322.0,1.732734,35.2946,0,centroide,0.0,0.928399
+Espalda Buzo T2,7,Puño T1-2,6,4497.16,336.0,1.721921,34.9779,0,centroide,0.0,0.925286
+Espalda Buzo T2,7,Puño T1-2,7,4497.16,350.0,1.711171,34.6656,0,centroide,0.0,0.922173
+Espalda Buzo T2,7,Capucha interior Buzo T2,1,4497.16,971.94,1.28914,30.4544,0,centroide,0.0,0.783877
+Espalda Buzo T2,7,Capucha interior Buzo T2,2,4497.16,1000.0,1.272353,31.0536,180,centroide,0.0,0.777638
+Espalda Buzo T2,7,Capucha interior Buzo T2,3,4497.16,1029.44,1.254922,30.8026,180,centroide,0.0,0.771092
+Espalda Buzo T2,7,Capucha interior Buzo T2,4,4497.16,1058.8,1.237719,29.7178,0,centroide,0.0,0.764562
+Espalda Buzo T2,7,Capucha interior Buzo T2,5,4497.16,1088.57,1.220462,29.4724,0,centroide,0.0,0.757942
+Espalda Buzo T2,7,Capucha interior Buzo T2,6,4497.16,1118.76,1.203153,30.0627,180,centroide,0.0,0.75123
+Espalda Buzo T2,7,Capucha interior Buzo T2,7,4497.16,1149.35,1.185798,28.9816,0,centroide,0.0,0.744427
+Frente Buzo T2,1,Frente Buzo T2,2,2473.21,2576.26,0.044571,1.0,0,centroide,0.04184,0.001916
+Frente Buzo T2,1,Frente Buzo T2,3,2473.21,2879.99,0.155271,3.1427,0,centroide,0.142774,0.001783
+Frente Buzo T2,1,Frente Buzo T2,4,2473.21,3189.14,0.253067,4.8878,0,centroide,0.224575,0.000111
+Frente Buzo T2,1,Frente Buzo T2,5,2473.21,3407.9,0.317863,6.2473,0,centroide,0.274272,2e-06
+Frente Buzo T2,1,Frente Buzo T2,6,2473.21,3694.45,0.396013,8.0106,0,centroide,0.33056,0.0
+Frente Buzo T2,1,Frente Buzo T2,7,2473.21,4364.28,0.553146,12.1779,180,centroide,0.433306,0.0
+Frente Buzo T2,1,Cintura Buzo T2,1,2473.21,1092.0,1.264067,43.0,0,esquina,0.399322,0.734782
+Frente Buzo T2,1,Cintura Buzo T2,2,2473.21,1148.0,1.275447,43.0,0,esquina,0.428624,0.734782
+Frente Buzo T2,1,Cintura Buzo T2,3,2473.21,1204.0,1.286482,43.0,0,esquina,0.455199,0.734782
+Frente Buzo T2,1,Cintura Buzo T2,4,2473.21,1344.0,1.312651,48.9156,0,esquina,0.511949,0.734782
+Frente Buzo T2,1,Cintura Buzo T2,5,2473.21,1400.0,1.322588,52.9135,0,esquina,0.531471,0.734782
+Frente Buzo T2,1,Cintura Buzo T2,6,2473.21,1456.0,1.332243,56.9114,0,esquina,0.549492,0.734782
+Frente Buzo T2,1,Cintura Buzo T2,7,2473.21,1540.0,1.34622,62.9083,0,esquina,0.574065,0.734782
+Frente Buzo T2,1,Bolsillo T1-2,1,2473.21,782.0,1.03908,20.3354,180,centroide,0.0,0.683812
+Frente Buzo T2,1,Bolsillo T1-2,2,2473.21,782.0,1.03908,20.3354,180,centroide,0.0,0.683812
+Frente Buzo T2,1,Bolsillo T1-2,3,2473.21,865.19,0.963511,19.5039,180,centroide,0.000158,0.65023
+Frente Buzo T2,1,Bolsillo T1-2,4,2473.21,865.19,0.963511,19.5039,180,centroide,0.000158,0.65023
+Frente Buzo T2,1,Bolsillo T1-2,5,2473.21,951.16,0.890032,18.6723,180,centroide,0.000968,0.615789
+Frente Buzo T2,1,Bolsillo T1-2,6,2473.21,951.16,0.890032,18.6723,180,centroide,0.000968,0.615789
+Frente Buzo T2,1,Bolsillo T1-2,7,2473.21,951.16,0.890032,18.6723,180,centroide,0.000968,0.615789
+Frente Buzo T2,1,Manga Buzo T2,1,2473.21,1070.82,0.814232,26.2273,180,esquina,0.018882,0.575208
+Frente Buzo T2,1,Manga Buzo T2,2,2473.21,1070.68,0.814305,26.2275,180,esquina,0.018855,0.575251
+Frente Buzo T2,1,Manga Buzo T2,3,2473.21,1253.47,0.715854,24.2274,180,esquina,0.045528,0.516257
+Frente Buzo T2,1,Manga Buzo T2,4,2473.21,1253.47,0.715854,24.2274,180,esquina,0.045528,0.516257
+Frente Buzo T2,1,Manga Buzo T2,5,2473.21,1450.44,0.681846,22.2258,180,esquina,0.10855,0.4772
+Frente Buzo T2,1,Manga Buzo T2,6,2473.21,1450.44,0.681846,22.2258,180,esquina,0.10855,0.4772
+Frente Buzo T2,1,Manga Buzo T2,7,2473.21,1609.81,0.6309,10.956,180,centroide,0.131875,0.434939
+Frente Buzo T2,1,Capucha Buzo T2,1,2473.21,971.94,0.871527,19.001,180,centroide,0.0,0.607013
+Frente Buzo T2,1,Capucha Buzo T2,2,2473.21,1000.0,0.848331,19.3971,0,centroide,0.0,0.595669
+Frente Buzo T2,1,Capucha Buzo T2,3,2473.21,1029.44,0.824391,19.155,0,centroide,0.0,0.583765
+Frente Buzo T2,1,Capucha Buzo T2,4,2473.21,1058.8,0.80091,18.9135,0,centroide,0.0,0.571893
+Frente Buzo T2,1,Capucha Buzo T2,5,2473.21,1088.57,0.777497,18.0254,180,centroide,0.0,0.559854
+Frente Buzo T2,1,Capucha Buzo T2,6,2473.21,1118.76,0.754158,18.4305,0,centroide,0.0,0.54765
+Frente Buzo T2,1,Capucha Buzo T2,7,2473.21,1149.35,0.730898,18.189,0,centroide,0.0,0.53528
+Frente Buzo T2,1,Puño T1-2,1,2473.21,266.0,1.611567,25.251,0,centroide,0.0,0.892448
+Frente Buzo T2,1,Puño T1-2,2,2473.21,280.0,1.593203,24.9865,0,centroide,0.0,0.886787
+Frente Buzo T2,1,Puño T1-2,3,2473.21,294.0,1.575024,24.7292,0,centroide,0.0,0.881126
+Frente Buzo T2,1,Puño T1-2,4,2473.21,308.0,1.557028,24.4794,0,centroide,0.0,0.875466
+Frente Buzo T2,1,Puño T1-2,5,2473.21,322.0,1.539212,24.2374,0,centroide,0.0,0.869805
+Frente Buzo T2,1,Puño T1-2,6,2473.21,336.0,1.521574,24.0034,0,centroide,0.0,0.864144
+Frente Buzo T2,1,Puño T1-2,7,2473.21,350.0,1.504111,23.7776,0,centroide,0.0,0.858484
+Frente Buzo T2,1,Capucha interior Buzo T2,1,2473.21,971.94,0.871527,19.001,180,centroide,0.0,0.607013
+Frente Buzo T2,1,Capucha interior Buzo T2,2,2473.21,1000.0,0.848331,19.3971,0,centroide,0.0,0.595669
+Frente Buzo T2,1,Capucha interior Buzo T2,3,2473.21,1029.44,0.824391,19.155,0,centroide,0.0,0.583765
+Frente Buzo T2,1,Capucha interior Buzo T2,4,2473.21,1058.8,0.80091,18.9135,0,centroide,0.0,0.571893
+Frente Buzo T2,1,Capucha interior Buzo T2,5,2473.21,1088.57,0.777497,18.0254,180,centroide,0.0,0.559854
+Frente Buzo T2,1,Capucha interior Buzo T2,6,2473.21,1118.76,0.754158,18.4305,0,centroide,0.0,0.54765
+Frente Buzo T2,1,Capucha interior Buzo T2,7,2473.21,1149.35,0.730898,18.189,0,centroide,0.0,0.53528
+Frente Buzo T2,2,Frente Buzo T2,3,2576.26,2879.99,0.112518,2.2083,0,centroide,0.106023,0.000628
+Frente Buzo T2,2,Frente Buzo T2,4,2576.26,3189.14,0.212606,4.1445,0,centroide,0.192177,0.0
+Frente Buzo T2,2,Frente Buzo T2,5,2576.26,3407.9,0.277946,5.5261,0,centroide,0.244032,0.0
+Frente Buzo T2,2,Frente Buzo T2,6,2576.26,3694.45,0.356638,7.2493,0,centroide,0.302667,0.0
+Frente Buzo T2,2,Frente Buzo T2,7,2576.26,4364.28,0.515238,11.4901,180,centroide,0.409693,0.0
+Frente Buzo T2,2,Cintura Buzo T2,1,2576.26,1092.0,1.254938,43.0,0,esquina,0.374294,0.734782
+Frente Buzo T2,2,Cintura Buzo T2,2,2576.26,1148.0,1.266141,43.0,0,esquina,0.404816,0.734782
+Frente Buzo T2,2,Cintura Buzo T2,3,2576.26,1204.0,1.277013,43.0,0,esquina,0.432499,0.734782
+Frente Buzo T2,2,Cintura Buzo T2,4,2576.26,1344.0,1.302832,46.9537,0,esquina,0.491614,0.734782
+Frente Buzo T2,2,Cintura Buzo T2,5,2576.26,1400.0,1.312651,50.9515,0,esquina,0.511949,0.734782
+Frente Buzo T2,2,Cintura Buzo T2,6,2576.26,1456.0,1.322196,54.9492,0,esquina,0.530721,0.734782
+Frente Buzo T2,2,Cintura Buzo T2,7,2576.26,1540.0,1.336028,60.9458,0,esquina,0.556318,0.734782
+Frente Buzo T2,2,Bolsillo T1-2,1,2576.26,782.0,1.068567,19.6601,0,centroide,0.0,0.69646
+Frente Buzo T2,2,Bolsillo T1-2,2,2576.26,782.0,1.068567,19.6601,0,centroide,0.0,0.69646
+Frente Buzo T2,2,Bolsillo T1-2,3,2576.26,865.19,0.994389,18.6683,0,centroide,0.0,0.664168
+Frente Buzo T2,2,Bolsillo T1-2,4,2576.26,865.19,0.994389,18.6683,0,centroide,0.0,0.664168
+Frente Buzo T2,2,Bolsillo T1-2,5,2576.26,951.16,0.921415,18.6723,180,centroide,0.0,0.6308
+Frente Buzo T2,2,Bolsillo T1-2,6,2576.26,951.16,0.921415,18.6723,180,centroide,0.0,0.6308
+Frente Buzo T2,2,Bolsillo T1-2,7,2576.26,951.16,0.921415,18.6723,180,centroide,0.0,0.6308
+Frente Buzo T2,2,Manga Buzo T2,1,2576.26,1070.82,0.847763,28.2256,180,esquina,0.018904,0.592209
+Frente Buzo T2,2,Manga Buzo T2,2,2576.26,1070.68,0.84784,28.2258,180,esquina,0.018882,0.592252
+Frente Buzo T2,2,Manga Buzo T2,3,2576.26,1253.47,0.747405,26.2256,180,esquina,0.043234,0.53449
+Frente Buzo T2,2,Manga Buzo T2,4,2576.26,1253.47,0.747405,26.2256,180,esquina,0.043234,0.53449
+Frente Buzo T2,2,Manga Buzo T2,5,2576.26,1450.44,0.712504,24.224,180,esquina,0.106415,0.49691
+Frente Buzo T2,2,Manga Buzo T2,6,2576.26,1450.44,0.712504,24.224,180,esquina,0.106415,0.49691
+Frente Buzo T2,2,Manga Buzo T2,7,2576.26,1609.81,0.668877,11.955,180,centroide,0.134653,0.459277
+Frente Buzo T2,2,Capucha Buzo T2,1,2576.26,971.94,0.904301,20.2477,0,centroide,0.0,0.622732
+Frente Buzo T2,2,Capucha Buzo T2,2,2576.26,1000.0,0.881517,20.0064,0,centroide,0.0,0.611842
+Frente Buzo T2,2,Capucha Buzo T2,3,2576.26,1029.44,0.85799,19.7628,0,centroide,0.0,0.600415
+Frente Buzo T2,2,Capucha Buzo T2,4,2576.26,1058.8,0.834903,19.5204,0,centroide,0.0,0.589017
+Frente Buzo T2,2,Capucha Buzo T2,5,2576.26,1088.57,0.811872,19.278,0,centroide,0.0,0.57746
+Frente Buzo T2,2,Capucha Buzo T2,6,2576.26,1118.76,0.788903,18.4462,180,centroide,0.0,0.565744
+Frente Buzo T2,2,Capucha Buzo T2,7,2576.26,1149.35,0.766001,18.7934,0,centroide,0.0,0.553869
+Frente Buzo T2,2,Puño T1-2,1,2576.26,266.0,1.625651,25.7785,0,centroide,0.0,0.89675
+Frente Buzo T2,2,Puño T1-2,2,2576.26,280.0,1.607879,25.5006,0,centroide,0.0,0.891316
+Frente Buzo T2,2,Puño T1-2,3,2576.26,294.0,1.590282,25.2296,0,centroide,0.0,0.885881
+Frente Buzo T2,2,Puño T1-2,4,2576.26,308.0,1.572855,24.9656,0,centroide,0.0,0.880447
+Frente Buzo T2,2,Puño T1-2,5,2576.26,322.0,1.555596,24.7089,0,centroide,0.0,0.875013
+Frente Buzo T2,2,Puño T1-2,6,2576.26,336.0,1.538503,24.4598,0,centroide,0.0,0.869579
+Frente Buzo T2,2,Puño T1-2,7,2576.26,350.0,1.521574,24.2184,0,centroide,0.0,0.864144
+Frente Buzo T2,2,Capucha interior Buzo T2,1,2576.26,971.94,0.904301,20.2477,0,centroide,0.0,0.622732
+Frente Buzo T2,2,Capucha interior Buzo T2,2,2576.26,1000.0,0.881517,20.0064,0,centroide,0.0,0.611842
+Frente Buzo T2,2,Capucha interior Buzo T2,3,2576.26,1029.44,0.85799,19.7628,0,centroide,0.0,0.600415
+Frente Buzo T2,2,Capucha interior Buzo T2,4,2576.26,1058.8,0.834903,19.5204,0,centroide,0.0,0.589017
+Frente Buzo T2,2,Capucha interior Buzo T2,5,2576.26,1088.57,0.811872,19.278,0,centroide,0.0,0.57746
+Frente Buzo T2,2,Capucha interior Buzo T2,6,2576.26,1118.76,0.788903,18.4462,180,centroide,0.0,0.565744
+Frente Buzo T2,2,Capucha interior Buzo T2,7,2576.26,1149.35,0.766001,18.7934,0,centroide,0.0,0.553869
+Frente Buzo T2,3,Frente Buzo T2,4,2879.99,3189.14,0.101877,2.2067,0,centroide,0.096939,0.0
+Frente Buzo T2,3,Frente Buzo T2,5,2879.99,3407.9,0.167913,3.5453,0,centroide,0.154907,0.0
+Frente Buzo T2,3,Frente Buzo T2,6,2879.99,3694.45,0.247766,5.204,0,centroide,0.220455,0.0
+Frente Buzo T2,3,Frente Buzo T2,7,2879.99,4364.28,0.409783,10.1438,180,centroide,0.340099,0.0
+Frente Buzo T2,3,Cintura Buzo T2,1,2879.99,1092.0,1.256473,45.0,0,esquina,0.323882,0.743638
+Frente Buzo T2,3,Cintura Buzo T2,2,2879.99,1148.0,1.26681,45.0,0,esquina,0.356863,0.743638
+Frente Buzo T2,3,Cintura Buzo T2,3,2879.99,1204.0,1.276864,45.0,0,esquina,0.386777,0.743638
+Frente Buzo T2,3,Cintura Buzo T2,4,2879.99,1344.0,1.300831,45.0,0,esquina,0.450654,0.743638
+Frente Buzo T2,3,Cintura Buzo T2,5,2879.99,1400.0,1.309979,47.0125,0,esquina,0.472628,0.743638
+Frente Buzo T2,3,Cintura Buzo T2,6,2879.99,1456.0,1.318891,51.0099,0,esquina,0.492912,0.743638
+Frente Buzo T2,3,Cintura Buzo T2,7,2879.99,1540.0,1.331835,57.0046,0,esquina,0.520571,0.743638
+Frente Buzo T2,3,Bolsillo T1-2,1,2879.99,782.0,1.14582,21.7125,0,centroide,0.0,0.728472
+Frente Buzo T2,3,Bolsillo T1-2,2,2879.99,782.0,1.14582,21.7125,0,centroide,0.0,0.728472
+Frente Buzo T2,3,Bolsillo T1-2,3,2879.99,865.19,1.075942,20.7421,0,centroide,0.0,0.699586
+Frente Buzo T2,3,Bolsillo T1-2,4,2879.99,865.19,1.075942,20.7421,0,centroide,0.0,0.699586
+Frente Buzo T2,3,Bolsillo T1-2,5,2879.99,951.16,1.006923,19.736,180,centroide,0.0,0.669737
+Frente Buzo T2,3,Bolsillo T1-2,6,2879.99,951.16,1.006923,19.736,180,centroide,0.0,0.669737
+Frente Buzo T2,3,Bolsillo T1-2,7,2879.99,951.16,1.006923,19.736,180,centroide,0.0,0.669737
+Frente Buzo T2,3,Manga Buzo T2,1,2879.99,1070.82,0.93518,32.2984,180,esquina,0.01783,0.634816
+Frente Buzo T2,3,Manga Buzo T2,2,2879.99,1070.68,0.935274,32.2995,180,esquina,0.017826,0.634861
+Frente Buzo T2,3,Manga Buzo T2,3,2879.99,1253.47,0.820495,30.2722,180,esquina,0.02761,0.576784
+Frente Buzo T2,3,Manga Buzo T2,4,2879.99,1253.47,0.820495,30.2722,180,esquina,0.02761,0.576784
+Frente Buzo T2,3,Manga Buzo T2,5,2879.99,1450.44,0.756382,28.271,180,esquina,0.071765,0.532516
+Frente Buzo T2,3,Manga Buzo T2,6,2879.99,1450.44,0.756382,28.271,180,esquina,0.071765,0.532516
+Frente Buzo T2,3,Manga Buzo T2,7,2879.99,1609.81,0.715895,26.3152,180,esquina,0.104649,0.499532
+Frente Buzo T2,3,Capucha Buzo T2,1,2879.99,971.94,0.990698,22.2393,0,centroide,0.0,0.66252
+Frente Buzo T2,3,Capucha Buzo T2,2,2879.99,1000.0,0.969072,21.4676,180,centroide,0.0,0.652778
+Frente Buzo T2,3,Capucha Buzo T2,3,2879.99,1029.44,0.946714,21.2177,180,centroide,0.0,0.642556
+Frente Buzo T2,3,Capucha Buzo T2,4,2879.99,1058.8,0.924746,21.5086,0,centroide,0.0,0.63236
+Frente Buzo T2,3,Capucha Buzo T2,5,2879.99,1088.57,0.902804,21.2651,0,centroide,0.0,0.622022
+Frente Buzo T2,3,Capucha Buzo T2,6,2879.99,1118.76,0.880893,20.4799,180,centroide,0.0,0.611542
+Frente Buzo T2,3,Capucha Buzo T2,7,2879.99,1149.35,0.859019,20.2341,180,centroide,0.0,0.600919
+Frente Buzo T2,3,Puño T1-2,1,2879.99,266.0,1.661792,27.699,0,centroide,0.0,0.907639
+Frente Buzo T2,3,Puño T1-2,2,2879.99,280.0,1.645569,27.4056,0,centroide,0.0,0.902778
+Frente Buzo T2,3,Puño T1-2,3,2879.99,294.0,1.629489,27.1182,0,centroide,0.0,0.897916
+Frente Buzo T2,3,Puño T1-2,4,2879.99,308.0,1.61355,26.837,0,centroide,0.0,0.893055
+Frente Buzo T2,3,Puño T1-2,5,2879.99,322.0,1.59775,26.5623,0,centroide,0.0,0.888194
+Frente Buzo T2,3,Puño T1-2,6,2879.99,336.0,1.582089,26.2942,0,centroide,0.0,0.883333
+Frente Buzo T2,3,Puño T1-2,7,2879.99,350.0,1.566562,26.0329,0,centroide,0.0,0.878472
+Frente Buzo T2,3,Capucha interior Buzo T2,1,2879.99,971.94,0.990698,22.2393,0,centroide,0.0,0.66252
+Frente Buzo T2,3,Capucha interior Buzo T2,2,2879.99,1000.0,0.969072,21.4676,180,centroide,0.0,0.652778
+Frente Buzo T2,3,Capucha interior Buzo T2,3,2879.99,1029.44,0.946714,21.2177,180,centroide,0.0,0.642556
+Frente Buzo T2,3,Capucha interior Buzo T2,4,2879.99,1058.8,0.924746,21.5086,0,centroide,0.0,0.63236
+Frente Buzo T2,3,Capucha interior Buzo T2,5,2879.99,1088.57,0.902804,21.2651,0,centroide,0.0,0.622022
+Frente Buzo T2,3,Capucha interior Buzo T2,6,2879.99,1118.76,0.880893,20.4799,180,centroide,0.0,0.611542
+Frente Buzo T2,3,Capucha interior Buzo T2,7,2879.99,1149.35,0.859019,20.2341,180,centroide,0.0,0.600919
+Frente Buzo T2,4,Frente Buzo T2,5,3189.14,3407.9,0.066378,1.3815,0,centroide,0.064219,3e-05
+Frente Buzo T2,4,Frente Buzo T2,6,3189.14,3694.45,0.147012,3.1236,0,centroide,0.136867,0.000106
+Frente Buzo T2,4,Frente Buzo T2,7,3189.14,4364.28,0.311321,7.0731,0,centroide,0.269335,9.9e-05
+Frente Buzo T2,4,Cintura Buzo T2,1,3189.14,1092.0,1.283897,49.0,0,esquina,0.298136,0.759674
+Frente Buzo T2,4,Cintura Buzo T2,2,3189.14,1148.0,1.293143,49.0,0,esquina,0.332373,0.759674
+Frente Buzo T2,4,Cintura Buzo T2,3,3189.14,1204.0,1.302153,49.0,0,esquina,0.363426,0.759674
+Frente Buzo T2,4,Cintura Buzo T2,4,3189.14,1344.0,1.323705,49.0,0,esquina,0.429735,0.759674
+Frente Buzo T2,4,Cintura Buzo T2,5,3189.14,1400.0,1.331958,49.0,0,esquina,0.452546,0.759674
+Frente Buzo T2,4,Cintura Buzo T2,6,3189.14,1456.0,1.340011,49.0145,0,esquina,0.473602,0.759674
+Frente Buzo T2,4,Cintura Buzo T2,7,3189.14,1540.0,1.351734,55.0079,0,esquina,0.502315,0.759674
+Frente Buzo T2,4,Bolsillo T1-2,1,3189.14,782.0,1.212318,23.8045,0,centroide,0.0,0.754793
+Frente Buzo T2,4,Bolsillo T1-2,2,3189.14,782.0,1.212318,23.8045,0,centroide,0.0,0.754793
+Frente Buzo T2,4,Bolsillo T1-2,3,3189.14,865.19,1.146404,22.8119,0,centroide,0.0,0.728707
+Frente Buzo T2,4,Bolsillo T1-2,4,3189.14,865.19,1.146404,22.8119,0,centroide,0.0,0.728707
+Frente Buzo T2,4,Bolsillo T1-2,5,3189.14,951.16,1.081075,21.8391,0,centroide,0.0,0.701752
+Frente Buzo T2,4,Bolsillo T1-2,6,3189.14,951.16,1.081075,21.8391,0,centroide,0.0,0.701752
+Frente Buzo T2,4,Bolsillo T1-2,7,3189.14,951.16,1.081075,21.8391,0,centroide,0.0,0.701752
+Frente Buzo T2,4,Manga Buzo T2,1,3189.14,1070.82,1.000025,18.7876,0,centroide,0.005468,0.666066
+Frente Buzo T2,4,Manga Buzo T2,2,3189.14,1070.68,1.000097,18.7882,0,centroide,0.005445,0.666101
+Frente Buzo T2,4,Manga Buzo T2,3,3189.14,1253.47,0.88967,32.4098,180,esquina,0.016177,0.613316
+Frente Buzo T2,4,Manga Buzo T2,4,3189.14,1253.47,0.88967,32.4098,180,esquina,0.016177,0.613316
+Frente Buzo T2,4,Manga Buzo T2,5,3189.14,1450.44,0.786811,30.3702,180,esquina,0.029831,0.558761
+Frente Buzo T2,4,Manga Buzo T2,6,3189.14,1450.44,0.786811,30.3702,180,esquina,0.029831,0.558761
+Frente Buzo T2,4,Manga Buzo T2,7,3189.14,1609.81,0.720263,28.4183,180,esquina,0.046254,0.51857
+Frente Buzo T2,4,Capucha Buzo T2,1,3189.14,971.94,1.065685,23.7665,180,centroide,0.0,0.695235
+Frente Buzo T2,4,Capucha Buzo T2,2,3189.14,1000.0,1.045153,24.138,0,centroide,0.0,0.686437
+Frente Buzo T2,4,Capucha Buzo T2,3,3189.14,1029.44,1.023902,23.8936,0,centroide,0.0,0.677206
+Frente Buzo T2,4,Capucha Buzo T2,4,3189.14,1058.8,1.003,23.6508,0,centroide,0.0,0.667999
+Frente Buzo T2,4,Capucha Buzo T2,5,3189.14,1088.57,0.982098,22.7855,180,centroide,0.0,0.658663
+Frente Buzo T2,4,Capucha Buzo T2,6,3189.14,1118.76,0.961204,23.1654,0,centroide,0.0,0.649198
+Frente Buzo T2,4,Capucha Buzo T2,7,3189.14,1149.35,0.940323,22.9228,0,centroide,0.0,0.639605
+Frente Buzo T2,4,Puño T1-2,1,3189.14,266.0,1.692053,29.871,0,centroide,0.0,0.916592
+Frente Buzo T2,4,Puño T1-2,2,3189.14,280.0,1.677154,29.5829,0,centroide,0.0,0.912202
+Frente Buzo T2,4,Puño T1-2,3,3189.14,294.0,1.662374,29.3005,0,centroide,0.0,0.907812
+Frente Buzo T2,4,Puño T1-2,4,3189.14,308.0,1.647713,29.0239,0,centroide,0.0,0.903422
+Frente Buzo T2,4,Puño T1-2,5,3189.14,322.0,1.633168,28.7534,0,centroide,0.0,0.899032
+Frente Buzo T2,4,Puño T1-2,6,3189.14,336.0,1.618739,28.4891,0,centroide,0.0,0.894643
+Frente Buzo T2,4,Puño T1-2,7,3189.14,350.0,1.604424,28.2311,0,centroide,0.0,0.890253
+Frente Buzo T2,4,Capucha interior Buzo T2,1,3189.14,971.94,1.065685,23.7665,180,centroide,0.0,0.695235
+Frente Buzo T2,4,Capucha interior Buzo T2,2,3189.14,1000.0,1.045153,24.138,0,centroide,0.0,0.686437
+Frente Buzo T2,4,Capucha interior Buzo T2,3,3189.14,1029.44,1.023902,23.8936,0,centroide,0.0,0.677206
+Frente Buzo T2,4,Capucha interior Buzo T2,4,3189.14,1058.8,1.003,23.6508,0,centroide,0.0,0.667999
+Frente Buzo T2,4,Capucha interior Buzo T2,5,3189.14,1088.57,0.982098,22.7855,180,centroide,0.0,0.658663
+Frente Buzo T2,4,Capucha interior Buzo T2,6,3189.14,1118.76,0.961204,23.1654,0,centroide,0.0,0.649198
+Frente Buzo T2,4,Capucha interior Buzo T2,7,3189.14,1149.35,0.940323,22.9228,0,centroide,0.0,0.639605
+Frente Buzo T2,5,Frente Buzo T2,6,3407.9,3694.45,0.081122,1.7683,0,centroide,0.077769,0.000224
+Frente Buzo T2,5,Frente Buzo T2,7,3407.9,4364.28,0.246757,5.7351,0,centroide,0.219429,0.000372
+Frente Buzo T2,5,Cintura Buzo T2,1,3407.9,1092.0,1.294039,51.0,0,esquina,0.272721,0.766957
+Frente Buzo T2,5,Cintura Buzo T2,2,3407.9,1148.0,1.302717,51.0,0,esquina,0.308198,0.766957
+Frente Buzo T2,5,Cintura Buzo T2,3,3407.9,1204.0,1.311183,51.0,0,esquina,0.340375,0.766957
+Frente Buzo T2,5,Cintura Buzo T2,4,3407.9,1344.0,1.331477,51.0,0,esquina,0.409086,0.766957
+Frente Buzo T2,5,Cintura Buzo T2,5,3407.9,1400.0,1.339264,51.0,0,esquina,0.432723,0.766957
+Frente Buzo T2,5,Cintura Buzo T2,6,3407.9,1456.0,1.346871,51.0,0,esquina,0.454541,0.766957
+Frente Buzo T2,5,Cintura Buzo T2,7,3407.9,1540.0,1.357959,53.0266,0,esquina,0.484293,0.766957
+Frente Buzo T2,5,Bolsillo T1-2,1,3407.9,782.0,1.253443,25.1859,0,centroide,0.0,0.770533
+Frente Buzo T2,5,Bolsillo T1-2,2,3407.9,782.0,1.253443,25.1859,0,centroide,0.0,0.770533
+Frente Buzo T2,5,Bolsillo T1-2,3,3407.9,865.19,1.190103,23.7979,180,centroide,0.0,0.746122
+Frente Buzo T2,5,Bolsillo T1-2,4,3407.9,865.19,1.190103,23.7979,180,centroide,0.0,0.746122
+Frente Buzo T2,5,Bolsillo T1-2,5,3407.9,951.16,1.127191,23.219,0,centroide,0.0,0.720897
+Frente Buzo T2,5,Bolsillo T1-2,6,3407.9,951.16,1.127191,23.219,0,centroide,0.0,0.720897
+Frente Buzo T2,5,Bolsillo T1-2,7,3407.9,951.16,1.127191,23.219,0,centroide,0.0,0.720897
+Frente Buzo T2,5,Manga Buzo T2,1,3407.9,1070.82,1.044487,19.9496,0,centroide,0.000888,0.686062
+Frente Buzo T2,5,Manga Buzo T2,2,3407.9,1070.68,1.044567,19.9503,0,centroide,0.000875,0.686098
+Frente Buzo T2,5,Manga Buzo T2,3,3407.9,1253.47,0.939799,18.8024,0,centroide,0.014336,0.637461
+Frente Buzo T2,5,Manga Buzo T2,4,3407.9,1253.47,0.939799,18.8024,0,centroide,0.014336,0.637461
+Frente Buzo T2,5,Manga Buzo T2,5,3407.9,1450.44,0.831135,32.4189,180,esquina,0.021204,0.583413
+Frente Buzo T2,5,Manga Buzo T2,6,3407.9,1450.44,0.831135,32.4189,180,esquina,0.021204,0.583413
+Frente Buzo T2,5,Manga Buzo T2,7,3407.9,1609.81,0.757352,30.4688,180,esquina,0.03168,0.542589
+Frente Buzo T2,5,Capucha Buzo T2,1,3407.9,971.94,1.112351,25.7565,0,centroide,0.0,0.714798
+Frente Buzo T2,5,Capucha Buzo T2,2,3407.9,1000.0,1.09254,25.5152,0,centroide,0.0,0.706565
+Frente Buzo T2,5,Capucha Buzo T2,3,3407.9,1029.44,1.072023,25.2705,0,centroide,0.0,0.697926
+Frente Buzo T2,5,Capucha Buzo T2,4,3407.9,1058.8,1.051828,25.0276,0,centroide,0.0,0.68931
+Frente Buzo T2,5,Capucha Buzo T2,5,3407.9,1088.57,1.03162,24.7848,0,centroide,0.0,0.680573
+Frente Buzo T2,5,Capucha Buzo T2,6,3407.9,1118.76,1.011405,24.542,0,centroide,0.0,0.671717
+Frente Buzo T2,5,Capucha Buzo T2,7,3407.9,1149.35,0.991189,24.2992,0,centroide,0.0,0.662739
+Frente Buzo T2,5,Puño T1-2,1,3407.9,266.0,1.71039,31.2382,0,centroide,0.0,0.921946
+Frente Buzo T2,5,Puño T1-2,2,3407.9,280.0,1.696304,30.9473,0,centroide,0.0,0.917838
+Frente Buzo T2,5,Puño T1-2,3,3407.9,294.0,1.682325,30.6618,0,centroide,0.0,0.91373
+Frente Buzo T2,5,Puño T1-2,4,3407.9,308.0,1.668452,30.3818,0,centroide,0.0,0.909622
+Frente Buzo T2,5,Puño T1-2,5,3407.9,322.0,1.654683,30.1076,0,centroide,0.0,0.905514
+Frente Buzo T2,5,Puño T1-2,6,3407.9,336.0,1.641016,29.8392,0,centroide,0.0,0.901406
+Frente Buzo T2,5,Puño T1-2,7,3407.9,350.0,1.627452,29.5768,0,centroide,0.0,0.897297
+Frente Buzo T2,5,Capucha interior Buzo T2,1,3407.9,971.94,1.112351,25.7565,0,centroide,0.0,0.714798
+Frente Buzo T2,5,Capucha interior Buzo T2,2,3407.9,1000.0,1.09254,25.5152,0,centroide,0.0,0.706565
+Frente Buzo T2,5,Capucha interior Buzo T2,3,3407.9,1029.44,1.072023,25.2705,0,centroide,0.0,0.697926
+Frente Buzo T2,5,Capucha interior Buzo T2,4,3407.9,1058.8,1.051828,25.0276,0,centroide,0.0,0.68931
+Frente Buzo T2,5,Capucha interior Buzo T2,5,3407.9,1088.57,1.03162,24.7848,0,centroide,0.0,0.680573
+Frente Buzo T2,5,Capucha interior Buzo T2,6,3407.9,1118.76,1.011405,24.542,0,centroide,0.0,0.671717
+Frente Buzo T2,5,Capucha interior Buzo T2,7,3407.9,1149.35,0.991189,24.2992,0,centroide,0.0,0.662739
+Frente Buzo T2,6,Frente Buzo T2,7,3694.45,4364.28,0.167095,3.9695,0,centroide,0.153876,0.000468
+Frente Buzo T2,6,Cintura Buzo T2,1,3694.45,1092.0,1.301651,53.0,0,esquina,0.234749,0.773809
+Frente Buzo T2,6,Cintura Buzo T2,2,3694.45,1148.0,1.309727,53.0,0,esquina,0.272079,0.773809
+Frente Buzo T2,6,Cintura Buzo T2,3,3694.45,1204.0,1.317618,53.0,0,esquina,0.305935,0.773809
+Frente Buzo T2,6,Cintura Buzo T2,4,3694.45,1344.0,1.336579,53.0,0,esquina,0.378234,0.773809
+Frente Buzo T2,6,Cintura Buzo T2,5,3694.45,1400.0,1.343872,53.0,0,esquina,0.403104,0.773809
+Frente Buzo T2,6,Cintura Buzo T2,6,3694.45,1456.0,1.351006,53.0,0,esquina,0.426062,0.773809
+Frente Buzo T2,6,Cintura Buzo T2,7,3694.45,1540.0,1.361421,53.0,0,esquina,0.457368,0.773809
+Frente Buzo T2,6,Bolsillo T1-2,1,3694.45,782.0,1.301233,26.9003,0,centroide,0.0,0.788331
+Frente Buzo T2,6,Bolsillo T1-2,2,3694.45,782.0,1.301233,26.9003,0,centroide,0.0,0.788331
+Frente Buzo T2,6,Bolsillo T1-2,3,3694.45,865.19,1.241001,25.916,0,centroide,0.0,0.765813
+Frente Buzo T2,6,Bolsillo T1-2,4,3694.45,865.19,1.241001,25.916,0,centroide,0.0,0.765813
+Frente Buzo T2,6,Bolsillo T1-2,5,3694.45,951.16,1.181028,24.6498,180,centroide,0.0,0.742545
+Frente Buzo T2,6,Bolsillo T1-2,6,3694.45,951.16,1.181028,24.6498,180,centroide,0.0,0.742545
+Frente Buzo T2,6,Bolsillo T1-2,7,3694.45,951.16,1.181028,24.6498,180,centroide,0.0,0.742545
+Frente Buzo T2,6,Manga Buzo T2,1,3694.45,1070.82,1.101147,21.6217,0,centroide,0.0,0.710155
+Frente Buzo T2,6,Manga Buzo T2,2,3694.45,1070.68,1.101236,21.6225,0,centroide,0.0,0.710192
+Frente Buzo T2,6,Manga Buzo T2,3,3694.45,1253.47,0.994696,20.4154,0,centroide,0.00792,0.663403
+Frente Buzo T2,6,Manga Buzo T2,4,3694.45,1253.47,0.994696,20.4154,0,centroide,0.00792,0.663403
+Frente Buzo T2,6,Manga Buzo T2,5,3694.45,1450.44,0.891576,35.4668,180,esquina,0.01707,0.614102
+Frente Buzo T2,6,Manga Buzo T2,6,3694.45,1450.44,0.891576,35.4668,180,esquina,0.01707,0.614102
+Frente Buzo T2,6,Manga Buzo T2,7,3694.45,1609.81,0.812699,33.5184,180,esquina,0.021973,0.573837
+Frente Buzo T2,6,Capucha Buzo T2,1,3694.45,971.94,1.166859,27.4432,0,centroide,0.0,0.736919
+Frente Buzo T2,6,Capucha Buzo T2,2,3694.45,1000.0,1.147932,27.2016,0,centroide,0.0,0.729325
+Frente Buzo T2,6,Capucha Buzo T2,3,3694.45,1029.44,1.128314,26.3439,180,centroide,0.0,0.721356
+Frente Buzo T2,6,Capucha Buzo T2,4,3694.45,1058.8,1.108989,26.7126,0,centroide,0.0,0.713408
+Frente Buzo T2,6,Capucha Buzo T2,5,3694.45,1088.57,1.089636,26.4691,0,centroide,0.0,0.705349
+Frente Buzo T2,6,Capucha Buzo T2,6,3694.45,1118.76,1.070261,25.606,180,centroide,0.0,0.697179
+Frente Buzo T2,6,Capucha Buzo T2,7,3694.45,1149.35,1.050869,25.9823,0,centroide,0.0,0.688898
+Frente Buzo T2,6,Puño T1-2,1,3694.45,266.0,1.731344,32.893,0,centroide,0.0,0.928
+Frente Buzo T2,6,Puño T1-2,2,3694.45,280.0,1.7182,32.5948,0,centroide,0.0,0.924211
+Frente Buzo T2,6,Puño T1-2,3,3694.45,294.0,1.705149,32.3016,0,centroide,0.0,0.920421
+Frente Buzo T2,6,Puño T1-2,4,3694.45,308.0,1.692189,32.0135,0,centroide,0.0,0.916632
+Frente Buzo T2,6,Puño T1-2,5,3694.45,322.0,1.679319,31.7306,0,centroide,0.0,0.912842
+Frente Buzo T2,6,Puño T1-2,6,3694.45,336.0,1.666539,31.4532,0,centroide,0.0,0.909053
+Frente Buzo T2,6,Puño T1-2,7,3694.45,350.0,1.653847,31.1813,0,centroide,0.0,0.905263
+Frente Buzo T2,6,Capucha interior Buzo T2,1,3694.45,971.94,1.166859,27.4432,0,centroide,0.0,0.736919
+Frente Buzo T2,6,Capucha interior Buzo T2,2,3694.45,1000.0,1.147932,27.2016,0,centroide,0.0,0.729325
+Frente Buzo T2,6,Capucha interior Buzo T2,3,3694.45,1029.44,1.128314,26.3439,180,centroide,0.0,0.721356
+Frente Buzo T2,6,Capucha interior Buzo T2,4,3694.45,1058.8,1.108989,26.7126,0,centroide,0.0,0.713408
+Frente Buzo T2,6,Capucha interior Buzo T2,5,3694.45,1088.57,1.089636,26.4691,0,centroide,0.0,0.705349
+Frente Buzo T2,6,Capucha interior Buzo T2,6,3694.45,1118.76,1.070261,25.606,180,centroide,0.0,0.697179
+Frente Buzo T2,6,Capucha interior Buzo T2,7,3694.45,1149.35,1.050869,25.9823,0,centroide,0.0,0.688898
+Frente Buzo T2,7,Cintura Buzo T2,1,4364.28,1092.0,1.316481,57.0,0,esquina,0.146182,0.786364
+Frente Buzo T2,7,Cintura Buzo T2,2,4364.28,1148.0,1.323425,57.0,0,esquina,0.187832,0.786364
+Frente Buzo T2,7,Cintura Buzo T2,3,4364.28,1204.0,1.330229,57.0,0,esquina,0.225607,0.786364
+Frente Buzo T2,7,Cintura Buzo T2,4,4364.28,1344.0,1.346656,57.0,0,esquina,0.306273,0.786364
+Frente Buzo T2,7,Cintura Buzo T2,5,4364.28,1400.0,1.353003,57.0,0,esquina,0.334022,0.786364
+Frente Buzo T2,7,Cintura Buzo T2,6,4364.28,1456.0,1.359228,57.0,0,esquina,0.359637,0.786364
+Frente Buzo T2,7,Cintura Buzo T2,7,4364.28,1540.0,1.368344,57.0,0,esquina,0.394566,0.786364
+Frente Buzo T2,7,Bolsillo T1-2,1,4364.28,782.0,1.392183,30.6855,0,centroide,0.0,0.820818
+Frente Buzo T2,7,Bolsillo T1-2,2,4364.28,782.0,1.392183,30.6855,0,centroide,0.0,0.820818
+Frente Buzo T2,7,Bolsillo T1-2,3,4364.28,865.19,1.338219,29.4555,180,centroide,0.0,0.801756
+Frente Buzo T2,7,Bolsillo T1-2,4,4364.28,865.19,1.338219,29.4555,180,centroide,0.0,0.801756
+Frente Buzo T2,7,Bolsillo T1-2,5,4364.28,951.16,1.284231,28.778,0,centroide,0.0,0.782059
+Frente Buzo T2,7,Bolsillo T1-2,6,4364.28,951.16,1.284231,28.778,0,centroide,0.0,0.782059
+Frente Buzo T2,7,Bolsillo T1-2,7,4364.28,951.16,1.284231,28.778,0,centroide,0.0,0.782059
+Frente Buzo T2,7,Manga Buzo T2,1,4364.28,1070.82,1.211923,25.486,0,centroide,0.0,0.75464
+Frente Buzo T2,7,Manga Buzo T2,2,4364.28,1070.68,1.212004,25.4869,0,centroide,0.0,0.754672
+Frente Buzo T2,7,Manga Buzo T2,3,4364.28,1253.47,1.107495,24.1969,0,centroide,0.0,0.71279
+Frente Buzo T2,7,Manga Buzo T2,4,4364.28,1253.47,1.107495,24.1969,0,centroide,0.0,0.71279
+Frente Buzo T2,7,Manga Buzo T2,5,4364.28,1450.44,1.012674,23.0422,0,centroide,0.010469,0.671136
+Frente Buzo T2,7,Manga Buzo T2,6,4364.28,1450.44,1.012674,23.0422,0,centroide,0.010469,0.671136
+Frente Buzo T2,7,Manga Buzo T2,7,4364.28,1609.81,0.940948,40.6857,180,esquina,0.017451,0.637577
+Frente Buzo T2,7,Capucha Buzo T2,1,4364.28,971.94,1.271439,31.1599,0,centroide,0.0,0.777296
+Frente Buzo T2,7,Capucha Buzo T2,2,4364.28,1000.0,1.254329,30.3765,180,centroide,0.0,0.770868
+Frente Buzo T2,7,Capucha Buzo T2,3,4364.28,1029.44,1.236566,30.6704,0,centroide,0.0,0.764122
+Frente Buzo T2,7,Capucha Buzo T2,4,4364.28,1058.8,1.219042,30.4256,0,centroide,0.0,0.757394
+Frente Buzo T2,7,Capucha Buzo T2,5,4364.28,1088.57,1.201465,30.1809,0,centroide,0.0,0.750572
+Frente Buzo T2,7,Capucha Buzo T2,6,4364.28,1118.76,1.183841,29.3823,180,centroide,0.0,0.743656
+Frente Buzo T2,7,Capucha Buzo T2,7,4364.28,1149.35,1.166175,29.1351,180,centroide,0.0,0.736646
+Frente Buzo T2,7,Puño T1-2,1,4364.28,266.0,1.770208,36.5315,0,centroide,0.0,0.939051
+Frente Buzo T2,7,Puño T1-2,2,4364.28,280.0,1.758843,36.2168,0,centroide,0.0,0.935843
+Frente Buzo T2,7,Puño T1-2,3,4364.28,294.0,1.747546,35.9064,0,centroide,0.0,0.932635
+Frente Buzo T2,7,Puño T1-2,4,4364.28,308.0,1.736317,35.6003,0,centroide,0.0,0.929427
+Frente Buzo T2,7,Puño T1-2,5,4364.28,322.0,1.725155,35.2986,0,centroide,0.0,0.926219
+Frente Buzo T2,7,Puño T1-2,6,4364.28,336.0,1.71406,35.0014,0,centroide,0.0,0.923011
+Frente Buzo T2,7,Puño T1-2,7,4364.28,350.0,1.70303,34.7089,0,centroide,0.0,0.919804
+Frente Buzo T2,7,Capucha interior Buzo T2,1,4364.28,971.94,1.271439,31.1599,0,centroide,0.0,0.777296
+Frente Buzo T2,7,Capucha interior Buzo T2,2,4364.28,1000.0,1.254329,30.3765,180,centroide,0.0,0.770868
+Frente Buzo T2,7,Capucha interior Buzo T2,3,4364.28,1029.44,1.236566,30.6704,0,centroide,0.0,0.764122
+Frente Buzo T2,7,Capucha interior Buzo T2,4,4364.28,1058.8,1.219042,30.4256,0,centroide,0.0,0.757394
+Frente Buzo T2,7,Capucha interior Buzo T2,5,4364.28,1088.57,1.201465,30.1809,0,centroide,0.0,0.750572
+Frente Buzo T2,7,Capucha interior Buzo T2,6,4364.28,1118.76,1.183841,29.3823,180,centroide,0.0,0.743656
+Frente Buzo T2,7,Capucha interior Buzo T2,7,4364.28,1149.35,1.166175,29.1351,180,centroide,0.0,0.736646
+Cintura Buzo T2,1,Cintura Buzo T2,2,1092.0,1148.0,0.05,4.0,0,esquina,0.04878,0.0
+Cintura Buzo T2,1,Cintura Buzo T2,3,1092.0,1204.0,0.097561,8.0,0,esquina,0.093023,0.0
+Cintura Buzo T2,1,Cintura Buzo T2,4,1092.0,1344.0,0.206897,18.0,0,esquina,0.1875,0.0
+Cintura Buzo T2,1,Cintura Buzo T2,5,1092.0,1400.0,0.247191,22.0,0,esquina,0.22,0.0
+Cintura Buzo T2,1,Cintura Buzo T2,6,1092.0,1456.0,0.285714,26.0,0,esquina,0.25,0.0
+Cintura Buzo T2,1,Cintura Buzo T2,7,1092.0,1540.0,0.340426,32.0,0,esquina,0.290909,0.0
+Cintura Buzo T2,1,Bolsillo T1-2,1,1092.0,782.0,0.80517,32.0156,0,esquina,0.284172,0.487383
+Cintura Buzo T2,1,Bolsillo T1-2,2,1092.0,782.0,0.80517,32.0156,0,esquina,0.284172,0.487383
+Cintura Buzo T2,1,Bolsillo T1-2,3,1092.0,865.19,0.822455,30.9233,0,esquina,0.334055,0.472372
+Cintura Buzo T2,1,Bolsillo T1-2,4,1092.0,865.19,0.822455,30.9233,0,esquina,0.334055,0.472372
+Cintura Buzo T2,1,Bolsillo T1-2,5,1092.0,951.16,0.842717,29.8329,0,esquina,0.378517,0.458674
+Cintura Buzo T2,1,Bolsillo T1-2,6,1092.0,951.16,0.842717,29.8329,0,esquina,0.378517,0.458674
+Cintura Buzo T2,1,Bolsillo T1-2,7,1092.0,951.16,0.842717,29.8329,0,esquina,0.378517,0.458674
+Cintura Buzo T2,1,Manga Buzo T2,1,1092.0,1070.82,1.451482,28.6744,0,centroide,0.723029,0.728401
+Cintura Buzo T2,1,Manga Buzo T2,2,1092.0,1070.68,1.451447,28.6744,0,centroide,0.722993,0.728401
+Cintura Buzo T2,1,Manga Buzo T2,3,1092.0,1253.47,1.450214,27.7564,180,centroide,0.742812,0.704783
+Cintura Buzo T2,1,Manga Buzo T2,4,1092.0,1253.47,1.450214,27.7564,180,centroide,0.742812,0.704783
+Cintura Buzo T2,1,Manga Buzo T2,5,1092.0,1450.44,1.452233,26.8381,0,centroide,0.759958,0.681166
+Cintura Buzo T2,1,Manga Buzo T2,6,1092.0,1450.44,1.452233,26.8381,0,centroide,0.759958,0.681166
+Cintura Buzo T2,1,Manga Buzo T2,7,1092.0,1609.81,1.446361,25.9277,0,centroide,0.767701,0.657549
+Cintura Buzo T2,1,Capucha Buzo T2,1,1092.0,971.94,1.155017,25.1798,180,centroide,0.551414,0.600734
+Cintura Buzo T2,1,Capucha Buzo T2,2,1092.0,1000.0,1.153882,24.9792,180,centroide,0.55748,0.594763
+Cintura Buzo T2,1,Capucha Buzo T2,3,1092.0,1029.44,1.151213,24.7424,0,centroide,0.562711,0.587764
+Cintura Buzo T2,1,Capucha Buzo T2,4,1092.0,1058.8,1.149634,24.5237,180,centroide,0.568151,0.58128
+Cintura Buzo T2,1,Capucha Buzo T2,5,1092.0,1088.57,1.14826,24.3051,0,centroide,0.57346,0.574798
+Cintura Buzo T2,1,Capucha Buzo T2,6,1092.0,1118.76,1.147084,24.0864,0,centroide,0.578642,0.568317
+Cintura Buzo T2,1,Capucha Buzo T2,7,1092.0,1149.35,1.146098,23.8677,180,centroide,0.583701,0.561837
+Cintura Buzo T2,1,Puño T1-2,1,1092.0,266.0,1.216495,59.0,0,esquina,0.0,0.75641
+Cintura Buzo T2,1,Puño T1-2,2,1092.0,280.0,1.183673,58.0,0,esquina,0.0,0.74359
+Cintura Buzo T2,1,Puño T1-2,3,1092.0,294.0,1.151515,57.0,0,esquina,0.0,0.730769
+Cintura Buzo T2,1,Puño T1-2,4,1092.0,308.0,1.12,56.0,0,esquina,0.0,0.717949
+Cintura Buzo T2,1,Puño T1-2,5,1092.0,322.0,1.089109,55.0,0,esquina,0.0,0.705128
+Cintura Buzo T2,1,Puño T1-2,6,1092.0,336.0,1.058824,54.0,0,esquina,0.0,0.692308
+Cintura Buzo T2,1,Puño T1-2,7,1092.0,350.0,1.029126,53.0,0,esquina,0.0,0.679487
+Cintura Buzo T2,1,Capucha interior Buzo T2,1,1092.0,971.94,1.155017,25.1798,180,centroide,0.551414,0.600734
+Cintura Buzo T2,1,Capucha interior Buzo T2,2,1092.0,1000.0,1.153882,24.9792,180,centroide,0.55748,0.594763
+Cintura Buzo T2,1,Capucha interior Buzo T2,3,1092.0,1029.44,1.151213,24.7424,0,centroide,0.562711,0.587764
+Cintura Buzo T2,1,Capucha interior Buzo T2,4,1092.0,1058.8,1.149634,24.5237,180,centroide,0.568151,0.58128
+Cintura Buzo T2,1,Capucha interior Buzo T2,5,1092.0,1088.57,1.14826,24.3051,0,centroide,0.57346,0.574798
+Cintura Buzo T2,1,Capucha interior Buzo T2,6,1092.0,1118.76,1.147084,24.0864,0,centroide,0.578642,0.568317
+Cintura Buzo T2,1,Capucha interior Buzo T2,7,1092.0,1149.35,1.146098,23.8677,180,centroide,0.583701,0.561837
+Cintura Buzo T2,2,Cintura Buzo T2,3,1148.0,1204.0,0.047619,4.0,0,esquina,0.046512,0.0
+Cintura Buzo T2,2,Cintura Buzo T2,4,1148.0,1344.0,0.157303,14.0,0,esquina,0.145833,0.0
+Cintura Buzo T2,2,Cintura Buzo T2,5,1148.0,1400.0,0.197802,18.0,0,esquina,0.18,0.0
+Cintura Buzo T2,2,Cintura Buzo T2,6,1148.0,1456.0,0.236559,22.0,0,esquina,0.211538,0.0
+Cintura Buzo T2,2,Cintura Buzo T2,7,1148.0,1540.0,0.291667,28.0,0,esquina,0.254545,0.0
+Cintura Buzo T2,2,Bolsillo T1-2,1,1148.0,782.0,0.839839,35.9026,0,esquina,0.284172,0.512389
+Cintura Buzo T2,2,Bolsillo T1-2,2,1148.0,782.0,0.839839,35.9026,0,esquina,0.284172,0.512389
+Cintura Buzo T2,2,Bolsillo T1-2,3,1148.0,865.19,0.85521,34.8174,0,esquina,0.334055,0.49811
+Cintura Buzo T2,2,Bolsillo T1-2,4,1148.0,865.19,0.85521,34.8174,0,esquina,0.334055,0.49811
+Cintura Buzo T2,2,Bolsillo T1-2,5,1148.0,951.16,0.87359,33.7343,0,esquina,0.378517,0.48508
+Cintura Buzo T2,2,Bolsillo T1-2,6,1148.0,951.16,0.87359,33.7343,0,esquina,0.378517,0.48508
+Cintura Buzo T2,2,Bolsillo T1-2,7,1148.0,951.16,0.87359,33.7343,0,esquina,0.378517,0.48508
+Cintura Buzo T2,2,Manga Buzo T2,1,1148.0,1070.82,1.465326,30.6727,0,centroide,0.723029,0.74165
+Cintura Buzo T2,2,Manga Buzo T2,2,1148.0,1070.68,1.465293,30.6727,0,centroide,0.722993,0.74165
+Cintura Buzo T2,2,Manga Buzo T2,3,1148.0,1253.47,1.463034,29.7546,180,centroide,0.742812,0.719184
+Cintura Buzo T2,2,Manga Buzo T2,4,1148.0,1253.47,1.463034,29.7546,180,centroide,0.742812,0.719184
+Cintura Buzo T2,2,Manga Buzo T2,5,1148.0,1450.44,1.464038,28.8363,0,centroide,0.759958,0.696719
+Cintura Buzo T2,2,Manga Buzo T2,6,1148.0,1450.44,1.464038,28.8363,0,centroide,0.759958,0.696719
+Cintura Buzo T2,2,Manga Buzo T2,7,1148.0,1609.81,1.457604,27.9257,0,centroide,0.767701,0.674254
+Cintura Buzo T2,2,Capucha Buzo T2,1,1148.0,971.94,1.177338,27.1798,0,centroide,0.551414,0.62021
+Cintura Buzo T2,2,Capucha Buzo T2,2,1148.0,1000.0,1.175941,26.9792,180,centroide,0.55748,0.61453
+Cintura Buzo T2,2,Capucha Buzo T2,3,1148.0,1029.44,1.173043,26.7424,0,centroide,0.562711,0.607873
+Cintura Buzo T2,2,Capucha Buzo T2,4,1148.0,1058.8,1.171213,26.5237,180,centroide,0.568151,0.601706
+Cintura Buzo T2,2,Capucha Buzo T2,5,1148.0,1088.57,1.169586,26.3051,180,centroide,0.57346,0.59554
+Cintura Buzo T2,2,Capucha Buzo T2,6,1148.0,1118.76,1.168155,26.0864,0,centroide,0.578642,0.589375
+Cintura Buzo T2,2,Capucha Buzo T2,7,1148.0,1149.35,1.166913,25.8677,0,centroide,0.583701,0.583211
+Cintura Buzo T2,2,Puño T1-2,1,1148.0,266.0,1.247525,63.0,0,esquina,0.0,0.768293
+Cintura Buzo T2,2,Puño T1-2,2,1148.0,280.0,1.215686,62.0,0,esquina,0.0,0.756098
+Cintura Buzo T2,2,Puño T1-2,3,1148.0,294.0,1.184466,61.0,0,esquina,0.0,0.743902
+Cintura Buzo T2,2,Puño T1-2,4,1148.0,308.0,1.153846,60.0,0,esquina,0.0,0.731707
+Cintura Buzo T2,2,Puño T1-2,5,1148.0,322.0,1.12381,59.0,0,esquina,0.0,0.719512
+Cintura Buzo T2,2,Puño T1-2,6,1148.0,336.0,1.09434,58.0,0,esquina,0.0,0.707317
+Cintura Buzo T2,2,Puño T1-2,7,1148.0,350.0,1.065421,57.0,0,esquina,0.0,0.695122
+Cintura Buzo T2,2,Capucha interior Buzo T2,1,1148.0,971.94,1.177338,27.1798,0,centroide,0.551414,0.62021
+Cintura Buzo T2,2,Capucha interior Buzo T2,2,1148.0,1000.0,1.175941,26.9792,180,centroide,0.55748,0.61453
+Cintura Buzo T2,2,Capucha interior Buzo T2,3,1148.0,1029.44,1.173043,26.7424,0,centroide,0.562711,0.607873
+Cintura Buzo T2,2,Capucha interior Buzo T2,4,1148.0,1058.8,1.171213,26.5237,180,centroide,0.568151,0.601706
+Cintura Buzo T2,2,Capucha interior Buzo T2,5,1148.0,1088.57,1.169586,26.3051,180,centroide,0.57346,0.59554
+Cintura Buzo T2,2,Capucha interior Buzo T2,6,1148.0,1118.76,1.168155,26.0864,0,centroide,0.578642,0.589375
+Cintura Buzo T2,2,Capucha interior Buzo T2,7,1148.0,1149.35,1.166913,25.8677,0,centroide,0.583701,0.583211
+Cintura Buzo T2,3,Cintura Buzo T2,4,1204.0,1344.0,0.10989,10.0,0,esquina,0.104167,0.0
+Cintura Buzo T2,3,Cintura Buzo T2,5,1204.0,1400.0,0.150538,14.0,0,esquina,0.14,0.0
+Cintura Buzo T2,3,Cintura Buzo T2,6,1204.0,1456.0,0.189474,18.0,0,esquina,0.173077,0.0
+Cintura Buzo T2,3,Cintura Buzo T2,7,1204.0,1540.0,0.244898,24.0,0,esquina,0.218182,0.0
+Cintura Buzo T2,3,Bolsillo T1-2,1,1204.0,782.0,0.872552,39.8121,0,esquina,0.284172,0.535068
+Cintura Buzo T2,3,Bolsillo T1-2,2,1204.0,782.0,0.872552,39.8121,0,esquina,0.284172,0.535068
+Cintura Buzo T2,3,Bolsillo T1-2,3,1204.0,865.19,0.886193,38.7331,0,esquina,0.334055,0.521453
+Cintura Buzo T2,3,Bolsillo T1-2,4,1204.0,865.19,0.886193,38.7331,0,esquina,0.334055,0.521453
+Cintura Buzo T2,3,Bolsillo T1-2,5,1204.0,951.16,0.902859,37.6563,0,esquina,0.378517,0.50903
+Cintura Buzo T2,3,Bolsillo T1-2,6,1204.0,951.16,0.902859,37.6563,0,esquina,0.378517,0.50903
+Cintura Buzo T2,3,Bolsillo T1-2,7,1204.0,951.16,0.902859,37.6563,0,esquina,0.378517,0.50903
+Cintura Buzo T2,3,Manga Buzo T2,1,1204.0,1070.82,1.478488,32.6709,0,centroide,0.723029,0.753666
+Cintura Buzo T2,3,Manga Buzo T2,2,1204.0,1070.68,1.478457,32.6709,0,centroide,0.722993,0.753666
+Cintura Buzo T2,3,Manga Buzo T2,3,1204.0,1253.47,1.475271,31.7528,180,centroide,0.742812,0.732245
+Cintura Buzo T2,3,Manga Buzo T2,4,1204.0,1253.47,1.475271,31.7528,180,centroide,0.742812,0.732245
+Cintura Buzo T2,3,Manga Buzo T2,5,1204.0,1450.44,1.475345,30.8345,0,centroide,0.759958,0.710825
+Cintura Buzo T2,3,Manga Buzo T2,6,1204.0,1450.44,1.475345,30.8345,0,centroide,0.759958,0.710825
+Cintura Buzo T2,3,Manga Buzo T2,7,1204.0,1609.81,1.468398,29.9238,0,centroide,0.767701,0.689405
+Cintura Buzo T2,3,Capucha Buzo T2,1,1204.0,971.94,1.19851,29.1798,180,centroide,0.551414,0.637875
+Cintura Buzo T2,3,Capucha Buzo T2,2,1204.0,1000.0,1.196879,28.9792,180,centroide,0.55748,0.632459
+Cintura Buzo T2,3,Capucha Buzo T2,3,1204.0,1029.44,1.193777,28.7424,0,centroide,0.562711,0.626111
+Cintura Buzo T2,3,Capucha Buzo T2,4,1204.0,1058.8,1.191724,28.5237,0,centroide,0.568151,0.620231
+Cintura Buzo T2,3,Capucha Buzo T2,5,1204.0,1088.57,1.189871,28.3051,180,centroide,0.57346,0.614352
+Cintura Buzo T2,3,Capucha Buzo T2,6,1204.0,1118.76,1.18821,28.0864,0,centroide,0.578642,0.608474
+Cintura Buzo T2,3,Capucha Buzo T2,7,1204.0,1149.35,1.186737,27.8677,0,centroide,0.583701,0.602597
+Cintura Buzo T2,3,Puño T1-2,1,1204.0,266.0,1.27619,67.0,0,esquina,0.0,0.77907
+Cintura Buzo T2,3,Puño T1-2,2,1204.0,280.0,1.245283,66.0,0,esquina,0.0,0.767442
+Cintura Buzo T2,3,Puño T1-2,3,1204.0,294.0,1.214953,65.0,0,esquina,0.0,0.755814
+Cintura Buzo T2,3,Puño T1-2,4,1204.0,308.0,1.185185,64.0,0,esquina,0.0,0.744186
+Cintura Buzo T2,3,Puño T1-2,5,1204.0,322.0,1.155963,63.0,0,esquina,0.0,0.732558
+Cintura Buzo T2,3,Puño T1-2,6,1204.0,336.0,1.127273,62.0,0,esquina,0.0,0.72093
+Cintura Buzo T2,3,Puño T1-2,7,1204.0,350.0,1.099099,61.0,0,esquina,0.0,0.709302
+Cintura Buzo T2,3,Capucha interior Buzo T2,1,1204.0,971.94,1.19851,29.1798,180,centroide,0.551414,0.637875
+Cintura Buzo T2,3,Capucha interior Buzo T2,2,1204.0,1000.0,1.196879,28.9792,180,centroide,0.55748,0.632459
+Cintura Buzo T2,3,Capucha interior Buzo T2,3,1204.0,1029.44,1.193777,28.7424,0,centroide,0.562711,0.626111
+Cintura Buzo T2,3,Capucha interior Buzo T2,4,1204.0,1058.8,1.191724,28.5237,0,centroide,0.568151,0.620231
+Cintura Buzo T2,3,Capucha interior Buzo T2,5,1204.0,1088.57,1.189871,28.3051,180,centroide,0.57346,0.614352
+Cintura Buzo T2,3,Capucha interior Buzo T2,6,1204.0,1118.76,1.18821,28.0864,0,centroide,0.578642,0.608474
+Cintura Buzo T2,3,Capucha interior Buzo T2,7,1204.0,1149.35,1.186737,27.8677,0,centroide,0.583701,0.602597
+Cintura Buzo T2,4,Cintura Buzo T2,5,1344.0,1400.0,0.040816,4.0,0,esquina,0.04,0.0
+Cintura Buzo T2,4,Cintura Buzo T2,6,1344.0,1456.0,0.08,8.0,0,esquina,0.076923,0.0
+Cintura Buzo T2,4,Cintura Buzo T2,7,1344.0,1540.0,0.135922,14.0,0,esquina,0.127273,0.0
+Cintura Buzo T2,4,Bolsillo T1-2,1,1344.0,782.0,0.946796,49.6488,0,esquina,0.284172,0.583499
+Cintura Buzo T2,4,Bolsillo T1-2,2,1344.0,782.0,0.946796,49.6488,0,esquina,0.284172,0.583499
+Cintura Buzo T2,4,Bolsillo T1-2,3,1344.0,865.19,0.956776,48.5824,0,esquina,0.334055,0.571302
+Cintura Buzo T2,4,Bolsillo T1-2,4,1344.0,865.19,0.956776,48.5824,0,esquina,0.334055,0.571302
+Cintura Buzo T2,4,Bolsillo T1-2,5,1344.0,951.16,0.969782,47.5184,0,esquina,0.378517,0.560173
+Cintura Buzo T2,4,Bolsillo T1-2,6,1344.0,951.16,0.969782,47.5184,0,esquina,0.378517,0.560173
+Cintura Buzo T2,4,Bolsillo T1-2,7,1344.0,951.16,0.969782,47.5184,0,esquina,0.378517,0.560173
+Cintura Buzo T2,4,Manga Buzo T2,1,1344.0,1070.82,1.508723,37.6666,0,centroide,0.723029,0.779326
+Cintura Buzo T2,4,Manga Buzo T2,2,1344.0,1070.68,1.508695,37.6666,0,centroide,0.722993,0.779326
+Cintura Buzo T2,4,Manga Buzo T2,3,1344.0,1253.47,1.503553,36.7484,180,centroide,0.742812,0.760137
+Cintura Buzo T2,4,Manga Buzo T2,4,1344.0,1253.47,1.503553,36.7484,180,centroide,0.742812,0.760137
+Cintura Buzo T2,4,Manga Buzo T2,5,1344.0,1450.44,1.50163,35.83,0,centroide,0.759958,0.740947
+Cintura Buzo T2,4,Manga Buzo T2,6,1344.0,1450.44,1.50163,35.83,0,centroide,0.759958,0.740947
+Cintura Buzo T2,4,Manga Buzo T2,7,1344.0,1609.81,1.493594,34.9189,0,centroide,0.767701,0.721758
+Cintura Buzo T2,4,Capucha Buzo T2,1,1344.0,971.94,1.24696,34.1798,180,centroide,0.551414,0.675596
+Cintura Buzo T2,4,Capucha Buzo T2,2,1344.0,1000.0,1.244847,33.9792,0,centroide,0.55748,0.670745
+Cintura Buzo T2,4,Capucha Buzo T2,3,1344.0,1029.44,1.241333,33.7424,0,centroide,0.562711,0.665058
+Cintura Buzo T2,4,Capucha Buzo T2,4,1344.0,1058.8,1.238819,33.5237,0,centroide,0.568151,0.65979
+Cintura Buzo T2,4,Capucha Buzo T2,5,1344.0,1088.57,1.236495,33.3051,180,centroide,0.57346,0.654524
+Cintura Buzo T2,4,Capucha Buzo T2,6,1344.0,1118.76,1.234358,33.0864,180,centroide,0.578642,0.649258
+Cintura Buzo T2,4,Capucha Buzo T2,7,1344.0,1149.35,1.232401,32.8677,0,centroide,0.583701,0.643993
+Cintura Buzo T2,4,Puño T1-2,1,1344.0,266.0,1.33913,77.0,0,esquina,0.0,0.802083
+Cintura Buzo T2,4,Puño T1-2,2,1344.0,280.0,1.310345,76.0,0,esquina,0.0,0.791667
+Cintura Buzo T2,4,Puño T1-2,3,1344.0,294.0,1.282051,75.0,0,esquina,0.0,0.78125
+Cintura Buzo T2,4,Puño T1-2,4,1344.0,308.0,1.254237,74.0,0,esquina,0.0,0.770833
+Cintura Buzo T2,4,Puño T1-2,5,1344.0,322.0,1.226891,73.0,0,esquina,0.0,0.760417
+Cintura Buzo T2,4,Puño T1-2,6,1344.0,336.0,1.2,72.0,0,esquina,0.0,0.75
+Cintura Buzo T2,4,Puño T1-2,7,1344.0,350.0,1.173554,71.0,0,esquina,0.0,0.739583
+Cintura Buzo T2,4,Capucha interior Buzo T2,1,1344.0,971.94,1.24696,34.1798,180,centroide,0.551414,0.675596
+Cintura Buzo T2,4,Capucha interior Buzo T2,2,1344.0,1000.0,1.244847,33.9792,0,centroide,0.55748,0.670745
+Cintura Buzo T2,4,Capucha interior Buzo T2,3,1344.0,1029.44,1.241333,33.7424,0,centroide,0.562711,0.665058
+Cintura Buzo T2,4,Capucha interior Buzo T2,4,1344.0,1058.8,1.238819,33.5237,0,centroide,0.568151,0.65979
+Cintura Buzo T2,4,Capucha interior Buzo T2,5,1344.0,1088.57,1.236495,33.3051,180,centroide,0.57346,0.654524
+Cintura Buzo T2,4,Capucha interior Buzo T2,6,1344.0,1118.76,1.234358,33.0864,180,centroide,0.578642,0.649258
+Cintura Buzo T2,4,Capucha interior Buzo T2,7,1344.0,1149.35,1.232401,32.8677,0,centroide,0.583701,0.643993
+Cintura Buzo T2,5,Cintura Buzo T2,6,1400.0,1456.0,0.039216,4.0,0,esquina,0.038462,0.0
+Cintura Buzo T2,5,Cintura Buzo T2,7,1400.0,1540.0,0.095238,10.0,0,esquina,0.090909,0.0
+Cintura Buzo T2,5,Bolsillo T1-2,1,1400.0,782.0,0.973826,53.6004,0,esquina,0.284172,0.600159
+Cintura Buzo T2,5,Bolsillo T1-2,2,1400.0,782.0,0.973826,53.6004,0,esquina,0.284172,0.600159
+Cintura Buzo T2,5,Bolsillo T1-2,3,1400.0,865.19,0.982567,52.5381,0,esquina,0.334055,0.58845
+Cintura Buzo T2,5,Bolsillo T1-2,4,1400.0,865.19,0.982567,52.5381,0,esquina,0.334055,0.58845
+Cintura Buzo T2,5,Bolsillo T1-2,5,1400.0,951.16,0.99432,51.4782,0,esquina,0.378517,0.577766
+Cintura Buzo T2,5,Bolsillo T1-2,6,1400.0,951.16,0.99432,51.4782,0,esquina,0.378517,0.577766
+Cintura Buzo T2,5,Bolsillo T1-2,7,1400.0,951.16,0.99432,51.4782,0,esquina,0.378517,0.577766
+Cintura Buzo T2,5,Manga Buzo T2,1,1400.0,1070.82,1.519858,39.6649,0,centroide,0.723029,0.788153
+Cintura Buzo T2,5,Manga Buzo T2,2,1400.0,1070.68,1.519831,39.6649,0,centroide,0.722993,0.788153
+Cintura Buzo T2,5,Manga Buzo T2,3,1400.0,1253.47,1.51403,38.7467,180,centroide,0.742812,0.769731
+Cintura Buzo T2,5,Manga Buzo T2,4,1400.0,1253.47,1.51403,38.7467,180,centroide,0.742812,0.769731
+Cintura Buzo T2,5,Manga Buzo T2,5,1400.0,1450.44,1.511421,37.8282,0,centroide,0.759958,0.75131
+Cintura Buzo T2,5,Manga Buzo T2,6,1400.0,1450.44,1.511421,37.8282,0,centroide,0.759958,0.75131
+Cintura Buzo T2,5,Manga Buzo T2,7,1400.0,1609.81,1.503016,36.917,0,centroide,0.767701,0.732888
+Cintura Buzo T2,5,Capucha Buzo T2,1,1400.0,971.94,1.264739,36.1798,180,centroide,0.551414,0.688572
+Cintura Buzo T2,5,Capucha Buzo T2,2,1400.0,1000.0,1.262468,35.9792,180,centroide,0.55748,0.683915
+Cintura Buzo T2,5,Capucha Buzo T2,3,1400.0,1029.44,1.258821,35.7424,0,centroide,0.562711,0.678456
+Cintura Buzo T2,5,Capucha Buzo T2,4,1400.0,1058.8,1.256155,35.5237,0,centroide,0.568151,0.673399
+Cintura Buzo T2,5,Capucha Buzo T2,5,1400.0,1088.57,1.253676,35.3051,180,centroide,0.57346,0.668343
+Cintura Buzo T2,5,Capucha Buzo T2,6,1400.0,1118.76,1.251381,35.0864,0,centroide,0.578642,0.663287
+Cintura Buzo T2,5,Capucha Buzo T2,7,1400.0,1149.35,1.249262,34.8677,0,centroide,0.583701,0.658233
+Cintura Buzo T2,5,Puño T1-2,1,1400.0,266.0,1.361345,81.0,0,esquina,0.0,0.81
+Cintura Buzo T2,5,Puño T1-2,2,1400.0,280.0,1.333333,80.0,0,esquina,0.0,0.8
+Cintura Buzo T2,5,Puño T1-2,3,1400.0,294.0,1.305785,79.0,0,esquina,0.0,0.79
+Cintura Buzo T2,5,Puño T1-2,4,1400.0,308.0,1.278689,78.0,0,esquina,0.0,0.78
+Cintura Buzo T2,5,Puño T1-2,5,1400.0,322.0,1.252033,77.0,0,esquina,0.0,0.77
+Cintura Buzo T2,5,Puño T1-2,6,1400.0,336.0,1.225806,76.0,0,esquina,0.0,0.76
+Cintura Buzo T2,5,Puño T1-2,7,1400.0,350.0,1.2,75.0,0,esquina,0.0,0.75
+Cintura Buzo T2,5,Capucha interior Buzo T2,1,1400.0,971.94,1.264739,36.1798,180,centroide,0.551414,0.688572
+Cintura Buzo T2,5,Capucha interior Buzo T2,2,1400.0,1000.0,1.262468,35.9792,180,centroide,0.55748,0.683915
+Cintura Buzo T2,5,Capucha interior Buzo T2,3,1400.0,1029.44,1.258821,35.7424,0,centroide,0.562711,0.678456
+Cintura Buzo T2,5,Capucha interior Buzo T2,4,1400.0,1058.8,1.256155,35.5237,0,centroide,0.568151,0.673399
+Cintura Buzo T2,5,Capucha interior Buzo T2,5,1400.0,1088.57,1.253676,35.3051,180,centroide,0.57346,0.668343
+Cintura Buzo T2,5,Capucha interior Buzo T2,6,1400.0,1118.76,1.251381,35.0864,0,centroide,0.578642,0.663287
+Cintura Buzo T2,5,Capucha interior Buzo T2,7,1400.0,1149.35,1.249262,34.8677,0,centroide,0.583701,0.658233
+Cintura Buzo T2,6,Cintura Buzo T2,7,1456.0,1540.0,0.056075,6.0,0,esquina,0.054545,0.0
+Cintura Buzo T2,6,Bolsillo T1-2,1,1456.0,782.0,0.999504,57.5587,0,esquina,0.284172,0.615537
+Cintura Buzo T2,6,Bolsillo T1-2,2,1456.0,782.0,0.999504,57.5587,0,esquina,0.284172,0.615537
+Cintura Buzo T2,6,Bolsillo T1-2,3,1456.0,865.19,1.007113,56.5,0,esquina,0.334055,0.604279
+Cintura Buzo T2,6,Bolsillo T1-2,4,1456.0,865.19,1.007113,56.5,0,esquina,0.334055,0.604279
+Cintura Buzo T2,6,Bolsillo T1-2,5,1456.0,951.16,1.017716,55.4437,0,esquina,0.378517,0.594006
+Cintura Buzo T2,6,Bolsillo T1-2,6,1456.0,951.16,1.017716,55.4437,0,esquina,0.378517,0.594006
+Cintura Buzo T2,6,Bolsillo T1-2,7,1456.0,951.16,1.017716,55.4437,0,esquina,0.378517,0.594006
+Cintura Buzo T2,6,Manga Buzo T2,1,1456.0,1070.82,1.530499,41.6631,0,centroide,0.723029,0.796301
+Cintura Buzo T2,6,Manga Buzo T2,2,1456.0,1070.68,1.530473,41.6631,0,centroide,0.722993,0.796301
+Cintura Buzo T2,6,Manga Buzo T2,3,1456.0,1253.47,1.524074,40.7449,0,centroide,0.742812,0.778588
+Cintura Buzo T2,6,Manga Buzo T2,4,1456.0,1253.47,1.524074,40.7449,0,centroide,0.742812,0.778588
+Cintura Buzo T2,6,Manga Buzo T2,5,1456.0,1450.44,1.520835,39.8264,0,centroide,0.759958,0.760875
+Cintura Buzo T2,6,Manga Buzo T2,6,1456.0,1450.44,1.520835,39.8264,0,centroide,0.759958,0.760875
+Cintura Buzo T2,6,Manga Buzo T2,7,1456.0,1609.81,1.512094,38.9151,0,centroide,0.767701,0.743162
+Cintura Buzo T2,6,Capucha Buzo T2,1,1456.0,971.94,1.281698,38.1798,0,centroide,0.551414,0.70055
+Cintura Buzo T2,6,Capucha Buzo T2,2,1456.0,1000.0,1.279284,37.9792,180,centroide,0.55748,0.696072
+Cintura Buzo T2,6,Capucha Buzo T2,3,1456.0,1029.44,1.275521,37.7424,0,centroide,0.562711,0.690823
+Cintura Buzo T2,6,Capucha Buzo T2,4,1456.0,1058.8,1.272719,37.5237,0,centroide,0.568151,0.68596
+Cintura Buzo T2,6,Capucha Buzo T2,5,1456.0,1088.57,1.270101,37.3051,180,centroide,0.57346,0.681099
+Cintura Buzo T2,6,Capucha Buzo T2,6,1456.0,1118.76,1.267663,37.0864,0,centroide,0.578642,0.676238
+Cintura Buzo T2,6,Capucha Buzo T2,7,1456.0,1149.35,1.265399,36.8677,0,centroide,0.583701,0.671378
+Cintura Buzo T2,6,Puño T1-2,1,1456.0,266.0,1.382114,85.0,0,esquina,0.0,0.817308
+Cintura Buzo T2,6,Puño T1-2,2,1456.0,280.0,1.354839,84.0,0,esquina,0.0,0.807692
+Cintura Buzo T2,6,Puño T1-2,3,1456.0,294.0,1.328,83.0,0,esquina,0.0,0.798077
+Cintura Buzo T2,6,Puño T1-2,4,1456.0,308.0,1.301587,82.0,0,esquina,0.0,0.788462
+Cintura Buzo T2,6,Puño T1-2,5,1456.0,322.0,1.275591,81.0,0,esquina,0.0,0.778846
+Cintura Buzo T2,6,Puño T1-2,6,1456.0,336.0,1.25,80.0,0,esquina,0.0,0.769231
+Cintura Buzo T2,6,Puño T1-2,7,1456.0,350.0,1.224806,79.0,0,esquina,0.0,0.759615
+Cintura Buzo T2,6,Capucha interior Buzo T2,1,1456.0,971.94,1.281698,38.1798,0,centroide,0.551414,0.70055
+Cintura Buzo T2,6,Capucha interior Buzo T2,2,1456.0,1000.0,1.279284,37.9792,180,centroide,0.55748,0.696072
+Cintura Buzo T2,6,Capucha interior Buzo T2,3,1456.0,1029.44,1.275521,37.7424,0,centroide,0.562711,0.690823
+Cintura Buzo T2,6,Capucha interior Buzo T2,4,1456.0,1058.8,1.272719,37.5237,0,centroide,0.568151,0.68596
+Cintura Buzo T2,6,Capucha interior Buzo T2,5,1456.0,1088.57,1.270101,37.3051,180,centroide,0.57346,0.681099
+Cintura Buzo T2,6,Capucha interior Buzo T2,6,1456.0,1118.76,1.267663,37.0864,0,centroide,0.578642,0.676238
+Cintura Buzo T2,6,Capucha interior Buzo T2,7,1456.0,1149.35,1.265399,36.8677,0,centroide,0.583701,0.671378
+Cintura Buzo T2,7,Bolsillo T1-2,1,1540.0,782.0,1.035697,63.5059,0,esquina,0.284172,0.636508
+Cintura Buzo T2,7,Bolsillo T1-2,2,1540.0,782.0,1.035697,63.5059,0,esquina,0.284172,0.636508
+Cintura Buzo T2,7,Bolsillo T1-2,3,1540.0,865.19,1.041789,62.452,0,esquina,0.334055,0.625863
+Cintura Buzo T2,7,Bolsillo T1-2,4,1540.0,865.19,1.041789,62.452,0,esquina,0.334055,0.625863
+Cintura Buzo T2,7,Bolsillo T1-2,5,1540.0,951.16,1.050838,61.4003,0,esquina,0.378517,0.616151
+Cintura Buzo T2,7,Bolsillo T1-2,6,1540.0,951.16,1.050838,61.4003,0,esquina,0.378517,0.616151
+Cintura Buzo T2,7,Bolsillo T1-2,7,1540.0,951.16,1.050838,61.4003,0,esquina,0.378517,0.616151
+Cintura Buzo T2,7,Manga Buzo T2,1,1540.0,1070.82,1.545604,44.6605,0,centroide,0.723029,0.807411
+Cintura Buzo T2,7,Manga Buzo T2,2,1540.0,1070.68,1.54558,44.6605,0,centroide,0.722993,0.807411
+Cintura Buzo T2,7,Manga Buzo T2,3,1540.0,1253.47,1.538385,43.7422,180,centroide,0.742812,0.790665
+Cintura Buzo T2,7,Manga Buzo T2,4,1540.0,1253.47,1.538385,43.7422,180,centroide,0.742812,0.790665
+Cintura Buzo T2,7,Manga Buzo T2,5,1540.0,1450.44,1.534294,42.8237,0,centroide,0.759958,0.773918
+Cintura Buzo T2,7,Manga Buzo T2,6,1540.0,1450.44,1.534294,42.8237,0,centroide,0.759958,0.773918
+Cintura Buzo T2,7,Manga Buzo T2,7,1540.0,1609.81,1.525106,41.9121,0,centroide,0.767701,0.757171
+Cintura Buzo T2,7,Capucha Buzo T2,1,1540.0,971.94,1.305718,41.1798,0,centroide,0.551414,0.716884
+Cintura Buzo T2,7,Capucha Buzo T2,2,1540.0,1000.0,1.303119,40.9792,0,centroide,0.55748,0.71265
+Cintura Buzo T2,7,Capucha Buzo T2,3,1540.0,1029.44,1.299205,40.7424,0,centroide,0.562711,0.707687
+Cintura Buzo T2,7,Capucha Buzo T2,4,1540.0,1058.8,1.296226,40.5237,0,centroide,0.568151,0.70309
+Cintura Buzo T2,7,Capucha Buzo T2,5,1540.0,1088.57,1.293426,40.3051,180,centroide,0.57346,0.698493
+Cintura Buzo T2,7,Capucha Buzo T2,6,1540.0,1118.76,1.2908,40.0864,0,centroide,0.578642,0.693898
+Cintura Buzo T2,7,Capucha Buzo T2,7,1540.0,1149.35,1.288343,39.8677,0,centroide,0.583701,0.689303
+Cintura Buzo T2,7,Puño T1-2,1,1540.0,266.0,1.410853,91.0,0,esquina,0.0,0.827273
+Cintura Buzo T2,7,Puño T1-2,2,1540.0,280.0,1.384615,90.0,0,esquina,0.0,0.818182
+Cintura Buzo T2,7,Puño T1-2,3,1540.0,294.0,1.358779,89.0,0,esquina,0.0,0.809091
+Cintura Buzo T2,7,Puño T1-2,4,1540.0,308.0,1.333333,88.0,0,esquina,0.0,0.8
+Cintura Buzo T2,7,Puño T1-2,5,1540.0,322.0,1.308271,87.0,0,esquina,0.0,0.790909
+Cintura Buzo T2,7,Puño T1-2,6,1540.0,336.0,1.283582,86.0,0,esquina,0.0,0.781818
+Cintura Buzo T2,7,Puño T1-2,7,1540.0,350.0,1.259259,85.0,0,esquina,0.0,0.772727
+Cintura Buzo T2,7,Capucha interior Buzo T2,1,1540.0,971.94,1.305718,41.1798,0,centroide,0.551414,0.716884
+Cintura Buzo T2,7,Capucha interior Buzo T2,2,1540.0,1000.0,1.303119,40.9792,0,centroide,0.55748,0.71265
+Cintura Buzo T2,7,Capucha interior Buzo T2,3,1540.0,1029.44,1.299205,40.7424,0,centroide,0.562711,0.707687
+Cintura Buzo T2,7,Capucha interior Buzo T2,4,1540.0,1058.8,1.296226,40.5237,0,centroide,0.568151,0.70309
+Cintura Buzo T2,7,Capucha interior Buzo T2,5,1540.0,1088.57,1.293426,40.3051,180,centroide,0.57346,0.698493
+Cintura Buzo T2,7,Capucha interior Buzo T2,6,1540.0,1118.76,1.2908,40.0864,0,centroide,0.578642,0.693898
+Cintura Buzo T2,7,Capucha interior Buzo T2,7,1540.0,1149.35,1.288343,39.8677,0,centroide,0.583701,0.689303
+Bolsillo T1-2,1,Bolsillo T1-2,2,782.0,782.0,0.0,0.0,0,esquina,0.0,0.0
+Bolsillo T1-2,1,Bolsillo T1-2,3,782.0,865.19,0.10101,1.1896,0,centroide,0.096154,0.0
+Bolsillo T1-2,1,Bolsillo T1-2,4,782.0,865.19,0.10101,1.1896,0,centroide,0.096154,0.0
+Bolsillo T1-2,1,Bolsillo T1-2,5,782.0,951.16,0.1952,2.3793,0,centroide,0.177843,0.0
+Bolsillo T1-2,1,Bolsillo T1-2,6,782.0,951.16,0.1952,2.3793,0,centroide,0.177843,0.0
+Bolsillo T1-2,1,Bolsillo T1-2,7,782.0,951.16,0.1952,2.3793,0,centroide,0.177843,0.0
+Bolsillo T1-2,1,Manga Buzo T2,1,782.0,1070.82,1.024455,16.2417,0,centroide,0.578008,0.422152
+Bolsillo T1-2,1,Manga Buzo T2,2,782.0,1070.68,1.024382,16.2384,0,centroide,0.577954,0.422152
+Bolsillo T1-2,1,Manga Buzo T2,3,782.0,1253.47,1.030467,18.2587,0,centroide,0.606401,0.369101
+Bolsillo T1-2,1,Manga Buzo T2,4,782.0,1253.47,1.030467,18.2587,0,centroide,0.606401,0.369101
+Bolsillo T1-2,1,Manga Buzo T2,5,782.0,1450.44,1.045698,20.2756,0,centroide,0.632797,0.318918
+Bolsillo T1-2,1,Manga Buzo T2,6,782.0,1450.44,1.045698,20.2756,0,centroide,0.632797,0.318918
+Bolsillo T1-2,1,Manga Buzo T2,7,782.0,1609.81,1.047417,21.2841,0,centroide,0.64617,0.271611
+Bolsillo T1-2,1,Capucha Buzo T2,1,782.0,971.94,0.527281,9.6798,0,centroide,0.335592,0.174213
+Bolsillo T1-2,1,Capucha Buzo T2,2,782.0,1000.0,0.531944,9.4792,0,centroide,0.34598,0.16366
+Bolsillo T1-2,1,Capucha Buzo T2,3,782.0,1029.44,0.535863,9.4705,0,centroide,0.355912,0.152112
+Bolsillo T1-2,1,Capucha Buzo T2,4,782.0,1058.8,0.542048,9.7231,0,centroide,0.366312,0.142008
+Bolsillo T1-2,1,Capucha Buzo T2,5,782.0,1088.57,0.548968,9.9756,0,centroide,0.376647,0.132269
+Bolsillo T1-2,1,Capucha Buzo T2,6,782.0,1118.76,0.556372,10.2282,0,centroide,0.386823,0.122766
+Bolsillo T1-2,1,Capucha Buzo T2,7,782.0,1149.35,0.56423,10.4808,0,centroide,0.396839,0.113499
+Bolsillo T1-2,1,Puño T1-2,1,782.0,266.0,0.984733,14.0,0,centroide,0.0,0.659847
+Bolsillo T1-2,1,Puño T1-2,2,782.0,280.0,0.945386,13.5,0,centroide,0.0,0.641944
+Bolsillo T1-2,1,Puño T1-2,3,782.0,294.0,0.907063,13.0,0,centroide,0.0,0.624041
+Bolsillo T1-2,1,Puño T1-2,4,782.0,308.0,0.869725,12.5,0,centroide,0.0,0.606138
+Bolsillo T1-2,1,Puño T1-2,5,782.0,322.0,0.833333,12.0,0,centroide,0.0,0.588235
+Bolsillo T1-2,1,Puño T1-2,6,782.0,336.0,0.797853,11.5,0,centroide,0.0,0.570332
+Bolsillo T1-2,1,Puño T1-2,7,782.0,350.0,0.763251,11.0,0,centroide,0.0,0.55243
+Bolsillo T1-2,1,Capucha interior Buzo T2,1,782.0,971.94,0.527281,9.6798,0,centroide,0.335592,0.174213
+Bolsillo T1-2,1,Capucha interior Buzo T2,2,782.0,1000.0,0.531944,9.4792,0,centroide,0.34598,0.16366
+Bolsillo T1-2,1,Capucha interior Buzo T2,3,782.0,1029.44,0.535863,9.4705,0,centroide,0.355912,0.152112
+Bolsillo T1-2,1,Capucha interior Buzo T2,4,782.0,1058.8,0.542048,9.7231,0,centroide,0.366312,0.142008
+Bolsillo T1-2,1,Capucha interior Buzo T2,5,782.0,1088.57,0.548968,9.9756,0,centroide,0.376647,0.132269
+Bolsillo T1-2,1,Capucha interior Buzo T2,6,782.0,1118.76,0.556372,10.2282,0,centroide,0.386823,0.122766
+Bolsillo T1-2,1,Capucha interior Buzo T2,7,782.0,1149.35,0.56423,10.4808,0,centroide,0.396839,0.113499
+Bolsillo T1-2,2,Bolsillo T1-2,3,782.0,865.19,0.10101,1.1896,0,centroide,0.096154,0.0
+Bolsillo T1-2,2,Bolsillo T1-2,4,782.0,865.19,0.10101,1.1896,0,centroide,0.096154,0.0
+Bolsillo T1-2,2,Bolsillo T1-2,5,782.0,951.16,0.1952,2.3793,0,centroide,0.177843,0.0
+Bolsillo T1-2,2,Bolsillo T1-2,6,782.0,951.16,0.1952,2.3793,0,centroide,0.177843,0.0
+Bolsillo T1-2,2,Bolsillo T1-2,7,782.0,951.16,0.1952,2.3793,0,centroide,0.177843,0.0
+Bolsillo T1-2,2,Manga Buzo T2,1,782.0,1070.82,1.024455,16.2417,0,centroide,0.578008,0.422152
+Bolsillo T1-2,2,Manga Buzo T2,2,782.0,1070.68,1.024382,16.2384,0,centroide,0.577954,0.422152
+Bolsillo T1-2,2,Manga Buzo T2,3,782.0,1253.47,1.030467,18.2587,0,centroide,0.606401,0.369101
+Bolsillo T1-2,2,Manga Buzo T2,4,782.0,1253.47,1.030467,18.2587,0,centroide,0.606401,0.369101
+Bolsillo T1-2,2,Manga Buzo T2,5,782.0,1450.44,1.045698,20.2756,0,centroide,0.632797,0.318918
+Bolsillo T1-2,2,Manga Buzo T2,6,782.0,1450.44,1.045698,20.2756,0,centroide,0.632797,0.318918
+Bolsillo T1-2,2,Manga Buzo T2,7,782.0,1609.81,1.047417,21.2841,0,centroide,0.64617,0.271611
+Bolsillo T1-2,2,Capucha Buzo T2,1,782.0,971.94,0.527281,9.6798,0,centroide,0.335592,0.174213
+Bolsillo T1-2,2,Capucha Buzo T2,2,782.0,1000.0,0.531944,9.4792,0,centroide,0.34598,0.16366
+Bolsillo T1-2,2,Capucha Buzo T2,3,782.0,1029.44,0.535863,9.4705,0,centroide,0.355912,0.152112
+Bolsillo T1-2,2,Capucha Buzo T2,4,782.0,1058.8,0.542048,9.7231,0,centroide,0.366312,0.142008
+Bolsillo T1-2,2,Capucha Buzo T2,5,782.0,1088.57,0.548968,9.9756,0,centroide,0.376647,0.132269
+Bolsillo T1-2,2,Capucha Buzo T2,6,782.0,1118.76,0.556372,10.2282,0,centroide,0.386823,0.122766
+Bolsillo T1-2,2,Capucha Buzo T2,7,782.0,1149.35,0.56423,10.4808,0,centroide,0.396839,0.113499
+Bolsillo T1-2,2,Puño T1-2,1,782.0,266.0,0.984733,14.0,0,centroide,0.0,0.659847
+Bolsillo T1-2,2,Puño T1-2,2,782.0,280.0,0.945386,13.5,0,centroide,0.0,0.641944
+Bolsillo T1-2,2,Puño T1-2,3,782.0,294.0,0.907063,13.0,0,centroide,0.0,0.624041
+Bolsillo T1-2,2,Puño T1-2,4,782.0,308.0,0.869725,12.5,0,centroide,0.0,0.606138
+Bolsillo T1-2,2,Puño T1-2,5,782.0,322.0,0.833333,12.0,0,centroide,0.0,0.588235
+Bolsillo T1-2,2,Puño T1-2,6,782.0,336.0,0.797853,11.5,0,centroide,0.0,0.570332
+Bolsillo T1-2,2,Puño T1-2,7,782.0,350.0,0.763251,11.0,0,centroide,0.0,0.55243
+Bolsillo T1-2,2,Capucha interior Buzo T2,1,782.0,971.94,0.527281,9.6798,0,centroide,0.335592,0.174213
+Bolsillo T1-2,2,Capucha interior Buzo T2,2,782.0,1000.0,0.531944,9.4792,0,centroide,0.34598,0.16366
+Bolsillo T1-2,2,Capucha interior Buzo T2,3,782.0,1029.44,0.535863,9.4705,0,centroide,0.355912,0.152112
+Bolsillo T1-2,2,Capucha interior Buzo T2,4,782.0,1058.8,0.542048,9.7231,0,centroide,0.366312,0.142008
+Bolsillo T1-2,2,Capucha interior Buzo T2,5,782.0,1088.57,0.548968,9.9756,0,centroide,0.376647,0.132269
+Bolsillo T1-2,2,Capucha interior Buzo T2,6,782.0,1118.76,0.556372,10.2282,0,centroide,0.386823,0.122766
+Bolsillo T1-2,2,Capucha interior Buzo T2,7,782.0,1149.35,0.56423,10.4808,0,centroide,0.396839,0.113499
+Bolsillo T1-2,3,Bolsillo T1-2,4,865.19,865.19,0.0,0.0,0,esquina,0.0,0.0
+Bolsillo T1-2,3,Bolsillo T1-2,5,865.19,951.16,0.094656,1.1896,0,centroide,0.090379,0.0
+Bolsillo T1-2,3,Bolsillo T1-2,6,865.19,951.16,0.094656,1.1896,0,centroide,0.090379,0.0
+Bolsillo T1-2,3,Bolsillo T1-2,7,865.19,951.16,0.094656,1.1896,0,centroide,0.090379,0.0
+Bolsillo T1-2,3,Manga Buzo T2,1,865.19,1070.82,0.990055,15.4102,0,centroide,0.543512,0.43502
+Bolsillo T1-2,3,Manga Buzo T2,2,865.19,1070.68,0.989983,15.4068,0,centroide,0.543453,0.435019
+Bolsillo T1-2,3,Manga Buzo T2,3,865.19,1253.47,0.991285,17.4271,0,centroide,0.573758,0.382471
+Bolsillo T1-2,3,Manga Buzo T2,4,865.19,1253.47,0.991285,17.4271,0,centroide,0.573758,0.382471
+Bolsillo T1-2,3,Manga Buzo T2,5,865.19,1450.44,1.002656,19.4441,0,centroide,0.601934,0.332667
+Bolsillo T1-2,3,Manga Buzo T2,6,865.19,1450.44,1.002656,19.4441,0,centroide,0.601934,0.332667
+Bolsillo T1-2,3,Manga Buzo T2,7,865.19,1609.81,1.001068,20.4525,0,centroide,0.616048,0.285604
+Bolsillo T1-2,3,Capucha Buzo T2,1,865.19,971.94,0.486934,10.1798,0,centroide,0.285012,0.196795
+Bolsillo T1-2,3,Capucha Buzo T2,2,865.19,1000.0,0.485677,9.9792,0,centroide,0.293874,0.183852
+Bolsillo T1-2,3,Capucha Buzo T2,3,865.19,1029.44,0.484371,9.7424,0,centroide,0.30264,0.170255
+Bolsillo T1-2,3,Capucha Buzo T2,4,865.19,1058.8,0.486799,9.5237,0,centroide,0.312574,0.158745
+Bolsillo T1-2,3,Capucha Buzo T2,5,865.19,1088.57,0.490767,9.3051,0,centroide,0.32281,0.147967
+Bolsillo T1-2,3,Capucha Buzo T2,6,865.19,1118.76,0.495976,9.3967,0,centroide,0.33321,0.13779
+Bolsillo T1-2,3,Capucha Buzo T2,7,865.19,1149.35,0.502132,9.6493,0,centroide,0.343647,0.128078
+Bolsillo T1-2,3,Puño T1-2,1,865.19,266.0,1.059399,14.5,0,centroide,0.0,0.692554
+Bolsillo T1-2,3,Puño T1-2,2,865.19,280.0,1.021998,14.0,0,centroide,0.0,0.676372
+Bolsillo T1-2,3,Puño T1-2,3,865.19,294.0,0.9855,13.5,0,centroide,0.0,0.660191
+Bolsillo T1-2,3,Puño T1-2,4,865.19,308.0,0.949873,13.0,0,centroide,0.0,0.644009
+Bolsillo T1-2,3,Puño T1-2,5,865.19,322.0,0.915087,12.5,0,centroide,0.0,0.627828
+Bolsillo T1-2,3,Puño T1-2,6,865.19,336.0,0.881111,12.0,0,centroide,0.0,0.611647
+Bolsillo T1-2,3,Puño T1-2,7,865.19,350.0,0.847918,11.5,0,centroide,0.0,0.595465
+Bolsillo T1-2,3,Capucha interior Buzo T2,1,865.19,971.94,0.486934,10.1798,0,centroide,0.285012,0.196795
+Bolsillo T1-2,3,Capucha interior Buzo T2,2,865.19,1000.0,0.485677,9.9792,0,centroide,0.293874,0.183852
+Bolsillo T1-2,3,Capucha interior Buzo T2,3,865.19,1029.44,0.484371,9.7424,0,centroide,0.30264,0.170255
+Bolsillo T1-2,3,Capucha interior Buzo T2,4,865.19,1058.8,0.486799,9.5237,0,centroide,0.312574,0.158745
+Bolsillo T1-2,3,Capucha interior Buzo T2,5,865.19,1088.57,0.490767,9.3051,0,centroide,0.32281,0.147967
+Bolsillo T1-2,3,Capucha interior Buzo T2,6,865.19,1118.76,0.495976,9.3967,0,centroide,0.33321,0.13779
+Bolsillo T1-2,3,Capucha interior Buzo T2,7,865.19,1149.35,0.502132,9.6493,0,centroide,0.343647,0.128078
+Bolsillo T1-2,4,Bolsillo T1-2,5,865.19,951.16,0.094656,1.1896,0,centroide,0.090379,0.0
+Bolsillo T1-2,4,Bolsillo T1-2,6,865.19,951.16,0.094656,1.1896,0,centroide,0.090379,0.0
+Bolsillo T1-2,4,Bolsillo T1-2,7,865.19,951.16,0.094656,1.1896,0,centroide,0.090379,0.0
+Bolsillo T1-2,4,Manga Buzo T2,1,865.19,1070.82,0.990055,15.4102,0,centroide,0.543512,0.43502
+Bolsillo T1-2,4,Manga Buzo T2,2,865.19,1070.68,0.989983,15.4068,0,centroide,0.543453,0.435019
+Bolsillo T1-2,4,Manga Buzo T2,3,865.19,1253.47,0.991285,17.4271,0,centroide,0.573758,0.382471
+Bolsillo T1-2,4,Manga Buzo T2,4,865.19,1253.47,0.991285,17.4271,0,centroide,0.573758,0.382471
+Bolsillo T1-2,4,Manga Buzo T2,5,865.19,1450.44,1.002656,19.4441,0,centroide,0.601934,0.332667
+Bolsillo T1-2,4,Manga Buzo T2,6,865.19,1450.44,1.002656,19.4441,0,centroide,0.601934,0.332667
+Bolsillo T1-2,4,Manga Buzo T2,7,865.19,1609.81,1.001068,20.4525,0,centroide,0.616048,0.285604
+Bolsillo T1-2,4,Capucha Buzo T2,1,865.19,971.94,0.486934,10.1798,0,centroide,0.285012,0.196795
+Bolsillo T1-2,4,Capucha Buzo T2,2,865.19,1000.0,0.485677,9.9792,0,centroide,0.293874,0.183852
+Bolsillo T1-2,4,Capucha Buzo T2,3,865.19,1029.44,0.484371,9.7424,0,centroide,0.30264,0.170255
+Bolsillo T1-2,4,Capucha Buzo T2,4,865.19,1058.8,0.486799,9.5237,0,centroide,0.312574,0.158745
+Bolsillo T1-2,4,Capucha Buzo T2,5,865.19,1088.57,0.490767,9.3051,0,centroide,0.32281,0.147967
+Bolsillo T1-2,4,Capucha Buzo T2,6,865.19,1118.76,0.495976,9.3967,0,centroide,0.33321,0.13779
+Bolsillo T1-2,4,Capucha Buzo T2,7,865.19,1149.35,0.502132,9.6493,0,centroide,0.343647,0.128078
+Bolsillo T1-2,4,Puño T1-2,1,865.19,266.0,1.059399,14.5,0,centroide,0.0,0.692554
+Bolsillo T1-2,4,Puño T1-2,2,865.19,280.0,1.021998,14.0,0,centroide,0.0,0.676372
+Bolsillo T1-2,4,Puño T1-2,3,865.19,294.0,0.9855,13.5,0,centroide,0.0,0.660191
+Bolsillo T1-2,4,Puño T1-2,4,865.19,308.0,0.949873,13.0,0,centroide,0.0,0.644009
+Bolsillo T1-2,4,Puño T1-2,5,865.19,322.0,0.915087,12.5,0,centroide,0.0,0.627828
+Bolsillo T1-2,4,Puño T1-2,6,865.19,336.0,0.881111,12.0,0,centroide,0.0,0.611647
+Bolsillo T1-2,4,Puño T1-2,7,865.19,350.0,0.847918,11.5,0,centroide,0.0,0.595465
+Bolsillo T1-2,4,Capucha interior Buzo T2,1,865.19,971.94,0.486934,10.1798,0,centroide,0.285012,0.196795
+Bolsillo T1-2,4,Capucha interior Buzo T2,2,865.19,1000.0,0.485677,9.9792,0,centroide,0.293874,0.183852
+Bolsillo T1-2,4,Capucha interior Buzo T2,3,865.19,1029.44,0.484371,9.7424,0,centroide,0.30264,0.170255
+Bolsillo T1-2,4,Capucha interior Buzo T2,4,865.19,1058.8,0.486799,9.5237,0,centroide,0.312574,0.158745
+Bolsillo T1-2,4,Capucha interior Buzo T2,5,865.19,1088.57,0.490767,9.3051,0,centroide,0.32281,0.147967
+Bolsillo T1-2,4,Capucha interior Buzo T2,6,865.19,1118.76,0.495976,9.3967,0,centroide,0.33321,0.13779
+Bolsillo T1-2,4,Capucha interior Buzo T2,7,865.19,1149.35,0.502132,9.6493,0,centroide,0.343647,0.128078
+Bolsillo T1-2,5,Bolsillo T1-2,6,951.16,951.16,0.0,0.0,0,esquina,0.0,0.0
+Bolsillo T1-2,5,Bolsillo T1-2,7,951.16,951.16,0.0,0.0,0,esquina,0.0,0.0
+Bolsillo T1-2,5,Manga Buzo T2,1,951.16,1070.82,0.960342,14.5787,0,centroide,0.509217,0.447472
+Bolsillo T1-2,5,Manga Buzo T2,2,951.16,1070.68,0.960271,14.5753,0,centroide,0.509153,0.447471
+Bolsillo T1-2,5,Manga Buzo T2,3,951.16,1253.47,0.956668,16.5956,0,centroide,0.541242,0.395432
+Bolsillo T1-2,5,Manga Buzo T2,4,951.16,1253.47,0.956668,16.5956,0,centroide,0.541242,0.395432
+Bolsillo T1-2,5,Manga Buzo T2,5,951.16,1450.44,0.963963,18.6125,0,centroide,0.57114,0.346021
+Bolsillo T1-2,5,Manga Buzo T2,6,951.16,1450.44,0.963963,18.6125,0,centroide,0.57114,0.346021
+Bolsillo T1-2,5,Manga Buzo T2,7,951.16,1609.81,0.958912,19.621,0,centroide,0.585946,0.299223
+Bolsillo T1-2,5,Capucha Buzo T2,1,951.16,971.94,0.457127,10.6798,0,centroide,0.236812,0.220134
+Bolsillo T1-2,5,Capucha Buzo T2,2,951.16,1000.0,0.454954,10.4792,0,centroide,0.246342,0.207643
+Bolsillo T1-2,5,Capucha Buzo T2,3,951.16,1029.44,0.450346,10.2424,0,centroide,0.254633,0.193288
+Bolsillo T1-2,5,Capucha Buzo T2,4,951.16,1058.8,0.447551,10.0237,0,centroide,0.263233,0.179852
+Bolsillo T1-2,5,Capucha Buzo T2,5,951.16,1088.57,0.446253,9.8051,0,centroide,0.272161,0.167007
+Bolsillo T1-2,5,Capucha Buzo T2,6,951.16,1118.76,0.447765,9.5864,0,centroide,0.282018,0.155503
+Bolsillo T1-2,5,Capucha Buzo T2,7,951.16,1149.35,0.450914,9.3677,0,centroide,0.292239,0.14476
+Bolsillo T1-2,5,Puño T1-2,1,951.16,266.0,1.125831,15.0,0,centroide,0.0,0.72034
+Bolsillo T1-2,5,Puño T1-2,2,951.16,280.0,1.090286,14.5,0,centroide,0.0,0.705621
+Bolsillo T1-2,5,Puño T1-2,3,951.16,294.0,1.05554,14.0,0,centroide,0.0,0.690902
+Bolsillo T1-2,5,Puño T1-2,4,951.16,308.0,1.021567,13.5,0,centroide,0.0,0.676184
+Bolsillo T1-2,5,Puño T1-2,5,951.16,322.0,0.988341,13.0,0,centroide,0.0,0.661465
+Bolsillo T1-2,5,Puño T1-2,6,951.16,336.0,0.955838,12.5,0,centroide,0.0,0.646746
+Bolsillo T1-2,5,Puño T1-2,7,951.16,350.0,0.924034,12.0,0,centroide,0.0,0.632027
+Bolsillo T1-2,5,Capucha interior Buzo T2,1,951.16,971.94,0.457127,10.6798,0,centroide,0.236812,0.220134
+Bolsillo T1-2,5,Capucha interior Buzo T2,2,951.16,1000.0,0.454954,10.4792,0,centroide,0.246342,0.207643
+Bolsillo T1-2,5,Capucha interior Buzo T2,3,951.16,1029.44,0.450346,10.2424,0,centroide,0.254633,0.193288
+Bolsillo T1-2,5,Capucha interior Buzo T2,4,951.16,1058.8,0.447551,10.0237,0,centroide,0.263233,0.179852
+Bolsillo T1-2,5,Capucha interior Buzo T2,5,951.16,1088.57,0.446253,9.8051,0,centroide,0.272161,0.167007
+Bolsillo T1-2,5,Capucha interior Buzo T2,6,951.16,1118.76,0.447765,9.5864,0,centroide,0.282018,0.155503
+Bolsillo T1-2,5,Capucha interior Buzo T2,7,951.16,1149.35,0.450914,9.3677,0,centroide,0.292239,0.14476
+Bolsillo T1-2,6,Bolsillo T1-2,7,951.16,951.16,0.0,0.0,0,esquina,0.0,0.0
+Bolsillo T1-2,6,Manga Buzo T2,1,951.16,1070.82,0.960342,14.5787,0,centroide,0.509217,0.447472
+Bolsillo T1-2,6,Manga Buzo T2,2,951.16,1070.68,0.960271,14.5753,0,centroide,0.509153,0.447471
+Bolsillo T1-2,6,Manga Buzo T2,3,951.16,1253.47,0.956668,16.5956,0,centroide,0.541242,0.395432
+Bolsillo T1-2,6,Manga Buzo T2,4,951.16,1253.47,0.956668,16.5956,0,centroide,0.541242,0.395432
+Bolsillo T1-2,6,Manga Buzo T2,5,951.16,1450.44,0.963963,18.6125,0,centroide,0.57114,0.346021
+Bolsillo T1-2,6,Manga Buzo T2,6,951.16,1450.44,0.963963,18.6125,0,centroide,0.57114,0.346021
+Bolsillo T1-2,6,Manga Buzo T2,7,951.16,1609.81,0.958912,19.621,0,centroide,0.585946,0.299223
+Bolsillo T1-2,6,Capucha Buzo T2,1,951.16,971.94,0.457127,10.6798,0,centroide,0.236812,0.220134
+Bolsillo T1-2,6,Capucha Buzo T2,2,951.16,1000.0,0.454954,10.4792,0,centroide,0.246342,0.207643
+Bolsillo T1-2,6,Capucha Buzo T2,3,951.16,1029.44,0.450346,10.2424,0,centroide,0.254633,0.193288
+Bolsillo T1-2,6,Capucha Buzo T2,4,951.16,1058.8,0.447551,10.0237,0,centroide,0.263233,0.179852
+Bolsillo T1-2,6,Capucha Buzo T2,5,951.16,1088.57,0.446253,9.8051,0,centroide,0.272161,0.167007
+Bolsillo T1-2,6,Capucha Buzo T2,6,951.16,1118.76,0.447765,9.5864,0,centroide,0.282018,0.155503
+Bolsillo T1-2,6,Capucha Buzo T2,7,951.16,1149.35,0.450914,9.3677,0,centroide,0.292239,0.14476
+Bolsillo T1-2,6,Puño T1-2,1,951.16,266.0,1.125831,15.0,0,centroide,0.0,0.72034
+Bolsillo T1-2,6,Puño T1-2,2,951.16,280.0,1.090286,14.5,0,centroide,0.0,0.705621
+Bolsillo T1-2,6,Puño T1-2,3,951.16,294.0,1.05554,14.0,0,centroide,0.0,0.690902
+Bolsillo T1-2,6,Puño T1-2,4,951.16,308.0,1.021567,13.5,0,centroide,0.0,0.676184
+Bolsillo T1-2,6,Puño T1-2,5,951.16,322.0,0.988341,13.0,0,centroide,0.0,0.661465
+Bolsillo T1-2,6,Puño T1-2,6,951.16,336.0,0.955838,12.5,0,centroide,0.0,0.646746
+Bolsillo T1-2,6,Puño T1-2,7,951.16,350.0,0.924034,12.0,0,centroide,0.0,0.632027
+Bolsillo T1-2,6,Capucha interior Buzo T2,1,951.16,971.94,0.457127,10.6798,0,centroide,0.236812,0.220134
+Bolsillo T1-2,6,Capucha interior Buzo T2,2,951.16,1000.0,0.454954,10.4792,0,centroide,0.246342,0.207643
+Bolsillo T1-2,6,Capucha interior Buzo T2,3,951.16,1029.44,0.450346,10.2424,0,centroide,0.254633,0.193288
+Bolsillo T1-2,6,Capucha interior Buzo T2,4,951.16,1058.8,0.447551,10.0237,0,centroide,0.263233,0.179852
+Bolsillo T1-2,6,Capucha interior Buzo T2,5,951.16,1088.57,0.446253,9.8051,0,centroide,0.272161,0.167007
+Bolsillo T1-2,6,Capucha interior Buzo T2,6,951.16,1118.76,0.447765,9.5864,0,centroide,0.282018,0.155503
+Bolsillo T1-2,6,Capucha interior Buzo T2,7,951.16,1149.35,0.450914,9.3677,0,centroide,0.292239,0.14476
+Bolsillo T1-2,7,Manga Buzo T2,1,951.16,1070.82,0.960342,14.5787,0,centroide,0.509217,0.447472
+Bolsillo T1-2,7,Manga Buzo T2,2,951.16,1070.68,0.960271,14.5753,0,centroide,0.509153,0.447471
+Bolsillo T1-2,7,Manga Buzo T2,3,951.16,1253.47,0.956668,16.5956,0,centroide,0.541242,0.395432
+Bolsillo T1-2,7,Manga Buzo T2,4,951.16,1253.47,0.956668,16.5956,0,centroide,0.541242,0.395432
+Bolsillo T1-2,7,Manga Buzo T2,5,951.16,1450.44,0.963963,18.6125,0,centroide,0.57114,0.346021
+Bolsillo T1-2,7,Manga Buzo T2,6,951.16,1450.44,0.963963,18.6125,0,centroide,0.57114,0.346021
+Bolsillo T1-2,7,Manga Buzo T2,7,951.16,1609.81,0.958912,19.621,0,centroide,0.585946,0.299223
+Bolsillo T1-2,7,Capucha Buzo T2,1,951.16,971.94,0.457127,10.6798,0,centroide,0.236812,0.220134
+Bolsillo T1-2,7,Capucha Buzo T2,2,951.16,1000.0,0.454954,10.4792,0,centroide,0.246342,0.207643
+Bolsillo T1-2,7,Capucha Buzo T2,3,951.16,1029.44,0.450346,10.2424,0,centroide,0.254633,0.193288
+Bolsillo T1-2,7,Capucha Buzo T2,4,951.16,1058.8,0.447551,10.0237,0,centroide,0.263233,0.179852
+Bolsillo T1-2,7,Capucha Buzo T2,5,951.16,1088.57,0.446253,9.8051,0,centroide,0.272161,0.167007
+Bolsillo T1-2,7,Capucha Buzo T2,6,951.16,1118.76,0.447765,9.5864,0,centroide,0.282018,0.155503
+Bolsillo T1-2,7,Capucha Buzo T2,7,951.16,1149.35,0.450914,9.3677,0,centroide,0.292239,0.14476
+Bolsillo T1-2,7,Puño T1-2,1,951.16,266.0,1.125831,15.0,0,centroide,0.0,0.72034
+Bolsillo T1-2,7,Puño T1-2,2,951.16,280.0,1.090286,14.5,0,centroide,0.0,0.705621
+Bolsillo T1-2,7,Puño T1-2,3,951.16,294.0,1.05554,14.0,0,centroide,0.0,0.690902
+Bolsillo T1-2,7,Puño T1-2,4,951.16,308.0,1.021567,13.5,0,centroide,0.0,0.676184
+Bolsillo T1-2,7,Puño T1-2,5,951.16,322.0,0.988341,13.0,0,centroide,0.0,0.661465
+Bolsillo T1-2,7,Puño T1-2,6,951.16,336.0,0.955838,12.5,0,centroide,0.0,0.646746
+Bolsillo T1-2,7,Puño T1-2,7,951.16,350.0,0.924034,12.0,0,centroide,0.0,0.632027
+Bolsillo T1-2,7,Capucha interior Buzo T2,1,951.16,971.94,0.457127,10.6798,0,centroide,0.236812,0.220134
+Bolsillo T1-2,7,Capucha interior Buzo T2,2,951.16,1000.0,0.454954,10.4792,0,centroide,0.246342,0.207643
+Bolsillo T1-2,7,Capucha interior Buzo T2,3,951.16,1029.44,0.450346,10.2424,0,centroide,0.254633,0.193288
+Bolsillo T1-2,7,Capucha interior Buzo T2,4,951.16,1058.8,0.447551,10.0237,0,centroide,0.263233,0.179852
+Bolsillo T1-2,7,Capucha interior Buzo T2,5,951.16,1088.57,0.446253,9.8051,0,centroide,0.272161,0.167007
+Bolsillo T1-2,7,Capucha interior Buzo T2,6,951.16,1118.76,0.447765,9.5864,0,centroide,0.282018,0.155503
+Bolsillo T1-2,7,Capucha interior Buzo T2,7,951.16,1149.35,0.450914,9.3677,0,centroide,0.292239,0.14476
+Manga Buzo T2,1,Manga Buzo T2,2,1070.82,1070.68,0.000132,0.0034,0,centroide,2e-06,0.00013
+Manga Buzo T2,1,Manga Buzo T2,3,1070.82,1253.47,0.157165,2.1796,0,centroide,0.145714,0.0
+Manga Buzo T2,1,Manga Buzo T2,4,1070.82,1253.47,0.157165,2.1796,0,centroide,0.145714,0.0
+Manga Buzo T2,1,Manga Buzo T2,5,1070.82,1450.44,0.301136,4.3591,0,centroide,0.261728,0.0
+Manga Buzo T2,1,Manga Buzo T2,6,1070.82,1450.44,0.301136,4.3591,0,centroide,0.261728,0.0
+Manga Buzo T2,1,Manga Buzo T2,7,1070.82,1609.81,0.402138,5.6185,0,centroide,0.334816,0.0
+Manga Buzo T2,1,Capucha Buzo T2,1,1070.82,971.94,0.602109,15.2585,0,esquina,0.265501,0.333324
+Manga Buzo T2,1,Capucha Buzo T2,2,1070.82,1000.0,0.595944,14.7187,0,esquina,0.273113,0.321188
+Manga Buzo T2,1,Capucha Buzo T2,3,1070.82,1029.44,0.592584,14.2339,0,esquina,0.282148,0.30989
+Manga Buzo T2,1,Capucha Buzo T2,4,1070.82,1058.8,0.588469,13.7216,0,esquina,0.290229,0.298195
+Manga Buzo T2,1,Capucha Buzo T2,5,1070.82,1088.57,0.584763,13.2095,0,esquina,0.298152,0.286515
+Manga Buzo T2,1,Capucha Buzo T2,6,1070.82,1118.76,0.581449,12.6974,0,esquina,0.305921,0.274848
+Manga Buzo T2,1,Capucha Buzo T2,7,1070.82,1149.35,0.578512,12.7263,0,esquina,0.313537,0.263194
+Manga Buzo T2,1,Puño T1-2,1,1070.82,266.0,1.204081,19.2202,0,centroide,0.0,0.751592
+Manga Buzo T2,1,Puño T1-2,2,1070.82,280.0,1.170874,19.2202,0,centroide,0.0,0.738518
+Manga Buzo T2,1,Puño T1-2,3,1070.82,294.0,1.141141,19.2202,0,centroide,0.003242,0.726334
+Manga Buzo T2,1,Puño T1-2,4,1070.82,308.0,1.139594,19.2202,0,centroide,0.037057,0.723029
+Manga Buzo T2,1,Puño T1-2,5,1070.82,322.0,1.148242,19.2202,0,centroide,0.078924,0.723029
+Manga Buzo T2,1,Puño T1-2,6,1070.82,336.0,1.156718,19.2202,0,centroide,0.117303,0.723029
+Manga Buzo T2,1,Puño T1-2,7,1070.82,350.0,1.165027,19.2202,0,centroide,0.15261,0.723029
+Manga Buzo T2,1,Capucha interior Buzo T2,1,1070.82,971.94,0.602109,15.2585,0,esquina,0.265501,0.333324
+Manga Buzo T2,1,Capucha interior Buzo T2,2,1070.82,1000.0,0.595944,14.7187,0,esquina,0.273113,0.321188
+Manga Buzo T2,1,Capucha interior Buzo T2,3,1070.82,1029.44,0.592584,14.2339,0,esquina,0.282148,0.30989
+Manga Buzo T2,1,Capucha interior Buzo T2,4,1070.82,1058.8,0.588469,13.7216,0,esquina,0.290229,0.298195
+Manga Buzo T2,1,Capucha interior Buzo T2,5,1070.82,1088.57,0.584763,13.2095,0,esquina,0.298152,0.286515
+Manga Buzo T2,1,Capucha interior Buzo T2,6,1070.82,1118.76,0.581449,12.6974,0,esquina,0.305921,0.274848
+Manga Buzo T2,1,Capucha interior Buzo T2,7,1070.82,1149.35,0.578512,12.7263,0,esquina,0.313537,0.263194
+Manga Buzo T2,2,Manga Buzo T2,3,1070.68,1253.47,0.157292,2.1827,0,centroide,0.145823,0.0
+Manga Buzo T2,2,Manga Buzo T2,4,1070.68,1253.47,0.157292,2.1827,0,centroide,0.145823,0.0
+Manga Buzo T2,2,Manga Buzo T2,5,1070.68,1450.44,0.301261,4.3622,0,centroide,0.261823,0.0
+Manga Buzo T2,2,Manga Buzo T2,6,1070.68,1450.44,0.301261,4.3622,0,centroide,0.261823,0.0
+Manga Buzo T2,2,Manga Buzo T2,7,1070.68,1609.81,0.40226,8.3031,180,centroide,0.334901,0.0
+Manga Buzo T2,2,Capucha Buzo T2,1,1070.68,971.94,0.602002,15.252,0,esquina,0.265495,0.333233
+Manga Buzo T2,2,Capucha Buzo T2,2,1070.68,1000.0,0.595838,14.7121,0,esquina,0.273106,0.321095
+Manga Buzo T2,2,Capucha Buzo T2,3,1070.68,1029.44,0.592479,14.2273,0,esquina,0.282141,0.309795
+Manga Buzo T2,2,Capucha Buzo T2,4,1070.68,1058.8,0.588365,13.7151,0,esquina,0.290222,0.298099
+Manga Buzo T2,2,Capucha Buzo T2,5,1070.68,1088.57,0.584659,13.2029,0,esquina,0.298145,0.286417
+Manga Buzo T2,2,Capucha Buzo T2,6,1070.68,1118.76,0.581346,12.6909,0,esquina,0.305914,0.274748
+Manga Buzo T2,2,Capucha Buzo T2,7,1070.68,1149.35,0.57841,12.7262,0,esquina,0.31353,0.263092
+Manga Buzo T2,2,Puño T1-2,1,1070.68,266.0,1.204,19.2169,0,centroide,0.0,0.75156
+Manga Buzo T2,2,Puño T1-2,2,1070.68,280.0,1.17079,19.2169,0,centroide,0.0,0.738485
+Manga Buzo T2,2,Puño T1-2,3,1070.68,294.0,1.141055,19.2169,0,centroide,0.003242,0.726299
+Manga Buzo T2,2,Puño T1-2,4,1070.68,308.0,1.139508,19.2169,0,centroide,0.037057,0.722993
+Manga Buzo T2,2,Puño T1-2,5,1070.68,322.0,1.148158,19.2169,0,centroide,0.078924,0.722993
+Manga Buzo T2,2,Puño T1-2,6,1070.68,336.0,1.156636,19.2169,0,centroide,0.117303,0.722993
+Manga Buzo T2,2,Puño T1-2,7,1070.68,350.0,1.164947,19.2169,0,centroide,0.15261,0.722993
+Manga Buzo T2,2,Capucha interior Buzo T2,1,1070.68,971.94,0.602002,15.252,0,esquina,0.265495,0.333233
+Manga Buzo T2,2,Capucha interior Buzo T2,2,1070.68,1000.0,0.595838,14.7121,0,esquina,0.273106,0.321095
+Manga Buzo T2,2,Capucha interior Buzo T2,3,1070.68,1029.44,0.592479,14.2273,0,esquina,0.282141,0.309795
+Manga Buzo T2,2,Capucha interior Buzo T2,4,1070.68,1058.8,0.588365,13.7151,0,esquina,0.290222,0.298099
+Manga Buzo T2,2,Capucha interior Buzo T2,5,1070.68,1088.57,0.584659,13.2029,0,esquina,0.298145,0.286417
+Manga Buzo T2,2,Capucha interior Buzo T2,6,1070.68,1118.76,0.581346,12.6909,0,esquina,0.305914,0.274748
+Manga Buzo T2,2,Capucha interior Buzo T2,7,1070.68,1149.35,0.57841,12.7262,0,esquina,0.31353,0.263092
+Manga Buzo T2,3,Manga Buzo T2,4,1253.47,1253.47,0.0,0.0,0,esquina,0.0,0.0
+Manga Buzo T2,3,Manga Buzo T2,5,1253.47,1450.44,0.145695,2.1796,0,centroide,0.135802,0.0
+Manga Buzo T2,3,Manga Buzo T2,6,1253.47,1450.44,0.145695,2.1796,0,centroide,0.135802,0.0
+Manga Buzo T2,3,Manga Buzo T2,7,1253.47,1609.81,0.248906,3.4471,0,centroide,0.221357,0.0
+Manga Buzo T2,3,Capucha Buzo T2,1,1253.47,971.94,0.62105,13.1461,180,centroide,0.21067,0.387952
+Manga Buzo T2,3,Capucha Buzo T2,2,1253.47,1000.0,0.61785,12.906,180,centroide,0.221341,0.378798
+Manga Buzo T2,3,Capucha Buzo T2,3,1253.47,1029.44,0.617601,12.685,180,centroide,0.233589,0.370569
+Manga Buzo T2,3,Capucha Buzo T2,4,1253.47,1058.8,0.616337,12.4544,180,centroide,0.24457,0.36189
+Manga Buzo T2,3,Capucha Buzo T2,5,1253.47,1088.57,0.612781,17.3348,0,esquina,0.253858,0.352013
+Manga Buzo T2,3,Capucha Buzo T2,6,1253.47,1118.76,0.607438,16.8221,0,esquina,0.261799,0.341133
+Manga Buzo T2,3,Capucha Buzo T2,7,1253.47,1149.35,0.602495,16.3099,0,esquina,0.269599,0.330268
+Manga Buzo T2,3,Puño T1-2,1,1253.47,266.0,1.299755,21.2532,0,centroide,0.0,0.787789
+Manga Buzo T2,3,Puño T1-2,2,1253.47,280.0,1.269629,21.2397,0,centroide,0.0,0.77662
+Manga Buzo T2,3,Puño T1-2,3,1253.47,294.0,1.240049,21.2372,0,centroide,0.0,0.765451
+Manga Buzo T2,3,Puño T1-2,4,1253.47,308.0,1.210999,21.2372,0,centroide,0.0,0.754282
+Manga Buzo T2,3,Puño T1-2,5,1253.47,322.0,1.187229,21.2372,0,centroide,0.005828,0.74461
+Manga Buzo T2,3,Puño T1-2,6,1253.47,336.0,1.188719,21.2372,0,centroide,0.040546,0.742812
+Manga Buzo T2,3,Puño T1-2,7,1253.47,350.0,1.195802,21.2372,0,centroide,0.078924,0.742812
+Manga Buzo T2,3,Capucha interior Buzo T2,1,1253.47,971.94,0.62105,13.1461,180,centroide,0.21067,0.387952
+Manga Buzo T2,3,Capucha interior Buzo T2,2,1253.47,1000.0,0.61785,12.906,180,centroide,0.221341,0.378798
+Manga Buzo T2,3,Capucha interior Buzo T2,3,1253.47,1029.44,0.617601,12.685,180,centroide,0.233589,0.370569
+Manga Buzo T2,3,Capucha interior Buzo T2,4,1253.47,1058.8,0.616337,12.4544,180,centroide,0.24457,0.36189
+Manga Buzo T2,3,Capucha interior Buzo T2,5,1253.47,1088.57,0.612781,17.3348,0,esquina,0.253858,0.352013
+Manga Buzo T2,3,Capucha interior Buzo T2,6,1253.47,1118.76,0.607438,16.8221,0,esquina,0.261799,0.341133
+Manga Buzo T2,3,Capucha interior Buzo T2,7,1253.47,1149.35,0.602495,16.3099,0,esquina,0.269599,0.330268
+Manga Buzo T2,4,Manga Buzo T2,5,1253.47,1450.44,0.145695,2.1796,0,centroide,0.135802,0.0
+Manga Buzo T2,4,Manga Buzo T2,6,1253.47,1450.44,0.145695,2.1796,0,centroide,0.135802,0.0
+Manga Buzo T2,4,Manga Buzo T2,7,1253.47,1609.81,0.248906,3.4471,0,centroide,0.221357,0.0
+Manga Buzo T2,4,Capucha Buzo T2,1,1253.47,971.94,0.62105,13.1461,180,centroide,0.21067,0.387952
+Manga Buzo T2,4,Capucha Buzo T2,2,1253.47,1000.0,0.61785,12.906,180,centroide,0.221341,0.378798
+Manga Buzo T2,4,Capucha Buzo T2,3,1253.47,1029.44,0.617601,12.685,180,centroide,0.233589,0.370569
+Manga Buzo T2,4,Capucha Buzo T2,4,1253.47,1058.8,0.616337,12.4544,180,centroide,0.24457,0.36189
+Manga Buzo T2,4,Capucha Buzo T2,5,1253.47,1088.57,0.612781,17.3348,0,esquina,0.253858,0.352013
+Manga Buzo T2,4,Capucha Buzo T2,6,1253.47,1118.76,0.607438,16.8221,0,esquina,0.261799,0.341133
+Manga Buzo T2,4,Capucha Buzo T2,7,1253.47,1149.35,0.602495,16.3099,0,esquina,0.269599,0.330268
+Manga Buzo T2,4,Puño T1-2,1,1253.47,266.0,1.299755,21.2532,0,centroide,0.0,0.787789
+Manga Buzo T2,4,Puño T1-2,2,1253.47,280.0,1.269629,21.2397,0,centroide,0.0,0.77662
+Manga Buzo T2,4,Puño T1-2,3,1253.47,294.0,1.240049,21.2372,0,centroide,0.0,0.765451
+Manga Buzo T2,4,Puño T1-2,4,1253.47,308.0,1.210999,21.2372,0,centroide,0.0,0.754282
+Manga Buzo T2,4,Puño T1-2,5,1253.47,322.0,1.187229,21.2372,0,centroide,0.005828,0.74461
+Manga Buzo T2,4,Puño T1-2,6,1253.47,336.0,1.188719,21.2372,0,centroide,0.040546,0.742812
+Manga Buzo T2,4,Puño T1-2,7,1253.47,350.0,1.195802,21.2372,0,centroide,0.078924,0.742812
+Manga Buzo T2,4,Capucha interior Buzo T2,1,1253.47,971.94,0.62105,13.1461,180,centroide,0.21067,0.387952
+Manga Buzo T2,4,Capucha interior Buzo T2,2,1253.47,1000.0,0.61785,12.906,180,centroide,0.221341,0.378798
+Manga Buzo T2,4,Capucha interior Buzo T2,3,1253.47,1029.44,0.617601,12.685,180,centroide,0.233589,0.370569
+Manga Buzo T2,4,Capucha interior Buzo T2,4,1253.47,1058.8,0.616337,12.4544,180,centroide,0.24457,0.36189
+Manga Buzo T2,4,Capucha interior Buzo T2,5,1253.47,1088.57,0.612781,17.3348,0,esquina,0.253858,0.352013
+Manga Buzo T2,4,Capucha interior Buzo T2,6,1253.47,1118.76,0.607438,16.8221,0,esquina,0.261799,0.341133
+Manga Buzo T2,4,Capucha interior Buzo T2,7,1253.47,1149.35,0.602495,16.3099,0,esquina,0.269599,0.330268
+Manga Buzo T2,5,Manga Buzo T2,6,1450.44,1450.44,0.0,0.0,0,esquina,0.0,0.0
+Manga Buzo T2,5,Manga Buzo T2,7,1450.44,1609.81,0.104154,1.3046,0,centroide,0.098999,0.0
+Manga Buzo T2,5,Capucha Buzo T2,1,1450.44,971.94,0.638138,15.325,180,centroide,0.151453,0.431389
+Manga Buzo T2,5,Capucha Buzo T2,2,1450.44,1000.0,0.633423,15.0848,180,centroide,0.16282,0.422812
+Manga Buzo T2,5,Capucha Buzo T2,3,1450.44,1029.44,0.631569,14.8638,180,centroide,0.175875,0.415085
+Manga Buzo T2,5,Capucha Buzo T2,4,1450.44,1058.8,0.628771,14.6332,180,centroide,0.187584,0.406948
+Manga Buzo T2,5,Capucha Buzo T2,5,1450.44,1088.57,0.626278,14.4026,180,centroide,0.198975,0.398821
+Manga Buzo T2,5,Capucha Buzo T2,6,1450.44,1118.76,0.624081,14.172,180,centroide,0.210059,0.390701
+Manga Buzo T2,5,Capucha Buzo T2,7,1450.44,1149.35,0.62217,13.9414,180,centroide,0.220849,0.382589
+Manga Buzo T2,5,Puño T1-2,1,1450.44,266.0,1.380113,23.3127,0,centroide,0.0,0.816608
+Manga Buzo T2,5,Puño T1-2,2,1450.44,280.0,1.352766,23.2826,0,centroide,0.0,0.806955
+Manga Buzo T2,5,Puño T1-2,3,1450.44,294.0,1.325859,23.2632,0,centroide,0.0,0.797303
+Manga Buzo T2,5,Puño T1-2,4,1450.44,308.0,1.29938,23.2546,0,centroide,0.0,0.787651
+Manga Buzo T2,5,Puño T1-2,5,1450.44,322.0,1.273319,23.2541,0,centroide,0.0,0.777999
+Manga Buzo T2,5,Puño T1-2,6,1450.44,336.0,1.247666,23.2541,0,centroide,0.0,0.768346
+Manga Buzo T2,5,Puño T1-2,7,1450.44,350.0,1.229288,23.2541,0,centroide,0.008842,0.760828
+Manga Buzo T2,5,Capucha interior Buzo T2,1,1450.44,971.94,0.638138,15.325,180,centroide,0.151453,0.431389
+Manga Buzo T2,5,Capucha interior Buzo T2,2,1450.44,1000.0,0.633423,15.0848,180,centroide,0.16282,0.422812
+Manga Buzo T2,5,Capucha interior Buzo T2,3,1450.44,1029.44,0.631569,14.8638,180,centroide,0.175875,0.415085
+Manga Buzo T2,5,Capucha interior Buzo T2,4,1450.44,1058.8,0.628771,14.6332,180,centroide,0.187584,0.406948
+Manga Buzo T2,5,Capucha interior Buzo T2,5,1450.44,1088.57,0.626278,14.4026,180,centroide,0.198975,0.398821
+Manga Buzo T2,5,Capucha interior Buzo T2,6,1450.44,1118.76,0.624081,14.172,180,centroide,0.210059,0.390701
+Manga Buzo T2,5,Capucha interior Buzo T2,7,1450.44,1149.35,0.62217,13.9414,180,centroide,0.220849,0.382589
+Manga Buzo T2,6,Manga Buzo T2,7,1450.44,1609.81,0.104154,1.3046,0,centroide,0.098999,0.0
+Manga Buzo T2,6,Capucha Buzo T2,1,1450.44,971.94,0.638138,15.325,180,centroide,0.151453,0.431389
+Manga Buzo T2,6,Capucha Buzo T2,2,1450.44,1000.0,0.633423,15.0848,180,centroide,0.16282,0.422812
+Manga Buzo T2,6,Capucha Buzo T2,3,1450.44,1029.44,0.631569,14.8638,180,centroide,0.175875,0.415085
+Manga Buzo T2,6,Capucha Buzo T2,4,1450.44,1058.8,0.628771,14.6332,180,centroide,0.187584,0.406948
+Manga Buzo T2,6,Capucha Buzo T2,5,1450.44,1088.57,0.626278,14.4026,180,centroide,0.198975,0.398821
+Manga Buzo T2,6,Capucha Buzo T2,6,1450.44,1118.76,0.624081,14.172,180,centroide,0.210059,0.390701
+Manga Buzo T2,6,Capucha Buzo T2,7,1450.44,1149.35,0.62217,13.9414,180,centroide,0.220849,0.382589
+Manga Buzo T2,6,Puño T1-2,1,1450.44,266.0,1.380113,23.3127,0,centroide,0.0,0.816608
+Manga Buzo T2,6,Puño T1-2,2,1450.44,280.0,1.352766,23.2826,0,centroide,0.0,0.806955
+Manga Buzo T2,6,Puño T1-2,3,1450.44,294.0,1.325859,23.2632,0,centroide,0.0,0.797303
+Manga Buzo T2,6,Puño T1-2,4,1450.44,308.0,1.29938,23.2546,0,centroide,0.0,0.787651
+Manga Buzo T2,6,Puño T1-2,5,1450.44,322.0,1.273319,23.2541,0,centroide,0.0,0.777999
+Manga Buzo T2,6,Puño T1-2,6,1450.44,336.0,1.247666,23.2541,0,centroide,0.0,0.768346
+Manga Buzo T2,6,Puño T1-2,7,1450.44,350.0,1.229288,23.2541,0,centroide,0.008842,0.760828
+Manga Buzo T2,6,Capucha interior Buzo T2,1,1450.44,971.94,0.638138,15.325,180,centroide,0.151453,0.431389
+Manga Buzo T2,6,Capucha interior Buzo T2,2,1450.44,1000.0,0.633423,15.0848,180,centroide,0.16282,0.422812
+Manga Buzo T2,6,Capucha interior Buzo T2,3,1450.44,1029.44,0.631569,14.8638,180,centroide,0.175875,0.415085
+Manga Buzo T2,6,Capucha interior Buzo T2,4,1450.44,1058.8,0.628771,14.6332,180,centroide,0.187584,0.406948
+Manga Buzo T2,6,Capucha interior Buzo T2,5,1450.44,1088.57,0.626278,14.4026,180,centroide,0.198975,0.398821
+Manga Buzo T2,6,Capucha interior Buzo T2,6,1450.44,1118.76,0.624081,14.172,180,centroide,0.210059,0.390701
+Manga Buzo T2,6,Capucha interior Buzo T2,7,1450.44,1149.35,0.62217,13.9414,180,centroide,0.220849,0.382589
+Manga Buzo T2,7,Capucha Buzo T2,1,1609.81,971.94,0.636694,16.5672,180,centroide,0.094668,0.453396
+Manga Buzo T2,7,Capucha Buzo T2,2,1609.81,1000.0,0.628973,16.3272,180,centroide,0.105468,0.444326
+Manga Buzo T2,7,Capucha Buzo T2,3,1609.81,1029.44,0.625336,16.1057,180,centroide,0.118917,0.436567
+Manga Buzo T2,7,Capucha Buzo T2,4,1609.81,1058.8,0.621366,15.875,180,centroide,0.13132,0.428654
+Manga Buzo T2,7,Capucha Buzo T2,5,1609.81,1088.57,0.61772,15.6443,180,centroide,0.143393,0.420751
+Manga Buzo T2,7,Capucha Buzo T2,6,1609.81,1118.76,0.614383,15.4136,180,centroide,0.155145,0.412858
+Manga Buzo T2,7,Capucha Buzo T2,7,1609.81,1149.35,0.611347,15.1828,180,centroide,0.166591,0.404974
+Manga Buzo T2,7,Puño T1-2,1,1609.81,266.0,1.432779,24.3888,0,centroide,0.0,0.834763
+Manga Buzo T2,7,Puño T1-2,2,1609.81,280.0,1.407348,24.3431,0,centroide,0.0,0.826067
+Manga Buzo T2,7,Puño T1-2,3,1609.81,294.0,1.382292,24.3076,0,centroide,0.0,0.81737
+Manga Buzo T2,7,Puño T1-2,4,1609.81,308.0,1.357601,24.2823,0,centroide,0.0,0.808673
+Manga Buzo T2,7,Puño T1-2,5,1609.81,322.0,1.333268,24.2673,0,centroide,0.0,0.799976
+Manga Buzo T2,7,Puño T1-2,6,1609.81,336.0,1.309285,24.2626,0,centroide,0.0,0.79128
+Manga Buzo T2,7,Puño T1-2,7,1609.81,350.0,1.285645,24.2626,0,centroide,0.0,0.782583
+Manga Buzo T2,7,Capucha interior Buzo T2,1,1609.81,971.94,0.636694,16.5672,180,centroide,0.094668,0.453396
+Manga Buzo T2,7,Capucha interior Buzo T2,2,1609.81,1000.0,0.628973,16.3272,180,centroide,0.105468,0.444326
+Manga Buzo T2,7,Capucha interior Buzo T2,3,1609.81,1029.44,0.625336,16.1057,180,centroide,0.118917,0.436567
+Manga Buzo T2,7,Capucha interior Buzo T2,4,1609.81,1058.8,0.621366,15.875,180,centroide,0.13132,0.428654
+Manga Buzo T2,7,Capucha interior Buzo T2,5,1609.81,1088.57,0.61772,15.6443,180,centroide,0.143393,0.420751
+Manga Buzo T2,7,Capucha interior Buzo T2,6,1609.81,1118.76,0.614383,15.4136,180,centroide,0.155145,0.412858
+Manga Buzo T2,7,Capucha interior Buzo T2,7,1609.81,1149.35,0.611347,15.1828,180,centroide,0.166591,0.404974
+Capucha Buzo T2,1,Capucha Buzo T2,2,971.94,1000.0,0.028456,0.3348,0,centroide,0.028056,0.0
+Capucha Buzo T2,1,Capucha Buzo T2,3,971.94,1029.44,0.057457,0.6682,0,centroide,0.055852,0.0
+Capucha Buzo T2,1,Capucha Buzo T2,4,971.94,1058.8,0.085545,1.0023,0,centroide,0.082036,0.0
+Capucha Buzo T2,1,Capucha Buzo T2,5,971.94,1088.57,0.113208,1.3364,0,centroide,0.107143,0.0
+Capucha Buzo T2,1,Capucha Buzo T2,6,971.94,1118.76,0.140447,1.6705,0,centroide,0.131232,0.0
+Capucha Buzo T2,1,Capucha Buzo T2,7,971.94,1149.35,0.167266,2.0045,0,centroide,0.154357,0.0
+Capucha Buzo T2,1,Puño T1-2,1,971.94,266.0,1.140508,12.7011,0,centroide,0.0,0.726321
+Capucha Buzo T2,1,Puño T1-2,2,971.94,280.0,1.105389,12.5399,0,centroide,0.0,0.711917
+Capucha Buzo T2,1,Puño T1-2,3,971.94,294.0,1.071047,12.3967,0,centroide,0.0,0.697513
+Capucha Buzo T2,1,Puño T1-2,4,971.94,308.0,1.037456,12.2722,0,centroide,0.0,0.683108
+Capucha Buzo T2,1,Puño T1-2,5,971.94,322.0,1.004592,12.1671,0,centroide,0.0,0.668704
+Capucha Buzo T2,1,Puño T1-2,6,971.94,336.0,0.972431,12.0817,0,centroide,0.0,0.6543
+Capucha Buzo T2,1,Puño T1-2,7,971.94,350.0,0.940951,12.0165,0,centroide,0.0,0.639896
+Capucha Buzo T2,1,Capucha interior Buzo T2,1,971.94,971.94,0.0,0.0,0,esquina,0.0,0.0
+Capucha Buzo T2,1,Capucha interior Buzo T2,2,971.94,1000.0,0.028456,0.3348,0,centroide,0.028056,0.0
+Capucha Buzo T2,1,Capucha interior Buzo T2,3,971.94,1029.44,0.057457,0.6682,0,centroide,0.055852,0.0
+Capucha Buzo T2,1,Capucha interior Buzo T2,4,971.94,1058.8,0.085545,1.0023,0,centroide,0.082036,0.0
+Capucha Buzo T2,1,Capucha interior Buzo T2,5,971.94,1088.57,0.113208,1.3364,0,centroide,0.107143,0.0
+Capucha Buzo T2,1,Capucha interior Buzo T2,6,971.94,1118.76,0.140447,1.6705,0,centroide,0.131232,0.0
+Capucha Buzo T2,1,Capucha interior Buzo T2,7,971.94,1149.35,0.167266,2.0045,0,centroide,0.154357,0.0
+Capucha Buzo T2,2,Capucha Buzo T2,3,1000.0,1029.44,0.029013,0.3351,0,centroide,0.028598,0.0
+Capucha Buzo T2,2,Capucha Buzo T2,4,1000.0,1058.8,0.057124,0.6688,0,centroide,0.055538,0.0
+Capucha Buzo T2,2,Capucha Buzo T2,5,1000.0,1088.57,0.08482,1.0027,0,centroide,0.081369,0.0
+Capucha Buzo T2,2,Capucha Buzo T2,6,1000.0,1118.76,0.112104,1.3367,0,centroide,0.106154,0.0
+Capucha Buzo T2,2,Capucha Buzo T2,7,1000.0,1149.35,0.138976,1.6708,0,centroide,0.129946,0.0
+Capucha Buzo T2,2,Puño T1-2,1,1000.0,266.0,1.159556,13.0218,0,centroide,0.0,0.733999
+Capucha Buzo T2,2,Puño T1-2,2,1000.0,280.0,1.124998,12.8568,0,centroide,0.0,0.719999
+Capucha Buzo T2,2,Puño T1-2,3,1000.0,294.0,1.091188,12.7093,0,centroide,0.0,0.705999
+Capucha Buzo T2,2,Puño T1-2,4,1000.0,308.0,1.058102,12.5799,0,centroide,0.0,0.691999
+Capucha Buzo T2,2,Puño T1-2,5,1000.0,322.0,1.025717,12.4693,0,centroide,0.0,0.677999
+Capucha Buzo T2,2,Puño T1-2,6,1000.0,336.0,0.99401,12.3779,0,centroide,0.0,0.663999
+Capucha Buzo T2,2,Puño T1-2,7,1000.0,350.0,0.962961,12.3062,0,centroide,0.0,0.649999
+Capucha Buzo T2,2,Capucha interior Buzo T2,1,1000.0,971.94,0.028456,0.3348,0,centroide,0.0,0.028056
+Capucha Buzo T2,2,Capucha interior Buzo T2,2,1000.0,1000.0,0.0,0.0,0,esquina,0.0,0.0
+Capucha Buzo T2,2,Capucha interior Buzo T2,3,1000.0,1029.44,0.029013,0.3351,0,centroide,0.028598,0.0
+Capucha Buzo T2,2,Capucha interior Buzo T2,4,1000.0,1058.8,0.057124,0.6688,0,centroide,0.055538,0.0
+Capucha Buzo T2,2,Capucha interior Buzo T2,5,1000.0,1088.57,0.08482,1.0027,0,centroide,0.081369,0.0
+Capucha Buzo T2,2,Capucha interior Buzo T2,6,1000.0,1118.76,0.112104,1.3367,0,centroide,0.106154,0.0
+Capucha Buzo T2,2,Capucha interior Buzo T2,7,1000.0,1149.35,0.138976,1.6708,0,centroide,0.129946,0.0
+Capucha Buzo T2,3,Capucha Buzo T2,4,1029.44,1058.8,0.028123,0.3341,0,centroide,0.027733,0.0
+Capucha Buzo T2,3,Capucha Buzo T2,5,1029.44,1088.57,0.055842,0.6682,0,centroide,0.054325,0.0
+Capucha Buzo T2,3,Capucha Buzo T2,6,1029.44,1118.76,0.083158,1.0023,0,centroide,0.079839,0.0
+Capucha Buzo T2,3,Capucha Buzo T2,7,1029.44,1149.35,0.110074,1.3364,0,centroide,0.104332,0.0
+Capucha Buzo T2,3,Puño T1-2,1,1029.44,266.0,1.178656,13.3271,0,centroide,0.0,0.741606
+Capucha Buzo T2,3,Puño T1-2,2,1029.44,280.0,1.144671,13.1569,0,centroide,0.0,0.728007
+Capucha Buzo T2,3,Puño T1-2,3,1029.44,294.0,1.111405,13.0037,0,centroide,0.0,0.714407
+Capucha Buzo T2,3,Puño T1-2,4,1029.44,308.0,1.078835,12.8681,0,centroide,0.0,0.700807
+Capucha Buzo T2,3,Puño T1-2,5,1029.44,322.0,1.046941,12.7507,0,centroide,0.0,0.687208
+Capucha Buzo T2,3,Puño T1-2,6,1029.44,336.0,1.0157,12.652,0,centroide,0.0,0.673608
+Capucha Buzo T2,3,Puño T1-2,7,1029.44,350.0,0.985093,12.5724,0,centroide,0.0,0.660008
+Capucha Buzo T2,3,Capucha interior Buzo T2,1,1029.44,971.94,0.057457,0.6682,0,centroide,0.0,0.055852
+Capucha Buzo T2,3,Capucha interior Buzo T2,2,1029.44,1000.0,0.029013,0.3351,0,centroide,0.0,0.028598
+Capucha Buzo T2,3,Capucha interior Buzo T2,3,1029.44,1029.44,0.0,0.0,0,esquina,0.0,0.0
+Capucha Buzo T2,3,Capucha interior Buzo T2,4,1029.44,1058.8,0.028123,0.3341,0,centroide,0.027733,0.0
+Capucha Buzo T2,3,Capucha interior Buzo T2,5,1029.44,1088.57,0.055842,0.6682,0,centroide,0.054325,0.0
+Capucha Buzo T2,3,Capucha interior Buzo T2,6,1029.44,1118.76,0.083158,1.0023,0,centroide,0.079839,0.0
+Capucha Buzo T2,3,Capucha interior Buzo T2,7,1029.44,1149.35,0.110074,1.3364,0,centroide,0.104332,0.0
+Capucha Buzo T2,4,Capucha Buzo T2,5,1058.8,1088.57,0.02773,0.3341,0,centroide,0.027351,0.0
+Capucha Buzo T2,4,Capucha Buzo T2,6,1058.8,1118.76,0.055068,0.6682,0,centroide,0.053592,0.0
+Capucha Buzo T2,4,Capucha Buzo T2,7,1058.8,1149.35,0.082015,1.0023,0,centroide,0.078784,0.0
+Capucha Buzo T2,4,Puño T1-2,1,1058.8,266.0,1.19686,13.6416,0,centroide,0.0,0.748772
+Capucha Buzo T2,4,Puño T1-2,2,1058.8,280.0,1.16343,13.4672,0,centroide,0.0,0.73555
+Capucha Buzo T2,4,Puño T1-2,3,1058.8,294.0,1.130692,13.3094,0,centroide,0.0,0.722327
+Capucha Buzo T2,4,Puño T1-2,4,1058.8,308.0,1.098625,13.1686,0,centroide,0.0,0.709105
+Capucha Buzo T2,4,Puño T1-2,5,1058.8,322.0,1.067208,13.0456,0,centroide,0.0,0.695882
+Capucha Buzo T2,4,Puño T1-2,6,1058.8,336.0,1.036421,12.9407,0,centroide,0.0,0.68266
+Capucha Buzo T2,4,Puño T1-2,7,1058.8,350.0,1.006247,12.8544,0,centroide,0.0,0.669437
+Capucha Buzo T2,4,Capucha interior Buzo T2,1,1058.8,971.94,0.085545,1.0023,0,centroide,0.0,0.082036
+Capucha Buzo T2,4,Capucha interior Buzo T2,2,1058.8,1000.0,0.057124,0.6688,0,centroide,0.0,0.055538
+Capucha Buzo T2,4,Capucha interior Buzo T2,3,1058.8,1029.44,0.028123,0.3341,0,centroide,0.0,0.027733
+Capucha Buzo T2,4,Capucha interior Buzo T2,4,1058.8,1058.8,0.0,0.0,0,esquina,0.0,0.0
+Capucha Buzo T2,4,Capucha interior Buzo T2,5,1058.8,1088.57,0.02773,0.3341,0,centroide,0.027351,0.0
+Capucha Buzo T2,4,Capucha interior Buzo T2,6,1058.8,1118.76,0.055068,0.6682,0,centroide,0.053592,0.0
+Capucha Buzo T2,4,Capucha interior Buzo T2,7,1058.8,1149.35,0.082015,1.0023,0,centroide,0.078784,0.0
+Capucha Buzo T2,5,Capucha Buzo T2,6,1088.57,1118.76,0.027348,0.3341,0,centroide,0.026979,0.0
+Capucha Buzo T2,5,Capucha Buzo T2,7,1088.57,1149.35,0.054316,0.6682,0,centroide,0.052879,0.0
+Capucha Buzo T2,5,Puño T1-2,1,1088.57,266.0,1.214513,13.9569,0,centroide,0.0,0.755644
+Capucha Buzo T2,5,Puño T1-2,2,1088.57,280.0,1.18163,13.7787,0,centroide,0.0,0.742783
+Capucha Buzo T2,5,Puño T1-2,3,1088.57,294.0,1.149413,13.6164,0,centroide,0.0,0.729922
+Capucha Buzo T2,5,Puño T1-2,4,1088.57,308.0,1.117841,13.4708,0,centroide,0.0,0.717061
+Capucha Buzo T2,5,Puño T1-2,5,1088.57,322.0,1.086897,13.3423,0,centroide,0.0,0.7042
+Capucha Buzo T2,5,Puño T1-2,6,1088.57,336.0,1.05656,13.2315,0,centroide,0.0,0.691339
+Capucha Buzo T2,5,Puño T1-2,7,1088.57,350.0,1.026814,13.1387,0,centroide,0.0,0.678478
+Capucha Buzo T2,5,Capucha interior Buzo T2,1,1088.57,971.94,0.113208,1.3364,0,centroide,0.0,0.107143
+Capucha Buzo T2,5,Capucha interior Buzo T2,2,1088.57,1000.0,0.08482,1.0027,0,centroide,0.0,0.081369
+Capucha Buzo T2,5,Capucha interior Buzo T2,3,1088.57,1029.44,0.055842,0.6682,0,centroide,0.0,0.054325
+Capucha Buzo T2,5,Capucha interior Buzo T2,4,1088.57,1058.8,0.02773,0.3341,0,centroide,0.0,0.027351
+Capucha Buzo T2,5,Capucha interior Buzo T2,5,1088.57,1088.57,0.0,0.0,0,esquina,0.0,0.0
+Capucha Buzo T2,5,Capucha interior Buzo T2,6,1088.57,1118.76,0.027348,0.3341,0,centroide,0.026979,0.0
+Capucha Buzo T2,5,Capucha interior Buzo T2,7,1088.57,1149.35,0.054316,0.6682,0,centroide,0.052879,0.0
+Capucha Buzo T2,6,Capucha Buzo T2,7,1118.76,1149.35,0.026977,0.3341,0,centroide,0.026618,0.0
+Capucha Buzo T2,6,Puño T1-2,1,1118.76,266.0,1.231634,14.2732,0,centroide,0.0,0.762236
+Capucha Buzo T2,6,Puño T1-2,2,1118.76,280.0,1.199289,14.0911,0,centroide,0.0,0.749722
+Capucha Buzo T2,6,Puño T1-2,3,1118.76,294.0,1.167585,13.9247,0,centroide,0.0,0.737208
+Capucha Buzo T2,6,Puño T1-2,4,1118.76,308.0,1.136504,13.7744,0,centroide,0.0,0.724695
+Capucha Buzo T2,6,Puño T1-2,5,1118.76,322.0,1.106026,13.6407,0,centroide,0.0,0.712181
+Capucha Buzo T2,6,Puño T1-2,6,1118.76,336.0,1.076135,13.5243,0,centroide,0.0,0.699667
+Capucha Buzo T2,6,Puño T1-2,7,1118.76,350.0,1.046813,13.4254,0,centroide,0.0,0.687153
+Capucha Buzo T2,6,Capucha interior Buzo T2,1,1118.76,971.94,0.140447,1.6705,0,centroide,0.0,0.131232
+Capucha Buzo T2,6,Capucha interior Buzo T2,2,1118.76,1000.0,0.112104,1.3367,0,centroide,0.0,0.106154
+Capucha Buzo T2,6,Capucha interior Buzo T2,3,1118.76,1029.44,0.083158,1.0023,0,centroide,0.0,0.079839
+Capucha Buzo T2,6,Capucha interior Buzo T2,4,1118.76,1058.8,0.055068,0.6682,0,centroide,0.0,0.053592
+Capucha Buzo T2,6,Capucha interior Buzo T2,5,1118.76,1088.57,0.027348,0.3341,0,centroide,0.0,0.026979
+Capucha Buzo T2,6,Capucha interior Buzo T2,6,1118.76,1118.76,0.0,0.0,0,esquina,0.0,0.0
+Capucha Buzo T2,6,Capucha interior Buzo T2,7,1118.76,1149.35,0.026977,0.3341,0,centroide,0.026618,0.0
+Capucha Buzo T2,7,Puño T1-2,1,1149.35,266.0,1.248243,14.5902,0,centroide,0.0,0.768565
+Capucha Buzo T2,7,Puño T1-2,2,1149.35,280.0,1.216428,14.4046,0,centroide,0.0,0.756384
+Capucha Buzo T2,7,Puño T1-2,3,1149.35,294.0,1.185229,14.2341,0,centroide,0.0,0.744204
+Capucha Buzo T2,7,Puño T1-2,4,1149.35,308.0,1.154631,14.0793,0,centroide,0.0,0.732023
+Capucha Buzo T2,7,Puño T1-2,5,1149.35,322.0,1.124614,13.9408,0,centroide,0.0,0.719842
+Capucha Buzo T2,7,Puño T1-2,6,1149.35,336.0,1.095163,13.819,0,centroide,0.0,0.707661
+Capucha Buzo T2,7,Puño T1-2,7,1149.35,350.0,1.066263,13.7143,0,centroide,0.0,0.69548
+Capucha Buzo T2,7,Capucha interior Buzo T2,1,1149.35,971.94,0.167266,2.0045,0,centroide,0.0,0.154357
+Capucha Buzo T2,7,Capucha interior Buzo T2,2,1149.35,1000.0,0.138976,1.6708,0,centroide,0.0,0.129946
+Capucha Buzo T2,7,Capucha interior Buzo T2,3,1149.35,1029.44,0.110074,1.3364,0,centroide,0.0,0.104332
+Capucha Buzo T2,7,Capucha interior Buzo T2,4,1149.35,1058.8,0.082015,1.0023,0,centroide,0.0,0.078784
+Capucha Buzo T2,7,Capucha interior Buzo T2,5,1149.35,1088.57,0.054316,0.6682,0,centroide,0.0,0.052879
+Capucha Buzo T2,7,Capucha interior Buzo T2,6,1149.35,1118.76,0.026977,0.3341,0,centroide,0.0,0.026618
+Capucha Buzo T2,7,Capucha interior Buzo T2,7,1149.35,1149.35,0.0,0.0,0,esquina,0.0,0.0
+Puño T1-2,1,Puño T1-2,2,266.0,280.0,0.051282,1.0,0,esquina,0.05,0.0
+Puño T1-2,1,Puño T1-2,3,266.0,294.0,0.1,2.0,0,esquina,0.095238,0.0
+Puño T1-2,1,Puño T1-2,4,266.0,308.0,0.146341,3.0,0,esquina,0.136364,0.0
+Puño T1-2,1,Puño T1-2,5,266.0,322.0,0.190476,4.0,0,esquina,0.173913,0.0
+Puño T1-2,1,Puño T1-2,6,266.0,336.0,0.232558,5.0,0,esquina,0.208333,0.0
+Puño T1-2,1,Puño T1-2,7,266.0,350.0,0.272727,6.0,0,esquina,0.24,0.0
+Puño T1-2,1,Capucha interior Buzo T2,1,266.0,971.94,1.140508,12.7011,0,centroide,0.726321,0.0
+Puño T1-2,1,Capucha interior Buzo T2,2,266.0,1000.0,1.159556,13.0218,0,centroide,0.733999,0.0
+Puño T1-2,1,Capucha interior Buzo T2,3,266.0,1029.44,1.178656,13.3271,180,centroide,0.741606,0.0
+Puño T1-2,1,Capucha interior Buzo T2,4,266.0,1058.8,1.19686,13.6416,0,centroide,0.748772,0.0
+Puño T1-2,1,Capucha interior Buzo T2,5,266.0,1088.57,1.214513,13.9569,0,centroide,0.755644,0.0
+Puño T1-2,1,Capucha interior Buzo T2,6,266.0,1118.76,1.231634,14.2732,0,centroide,0.762236,0.0
+Puño T1-2,1,Capucha interior Buzo T2,7,266.0,1149.35,1.248243,14.5902,0,centroide,0.768565,0.0
+Puño T1-2,2,Puño T1-2,3,280.0,294.0,0.04878,1.0,0,esquina,0.047619,0.0
+Puño T1-2,2,Puño T1-2,4,280.0,308.0,0.095238,2.0,0,esquina,0.090909,0.0
+Puño T1-2,2,Puño T1-2,5,280.0,322.0,0.139535,3.0,0,esquina,0.130435,0.0
+Puño T1-2,2,Puño T1-2,6,280.0,336.0,0.181818,4.0,0,esquina,0.166667,0.0
+Puño T1-2,2,Puño T1-2,7,280.0,350.0,0.222222,5.0,0,esquina,0.2,0.0
+Puño T1-2,2,Capucha interior Buzo T2,1,280.0,971.94,1.105389,12.5399,180,centroide,0.711917,0.0
+Puño T1-2,2,Capucha interior Buzo T2,2,280.0,1000.0,1.124998,12.8568,0,centroide,0.719999,0.0
+Puño T1-2,2,Capucha interior Buzo T2,3,280.0,1029.44,1.144671,13.1569,180,centroide,0.728007,0.0
+Puño T1-2,2,Capucha interior Buzo T2,4,280.0,1058.8,1.16343,13.4672,0,centroide,0.73555,0.0
+Puño T1-2,2,Capucha interior Buzo T2,5,280.0,1088.57,1.18163,13.7787,0,centroide,0.742783,0.0
+Puño T1-2,2,Capucha interior Buzo T2,6,280.0,1118.76,1.199289,14.0911,0,centroide,0.749722,0.0
+Puño T1-2,2,Capucha interior Buzo T2,7,280.0,1149.35,1.216428,14.4046,0,centroide,0.756384,0.0
+Puño T1-2,3,Puño T1-2,4,294.0,308.0,0.046512,1.0,0,esquina,0.045455,0.0
+Puño T1-2,3,Puño T1-2,5,294.0,322.0,0.090909,2.0,0,esquina,0.086957,0.0
+Puño T1-2,3,Puño T1-2,6,294.0,336.0,0.133333,3.0,0,esquina,0.125,0.0
+Puño T1-2,3,Puño T1-2,7,294.0,350.0,0.173913,4.0,0,esquina,0.16,0.0
+Puño T1-2,3,Capucha interior Buzo T2,1,294.0,971.94,1.071047,12.3967,180,centroide,0.697513,0.0
+Puño T1-2,3,Capucha interior Buzo T2,2,294.0,1000.0,1.091188,12.7093,0,centroide,0.705999,0.0
+Puño T1-2,3,Capucha interior Buzo T2,3,294.0,1029.44,1.111405,13.0037,180,centroide,0.714407,0.0
+Puño T1-2,3,Capucha interior Buzo T2,4,294.0,1058.8,1.130692,13.3094,0,centroide,0.722327,0.0
+Puño T1-2,3,Capucha interior Buzo T2,5,294.0,1088.57,1.149413,13.6164,0,centroide,0.729922,0.0
+Puño T1-2,3,Capucha interior Buzo T2,6,294.0,1118.76,1.167585,13.9247,0,centroide,0.737208,0.0
+Puño T1-2,3,Capucha interior Buzo T2,7,294.0,1149.35,1.185229,14.2341,0,centroide,0.744204,0.0
+Puño T1-2,4,Puño T1-2,5,308.0,322.0,0.044444,1.0,0,esquina,0.043478,0.0
+Puño T1-2,4,Puño T1-2,6,308.0,336.0,0.086957,2.0,0,esquina,0.083333,0.0
+Puño T1-2,4,Puño T1-2,7,308.0,350.0,0.12766,3.0,0,esquina,0.12,0.0
+Puño T1-2,4,Capucha interior Buzo T2,1,308.0,971.94,1.037456,12.2722,0,centroide,0.683108,0.0
+Puño T1-2,4,Capucha interior Buzo T2,2,308.0,1000.0,1.058102,12.5799,0,centroide,0.691999,0.0
+Puño T1-2,4,Capucha interior Buzo T2,3,308.0,1029.44,1.078835,12.8681,180,centroide,0.700807,0.0
+Puño T1-2,4,Capucha interior Buzo T2,4,308.0,1058.8,1.098625,13.1686,0,centroide,0.709105,0.0
+Puño T1-2,4,Capucha interior Buzo T2,5,308.0,1088.57,1.117841,13.4708,0,centroide,0.717061,0.0
+Puño T1-2,4,Capucha interior Buzo T2,6,308.0,1118.76,1.136504,13.7744,0,centroide,0.724695,0.0
+Puño T1-2,4,Capucha interior Buzo T2,7,308.0,1149.35,1.154631,14.0793,0,centroide,0.732023,0.0
+Puño T1-2,5,Puño T1-2,6,322.0,336.0,0.042553,1.0,0,esquina,0.041667,0.0
+Puño T1-2,5,Puño T1-2,7,322.0,350.0,0.083333,2.0,0,esquina,0.08,0.0
+Puño T1-2,5,Capucha interior Buzo T2,1,322.0,971.94,1.004592,12.1671,180,centroide,0.668704,0.0
+Puño T1-2,5,Capucha interior Buzo T2,2,322.0,1000.0,1.025717,12.4693,0,centroide,0.677999,0.0
+Puño T1-2,5,Capucha interior Buzo T2,3,322.0,1029.44,1.046941,12.7507,180,centroide,0.687208,0.0
+Puño T1-2,5,Capucha interior Buzo T2,4,322.0,1058.8,1.067208,13.0456,0,centroide,0.695882,0.0
+Puño T1-2,5,Capucha interior Buzo T2,5,322.0,1088.57,1.086897,13.3423,0,centroide,0.7042,0.0
+Puño T1-2,5,Capucha interior Buzo T2,6,322.0,1118.76,1.106026,13.6407,0,centroide,0.712181,0.0
+Puño T1-2,5,Capucha interior Buzo T2,7,322.0,1149.35,1.124614,13.9408,0,centroide,0.719842,0.0
+Puño T1-2,6,Puño T1-2,7,336.0,350.0,0.040816,1.0,0,esquina,0.04,0.0
+Puño T1-2,6,Capucha interior Buzo T2,1,336.0,971.94,0.972431,12.0817,180,centroide,0.6543,0.0
+Puño T1-2,6,Capucha interior Buzo T2,2,336.0,1000.0,0.99401,12.3779,0,centroide,0.663999,0.0
+Puño T1-2,6,Capucha interior Buzo T2,3,336.0,1029.44,1.0157,12.652,180,centroide,0.673608,0.0
+Puño T1-2,6,Capucha interior Buzo T2,4,336.0,1058.8,1.036421,12.9407,0,centroide,0.68266,0.0
+Puño T1-2,6,Capucha interior Buzo T2,5,336.0,1088.57,1.05656,13.2315,0,centroide,0.691339,0.0
+Puño T1-2,6,Capucha interior Buzo T2,6,336.0,1118.76,1.076135,13.5243,0,centroide,0.699667,0.0
+Puño T1-2,6,Capucha interior Buzo T2,7,336.0,1149.35,1.095163,13.819,0,centroide,0.707661,0.0
+Puño T1-2,7,Capucha interior Buzo T2,1,350.0,971.94,0.940951,12.0165,180,centroide,0.639896,0.0
+Puño T1-2,7,Capucha interior Buzo T2,2,350.0,1000.0,0.962961,12.3062,0,centroide,0.649999,0.0
+Puño T1-2,7,Capucha interior Buzo T2,3,350.0,1029.44,0.985093,12.5724,180,centroide,0.660008,0.0
+Puño T1-2,7,Capucha interior Buzo T2,4,350.0,1058.8,1.006247,12.8544,0,centroide,0.669437,0.0
+Puño T1-2,7,Capucha interior Buzo T2,5,350.0,1088.57,1.026814,13.1387,0,centroide,0.678478,0.0
+Puño T1-2,7,Capucha interior Buzo T2,6,350.0,1118.76,1.046813,13.4254,0,centroide,0.687153,0.0
+Puño T1-2,7,Capucha interior Buzo T2,7,350.0,1149.35,1.066263,13.7143,0,centroide,0.69548,0.0
+Capucha interior Buzo T2,1,Capucha interior Buzo T2,2,971.94,1000.0,0.028456,0.3348,0,centroide,0.028056,0.0
+Capucha interior Buzo T2,1,Capucha interior Buzo T2,3,971.94,1029.44,0.057457,0.6682,0,centroide,0.055852,0.0
+Capucha interior Buzo T2,1,Capucha interior Buzo T2,4,971.94,1058.8,0.085545,1.0023,0,centroide,0.082036,0.0
+Capucha interior Buzo T2,1,Capucha interior Buzo T2,5,971.94,1088.57,0.113208,1.3364,0,centroide,0.107143,0.0
+Capucha interior Buzo T2,1,Capucha interior Buzo T2,6,971.94,1118.76,0.140447,1.6705,0,centroide,0.131232,0.0
+Capucha interior Buzo T2,1,Capucha interior Buzo T2,7,971.94,1149.35,0.167266,2.0045,0,centroide,0.154357,0.0
+Capucha interior Buzo T2,2,Capucha interior Buzo T2,3,1000.0,1029.44,0.029013,0.3351,0,centroide,0.028598,0.0
+Capucha interior Buzo T2,2,Capucha interior Buzo T2,4,1000.0,1058.8,0.057124,0.6688,0,centroide,0.055538,0.0
+Capucha interior Buzo T2,2,Capucha interior Buzo T2,5,1000.0,1088.57,0.08482,1.0027,0,centroide,0.081369,0.0
+Capucha interior Buzo T2,2,Capucha interior Buzo T2,6,1000.0,1118.76,0.112104,1.3367,0,centroide,0.106154,0.0
+Capucha interior Buzo T2,2,Capucha interior Buzo T2,7,1000.0,1149.35,0.138976,1.6708,0,centroide,0.129946,0.0
+Capucha interior Buzo T2,3,Capucha interior Buzo T2,4,1029.44,1058.8,0.028123,0.3341,0,centroide,0.027733,0.0
+Capucha interior Buzo T2,3,Capucha interior Buzo T2,5,1029.44,1088.57,0.055842,0.6682,0,centroide,0.054325,0.0
+Capucha interior Buzo T2,3,Capucha interior Buzo T2,6,1029.44,1118.76,0.083158,1.0023,0,centroide,0.079839,0.0
+Capucha interior Buzo T2,3,Capucha interior Buzo T2,7,1029.44,1149.35,0.110074,1.3364,0,centroide,0.104332,0.0
+Capucha interior Buzo T2,4,Capucha interior Buzo T2,5,1058.8,1088.57,0.02773,0.3341,0,centroide,0.027351,0.0
+Capucha interior Buzo T2,4,Capucha interior Buzo T2,6,1058.8,1118.76,0.055068,0.6682,0,centroide,0.053592,0.0
+Capucha interior Buzo T2,4,Capucha interior Buzo T2,7,1058.8,1149.35,0.082015,1.0023,0,centroide,0.078784,0.0
+Capucha interior Buzo T2,5,Capucha interior Buzo T2,6,1088.57,1118.76,0.027348,0.3341,0,centroide,0.026979,0.0
+Capucha interior Buzo T2,5,Capucha interior Buzo T2,7,1088.57,1149.35,0.054316,0.6682,0,centroide,0.052879,0.0
+Capucha interior Buzo T2,6,Capucha interior Buzo T2,7,1118.76,1149.35,0.026977,0.3341,0,centroide,0.026618,0.0
