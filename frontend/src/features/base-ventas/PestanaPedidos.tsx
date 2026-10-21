@@ -11,6 +11,7 @@ import { ESTADO_PEDIDO_LABELS, ESTADOS_PEDIDO } from '../../types/pedido';
 import type { CampoOrdenPedidos, EstadoPedido, FiltrosListadoPedidos, OrigenPedido, PedidoResponse } from '../../types/pedido';
 import type { SincronizacionKommo } from '../../types/kommo';
 import EncabezadoOrdenable from './EncabezadoOrdenable';
+import IndicadoresPedido from './IndicadoresPedido';
 import {
   TIPOS_BUZO_CAMPERA,
   contarPorBucket,
@@ -273,16 +274,8 @@ export default function PestanaPedidos({ promociones, onEditarPedido, onNuevoPed
                 <tr key={pedido.id}>
                   <td>
                     <span className="pedidos-ficha">
-                      {pedido.codigoInterno}
-                      {pedido.origen === 'KOMMO' && <span className="origen-badge origen-badge--kommo">Kommo</span>}
-                      {!pedido.revisadoImportacion && (
-                        <span
-                          className="origen-badge origen-badge--nuevo"
-                          title="Importado y sin revisar: abrí Editar, revisá los datos y guardá."
-                        >
-                          Nuevo
-                        </span>
-                      )}
+                      <span className="pedidos-ficha-numero">{pedido.codigoInterno}</span>
+                      <IndicadoresPedido pedido={pedido} />
                     </span>
                   </td>
                   <td>{formatearFecha(pedido.fechaVenta)}</td>

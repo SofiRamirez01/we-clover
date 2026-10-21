@@ -393,32 +393,33 @@ button.historico-miniatura {
   color: var(--wc-text-muted);
 }
 
-/* Nº de ficha con los indicadores de origen y de pedido importado sin revisar: los badges bajan
-   debajo del número en vez de ensanchar la columna (la tabla ya está al límite a 1440px). */
+/* Nº de ficha con los indicadores de origen (ícono de Kommo/Excel) y de pedido importado sin
+   revisar (punto naranja), ver IndicadoresPedido. Si la tabla no tiene lugar, los indicadores
+   bajan debajo del número en vez de ensanchar la columna (la tabla ya está al límite a 1440px). */
 .pedidos-ficha {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 4px 6px;
+}
+
+.pedidos-ficha-numero {
   white-space: nowrap;
 }
 
-.origen-badge {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 1.4;
+.indicador-origen {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: help;
 }
 
-.origen-badge--kommo {
-  background: #e8f1fb;
-  color: #1d5fa8;
-}
-
-.origen-badge--nuevo {
-  background: #fef3e2;
-  color: #a9660a;
+.indicador-nuevo {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f28c18;
+  flex-shrink: 0;
   cursor: help;
 }
