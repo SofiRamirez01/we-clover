@@ -15,6 +15,7 @@ import com.weclover.backend.dto.pedido.OpcionMolderiaResponse;
 import com.weclover.backend.dto.pedido.PedidosPorEstado;
 import com.weclover.backend.dto.pedido.UnidadesPorEstadoYTipoPrenda;
 import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.OrigenPedido;
 import com.weclover.backend.entity.Pedido;
 
 @Repository
@@ -31,7 +32,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         + "AND (:hasta IS NULL OR p.fechaVenta <= :hasta) "
         + "AND (:idVendedor IS NULL OR p.creadoPor.id = :idVendedor) ";
 
-    /** Además de los anteriores: búsqueda (ya con los comodines escapados con '!'), estado,
+    /** Además de los anteriores: búsqueda (ya con los comodines escapados con '!'), estado, origen,
      *  "solo activos" y moldería – tipo de prenda (alguna prenda habilitada del pedido). La
      *  columna usa una collation _ai_ci: el LIKE no distingue mayúsculas ni tildes. */
     String FILTROS_LISTADO = FILTROS_PROMOCION_FECHA_VENDEDOR
@@ -40,6 +41,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         + "     OR p.colegio.localidad LIKE :buscar ESCAPE '!' "
         + "     OR p.creadoPor.nombre LIKE :buscar ESCAPE '!') "
         + "AND (:estado IS NULL OR p.estadoActual = :estado) "
+        + "AND (:origen IS NULL OR p.origen = :origen) "
         + "AND (:soloActivos = false OR p.estadoActual NOT IN :estadosCerrados) "
         + "AND (:idPatronCorte IS NULL OR EXISTS (SELECT 1 FROM Producto pr WHERE pr.pedido = p "
         + "     AND pr.habilitado = true AND pr.patronCorte.id = :idPatronCorte "
@@ -78,6 +80,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
         @Param("estadosCerrados") List<EstadoPedido> estadosCerrados,
         @Param("idPatronCorte") Long idPatronCorte,
         @Param("idTipoPrenda") Long idTipoPrenda,
+        @Param("origen") OrigenPedido origen,
         Pageable pageable);
 
     /** Pedidos por estado para los contadores del listado (ver FILTROS_PROMOCION_FECHA_VENDEDOR). */

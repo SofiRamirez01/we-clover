@@ -376,3 +376,49 @@ button.historico-miniatura {
     margin-left: 0;
   }
 }
+
+/* Barra de sincronización con Kommo (solo rol administrativo, ver PestanaPedidos). */
+.pedidos-kommo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.pedidos-kommo-texto {
+  font-size: 13px;
+  color: var(--wc-text-muted);
+}
+
+/* Nº de ficha con los indicadores de origen y de pedido importado sin revisar: los badges bajan
+   debajo del número en vez de ensanchar la columna (la tabla ya está al límite a 1440px). */
+.pedidos-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.origen-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.origen-badge--kommo {
+  background: #e8f1fb;
+  color: #1d5fa8;
+}
+
+.origen-badge--nuevo {
+  background: #fef3e2;
+  color: #a9660a;
+  cursor: help;
+}

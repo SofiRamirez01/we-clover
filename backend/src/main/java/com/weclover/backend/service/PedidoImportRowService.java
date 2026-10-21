@@ -26,6 +26,7 @@ import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.TipoPrenda;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
+import com.weclover.backend.exception.PedidoYaImportadoException;
 import com.weclover.backend.exception.ResourceNotFoundException;
 import com.weclover.backend.repository.ColegioRepository;
 import com.weclover.backend.repository.PedidoRepository;
@@ -252,7 +253,7 @@ class PedidoImportRowService {
 
         if (fila.kommoLeadId() != null) {
             pedidoRepository.findByKommoLeadId(fila.kommoLeadId()).ifPresent(existente -> {
-                throw new BusinessRuleException(
+                throw new PedidoYaImportadoException(
                     "El lead #" + fila.kommoLeadId() + " ya se importó como pedido " + existente.getCodigoInterno());
             });
         }
@@ -392,7 +393,7 @@ class PedidoImportRowService {
     private String generarCodigoInterno(String promo, String fichaKommo) {
         String codigo = armarCodigoInterno(promo, fichaKommo);
         if (pedidoRepository.existsByCodigoInterno(codigo)) {
-            throw new BusinessRuleException(
+            throw new PedidoYaImportadoException(
                 "Ya existe un pedido con el código " + codigo + " — probablemente esta fila (Ficha Kommo '"
                     + fichaKommo.trim() + "') ya se importó antes");
         }

@@ -1,11 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import DateRangePicker from '../../components/DateRangePicker';
 import CambiarEstadoPopover from '../../components/CambiarEstadoPopover';
 import AccionesPedidoMenu from '../../components/AccionesPedidoMenu';
 import HistorialPedidoModal from '../../components/HistorialPedidoModal';
 import ImportarExcelModal from '../../components/ImportarExcelModal';
+import SincronizarKommoModal from '../../components/SincronizarKommoModal';
+import { obtenerUltimaSincronizacionKommo } from '../../services/kommoService';
+import { leerUsuarioGuardado } from '../../utils/authStorage';
 import { ESTADO_PEDIDO_LABELS, ESTADOS_PEDIDO } from '../../types/pedido';
-import type { CampoOrdenPedidos, EstadoPedido, FiltrosListadoPedidos, PedidoResponse } from '../../types/pedido';
+import type { CampoOrdenPedidos, EstadoPedido, FiltrosListadoPedidos, OrigenPedido, PedidoResponse } from '../../types/pedido';
+import type { SincronizacionKommo } from '../../types/kommo';
 import EncabezadoOrdenable from './EncabezadoOrdenable';
 import {
   TIPOS_BUZO_CAMPERA,
@@ -29,9 +33,52 @@ interface Filtros {
   hasta: string;
   estado: FiltroEstado;
   promocion: string;
+  /** '' = todos los orígenes. */
+  origen: OrigenPedido | '';
 }
 
-const filtrosIniciales: Filtros = { buscar: '', desde: '', hasta: '', estado: 'ACTIVOS', promocion: '' };
+const filtrosIniciales: Filtros = { buscar: '', desde: '', hasta: '', estado: 'ACTIVOS', promocion: '', origen: '' };
+
+const ROL_ADMINISTRATIVO = 'ROLE_ADMINISTRATIVO';
+
+const ORIGEN_LABELS: Record<OrigenPedido, string> = {
+  MANUAL: 'Carga manual',
+  EXCEL: 'Excel',
+  KOMMO: 'Kommo',
+};
+
+/** "21/10/2026 10:30" a partir de la fecha y hora local del servidor (sin zona). */
+function formatearFechaHora(fechaHora: string): string {
+  return new Date(fechaHora).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+/** Última sincronización con Kommo y botón para sincronizar: solo para el rol administrativo. */
+function BarraKommo({
+  ultima,
+  estado,
+  onSincronizar,
+}: {
+  ultima: SincronizacionKommo | null;
+  estado: 'cargando' | 'listo' | 'error';
+  onSincronizar: () => void;
+}) {
+  let texto: string;
+  if (estado === 'cargando') texto = 'Consultando la última sincronización con Kommo…';
+  else if (estado === 'error') texto = 'No se pudo consultar la última sincronización con Kommo.';
+  else if (!ultima) texto = 'Nunca se sincronizó con Kommo.';
+  else
+    texto =
+      `Última sincronización con Kommo: ${formatearFechaHora(ultima.fechaHora)} · ` +
+      `${ultima.importados} ${ultima.importados === 1 ? 'importado' : 'importados'}`;
+  return (
+    <section className="card pedidos-kommo">
+      <span className="pedidos-kommo-texto">{texto}</span>
+      <button type="button" className="btn-secondary" onClick={onSincronizar} disabled={estado === 'cargando'}>
+        Sincronizar con Kommo
+      </button>
+    </section>
+  );
+}
 
 interface StatTileProps {
   label: string;
@@ -62,7 +109,24 @@ export default function PestanaPedidos({ promociones, onEditarPedido, onNuevoPed
   const [filtros, setFiltros] = useState<Filtros>(filtrosIniciales);
   const [pedidoHistorial, setPedidoHistorial] = useState<PedidoResponse | null>(null);
   const [mostrarImportar, setMostrarImportar] = useState(false);
+  const [mostrarKommo, setMostrarKommo] = useState(false);
   const [orden, setOrden] = useState<OrdenListado | null>(null);
+  const esAdministrativo = leerUsuarioGuardado()?.rol === ROL_ADMINISTRATIVO;
+  const [ultimaSync, setUltimaSync] = useState<SincronizacionKommo | null>(null);
+  const [estadoUltimaSync, setEstadoUltimaSync] = useState<'cargando' | 'listo' | 'error'>('cargando');
+
+  const cargarUltimaSync = useCallback(() => {
+    obtenerUltimaSincronizacionKommo()
+      .then((data) => {
+        setUltimaSync(data);
+        setEstadoUltimaSync('listo');
+      })
+      .catch(() => setEstadoUltimaSync('error'));
+  }, []);
+
+  useEffect(() => {
+    if (esAdministrativo) cargarUltimaSync();
+  }, [esAdministrativo, cargarUltimaSync]);
   const buscar = useValorDiferido(filtros.buscar.trim());
 
   const filtrosListado = useMemo<FiltrosListadoPedidos>(
@@ -73,10 +137,11 @@ export default function PestanaPedidos({ promociones, onEditarPedido, onNuevoPed
       soloActivos: filtros.estado === 'ACTIVOS' || undefined,
       estado: filtros.estado && filtros.estado !== 'ACTIVOS' ? filtros.estado : undefined,
       promocion: filtros.promocion ? Number(filtros.promocion) : undefined,
+      origen: filtros.origen || undefined,
       orden: orden?.campo,
       direccion: orden?.direccion,
     }),
-    [buscar, filtros.desde, filtros.hasta, filtros.estado, filtros.promocion, orden],
+    [buscar, filtros.desde, filtros.hasta, filtros.estado, filtros.promocion, filtros.origen, orden],
   );
   const listado = useListadoPedidos(filtrosListado);
 
@@ -124,6 +189,10 @@ export default function PestanaPedidos({ promociones, onEditarPedido, onNuevoPed
         <StatTile label="Entregados" value={contadoresUnidades.entregado} variante="entregado" />
       </div>
 
+      {esAdministrativo && (
+        <BarraKommo ultima={ultimaSync} estado={estadoUltimaSync} onSincronizar={() => setMostrarKommo(true)} />
+      )}
+
       <section className="card pedidos-filtros">
         <input
           className="pedidos-filtro-buscar"
@@ -155,6 +224,18 @@ export default function PestanaPedidos({ promociones, onEditarPedido, onNuevoPed
           {promociones.map((promocion) => (
             <option key={promocion} value={promocion}>
               Promoción {promocion}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filtros.origen}
+          onChange={(e) => actualizarFiltro('origen', e.target.value as OrigenPedido | '')}
+          aria-label="Origen"
+        >
+          <option value="">Origen (todos)</option>
+          {(Object.keys(ORIGEN_LABELS) as OrigenPedido[]).map((origen) => (
+            <option key={origen} value={origen}>
+              {ORIGEN_LABELS[origen]}
             </option>
           ))}
         </select>
@@ -190,7 +271,20 @@ export default function PestanaPedidos({ promociones, onEditarPedido, onNuevoPed
             {listado.estadoCarga === 'listo' &&
               listado.pedidos.map((pedido) => (
                 <tr key={pedido.id}>
-                  <td>{pedido.codigoInterno}</td>
+                  <td>
+                    <span className="pedidos-ficha">
+                      {pedido.codigoInterno}
+                      {pedido.origen === 'KOMMO' && <span className="origen-badge origen-badge--kommo">Kommo</span>}
+                      {!pedido.revisadoImportacion && (
+                        <span
+                          className="origen-badge origen-badge--nuevo"
+                          title="Importado y sin revisar: abrí Editar, revisá los datos y guardá."
+                        >
+                          Nuevo
+                        </span>
+                      )}
+                    </span>
+                  </td>
                   <td>{formatearFecha(pedido.fechaVenta)}</td>
                   <td>{formatearFecha(pedido.fechaEstimadaEntrega)}</td>
                   <td className="pedidos-celda-texto">{pedido.nombreColegio}</td>
@@ -216,6 +310,18 @@ export default function PestanaPedidos({ promociones, onEditarPedido, onNuevoPed
       </div>
 
       {pedidoHistorial && <HistorialPedidoModal pedido={pedidoHistorial} onClose={() => setPedidoHistorial(null)} />}
+
+      {mostrarKommo && (
+        <SincronizarKommoModal
+          ultimaSincronizacion={ultimaSync}
+          onClose={() => setMostrarKommo(false)}
+          onImportado={() => {
+            listado.recargar();
+            cargarUltimaSync();
+            onPedidosImportados();
+          }}
+        />
+      )}
 
       {mostrarImportar && (
         <ImportarExcelModal

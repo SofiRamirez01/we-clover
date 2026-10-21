@@ -35,6 +35,7 @@ import com.weclover.backend.dto.pedido.PedidoCreateRequest;
 import com.weclover.backend.dto.pedido.PedidoResponse;
 import com.weclover.backend.dto.pedido.PedidoUpdateRequest;
 import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.OrigenPedido;
 import com.weclover.backend.service.KommoImportService;
 import com.weclover.backend.service.PedidoImportService;
 import com.weclover.backend.service.PedidoListadoService;
@@ -80,10 +81,11 @@ public class PedidoController {
             @RequestParam(required = false) Integer tamanio,
             @RequestParam(required = false) CampoOrdenPedidos orden,
             @RequestParam(required = false) Sort.Direction direccion,
+            @RequestParam(required = false) OrigenPedido origen,
             @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
         FiltrosListadoPedidos filtros = new FiltrosListadoPedidos(
             buscar, promocion, estado, soloActivos, idPatronCorte, idTipoPrenda, desde, hasta, pagina, tamanio,
-            orden, direccion);
+            orden, direccion, origen);
         return pedidoListadoService.listar(filtros, idUsuarioActor);
     }
 
@@ -128,15 +130,17 @@ public class PedidoController {
     }
 
     /** Importación desde la API de Kommo (ver KommoImportService): por ids o por rango de fechas
-     *  de última actualización del lead. simular=true (default) no guarda nada. */
+     *  de última actualización del lead. simular=true (default) no guarda nada; simular=false
+     *  exige X-Usuario-Id de un usuario administrativo. */
     @PostMapping("/importar-kommo")
     public ImportacionKommoResponse importarKommo(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) List<Long> ids,
             @RequestParam(required = false) Integer limite,
-            @RequestParam(defaultValue = "true") boolean simular) {
-        return kommoImportService.importar(desde, hasta, ids, limite, simular);
+            @RequestParam(defaultValue = "true") boolean simular,
+            @RequestHeader(value = "X-Usuario-Id", required = false) Long idUsuarioActor) {
+        return kommoImportService.importar(desde, hasta, ids, limite, simular, idUsuarioActor);
     }
 
     /** La prioridad numérica por pedido fue reemplazada por las tandas (ver TandaController):

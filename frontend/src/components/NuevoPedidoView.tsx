@@ -137,6 +137,35 @@ interface NuevoPedidoViewProps {
   pedidoAEditar?: PedidoResponse | null;
 }
 
+/**
+ * Pedido importado (Excel o Kommo) que todavía no se guardó desde este formulario: lista los datos
+ * que la importación no trae o aproxima. Se calcula sobre el pedido tal como se importó, no sobre
+ * lo que se va editando. Al guardar, el backend lo marca como revisado y el aviso desaparece.
+ */
+function AvisoPedidoImportado({ pedido }: { pedido: PedidoResponse }) {
+  const origen = pedido.origen === 'KOMMO' ? 'desde Kommo' : 'desde el Excel de Kommo';
+  const pendientes: string[] = [];
+  if (pedido.curso === 'Sin curso') pendientes.push('el curso (quedó "Sin curso")');
+  pendientes.push('la cantidad de alumnos (se aproximó con la prenda de mayor cantidad)');
+  if (!pedido.emailRepresentanteCurso) pendientes.push('el mail del representante (no vino en la importación)');
+  // La Bandera siempre se importa con costo 0 porque se regala: no es un dato a revisar.
+  if (pedido.productos.some((p) => p.tipoPrenda !== 'Bandera' && p.costo === 0)) {
+    pendientes.push('los precios por prenda que quedaron en 0');
+  }
+  return (
+    <div className="alerta alerta--aviso" role="note">
+      <strong>Pedido importado {origen}, todavía sin revisar.</strong> Revisá los datos que la importación no trae
+      o aproxima:
+      <ul className="aviso-importado-lista">
+        {pendientes.map((texto) => (
+          <li key={texto}>{texto}</li>
+        ))}
+      </ul>
+      Al guardar los cambios, el pedido queda marcado como revisado.
+    </div>
+  );
+}
+
 export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: NuevoPedidoViewProps) {
   const { usuario } = useAuth();
   const esEdicion = pedidoAEditar != null;
@@ -359,6 +388,10 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
         <div className={`alerta alerta--${estado === 'error' ? 'error' : 'exito'}`} role="status">
           {mensaje}
         </div>
+      )}
+
+      {esEdicion && pedidoAEditar && !pedidoAEditar.revisadoImportacion && (
+        <AvisoPedidoImportado pedido={pedidoAEditar} />
       )}
 
       <form onSubmit={handleSubmit}>

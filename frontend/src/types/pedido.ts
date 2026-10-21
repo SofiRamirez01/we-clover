@@ -316,6 +316,7 @@ export interface FiltrosListadoPedidos {
   /** Fecha de venta (ISO), inclusive. */
   desde?: string;
   hasta?: string;
+  origen?: OrigenPedido;
   pagina?: number;
   tamanio?: number;
   /** Sin orden: del pedido más nuevo al más viejo. */

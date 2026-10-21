@@ -114,6 +114,12 @@ button {
   border: 1px solid #f3bcb6;
 }
 
+.alerta--aviso {
+  background: #fef3e2;
+  color: #7a4a07;
+  border: 1px solid #f6d7a7;
+}
+
 .btn-guardar {
   border: none;
   background: var(--wc-green);

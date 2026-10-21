@@ -17,6 +17,8 @@ import com.weclover.backend.entity.EstadoPedido;
  *                               antes del guion (null si Promo o Ficha no se pueden interpretar)
  * @param idPedido               pedido creado; null en la simulación o si se salteó
  * @param motivoSalteo           por qué no se importa; null si se importa
+ * @param yaImportado            el salteo es porque ya se había importado (mismo lead o Nº de
+ *                               ficha): no hay nada que corregir
  */
 public record LeadKommoImportacion(
     Long idLead,
@@ -28,7 +30,8 @@ public record LeadKommoImportacion(
     String fichaKommo,
     String codigoInternoPropuesto,
     Long idPedido,
-    String motivoSalteo
+    String motivoSalteo,
+    boolean yaImportado
 ) {
 
     /** null = el lead no trae el campo o no es un número. */

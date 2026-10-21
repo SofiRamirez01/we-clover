@@ -73,6 +73,7 @@ public class PedidoListadoService {
             ESTADOS_CERRADOS,
             filtros.idPatronCorte(),
             filtros.idTipoPrenda(),
+            filtros.origen(),
             PageRequest.of(pagina, tamanio, OrdenListadoPedidos.de(filtros.orden(), filtros.direccion())));
 
         List<ContadorEstadoPedidoResponse> contadores = contadores(

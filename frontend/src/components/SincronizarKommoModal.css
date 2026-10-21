@@ -1,0 +1,43 @@
+/* Modal "Sincronizar con Kommo" (base: HistorialPedidoModal.css). Más ancho: las tablas de leads
+   tienen cuatro o cinco columnas. */
+.kommo-modal {
+  max-width: 860px;
+}
+
+.kommo-rango {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 12px 0;
+}
+
+.kommo-rango label {
+  flex: 1 1 180px;
+}
+
+.kommo-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.kommo-resumen {
+  margin: 0 0 12px;
+}
+
+.kommo-nota {
+  font-size: 12.5px;
+  color: var(--wc-text-muted);
+}
+
+.kommo-ya-importados {
+  margin-top: 14px;
+}
+
+.kommo-ya-importados summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 8px;
+}

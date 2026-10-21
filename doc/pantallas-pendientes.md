@@ -6,7 +6,7 @@ detalle de lo ya construido (el "por qué" de cada decisión ya tomada) vive en
 [tareas-realizadas.md](tareas-realizadas.md). Cuando algo de acá se resuelva, mover el
 detalle a ese archivo y borrarlo de este.
 
-Última actualización: 2026-10-21 (importación desde la API de Kommo, paso 2: importación real).
+Última actualización: 2026-10-21 (importación desde la API de Kommo, paso 3: registro y pantalla).
 
 ## Responsive: falta verificar por debajo de 1280px y otras pantallas con tablas
 
@@ -101,7 +101,7 @@ Puntos a tener presentes:
   respuesta del endpoint (mostrado en el modal del frontend) — el resto de las filas se importa
   igual.
 
-## Importación de pedidos desde la API de Kommo (pasos 1 y 2: simulación e importación real)
+## Importación de pedidos desde la API de Kommo (pasos 1 a 3: importación, registro y pantalla)
 
 `POST /api/pedidos/importar-kommo` (por `ids` o por `desde`/`hasta` de última actualización del
 lead) trae leads del pipeline "Administracion", arma el mismo `FilaExcelPedido` que el Excel
@@ -113,11 +113,19 @@ vendedor se resuelve por `Usuario.kommoVendedorEnumId`, que se asigna en la pant
 `backend/application-local.example.yml`); el token sale de la variable de entorno `KOMMO_TOKEN`
 del proceso del backend. Sin eso el endpoint responde 503 y el resto arranca igual.
 
+Pantalla (paso 3): en Base Ventas → Pedidos, el rol administrativo ve la última sincronización y el
+botón "Sincronizar con Kommo" (modal con previsualización y confirmación sobre un rango de fechas).
+Cada importación real queda en `sincronizacion_kommo` (+ `sincronizacion_kommo_lead` para los ids
+pedidos); `GET /api/kommo/sincronizaciones/ultima`. Los pedidos importados muestran los badges
+"Kommo" y "Nuevo" (sin revisar) y hay filtro por origen; el formulario de edición avisa qué datos
+revisar.
+
 - **Esquema nuevo (2026-10-21)**: `pedidos.origen` (enum nativo de MySQL, default `MANUAL`),
   `pedidos.kommo_lead_id` (único), `pedidos.revisado_importacion` (default 1) y
   `usuarios.kommo_vendedor_enum_id` (único). Los agrega `ddl-auto=update` al reiniciar el
   backend, con los defaults para las filas existentes; no hace falta SQL a mano. Probado sobre
-  una copia de la base, no sobre `weclover_db`. Ojo: como `origen` es un enum nativo, sumarle un
+  una copia de la base, no sobre `weclover_db`. Paso 3: tablas nuevas `sincronizacion_kommo` y
+  `sincronizacion_kommo_lead`, también las crea `ddl-auto` al reiniciar. Ojo: como `origen` es un enum nativo, sumarle un
   valor más adelante necesita un `ALTER TABLE` a mano (igual que `estado_actual`).
 - **Vendedor vinculado a un usuario deshabilitado**: la importación lo saltea con el motivo
   "está vinculado a X, que está deshabilitado". Hoy no pasa porque deshabilitar un usuario le
@@ -126,15 +134,23 @@ del proceso del backend. Sin eso el endpoint responde 503 y el resto arranca igu
 - **Leads sin el campo Vendedor**: se saltean con "Falta el Responsable (vendedor)" (el texto
   viene del flujo de Excel). En la simulación del 2026-10-21 fueron 13 de 50; revisar si el
   texto alcanza o si hay que avisar en Kommo.
-- **Pendiente de UI (fuera de alcance de este paso)**: pantalla/modal de sincronización, badges
-  de origen y de "sin revisar", tabla de sincronizaciones y cron. `origen` y
-  `revisadoImportacion` ya viajan en `PedidoResponse`.
-- **Notas del lead**: `notas` va vacía por ahora (en el Excel salían de "Nota 1..5").
+- **Topes**: por fechas se trae el rango completo hasta 250 leads (una página de Kommo); si el
+  rango tiene más, la previsualización lo avisa y la importación real se rechaza entera (400) sin
+  guardar nada: importar solo una parte dejaría leads afuera, porque el rango por defecto de la
+  siguiente sincronización empieza el día de esta. Por ids el tope sigue en 50.
+- **Leads salteados que se corrigen de nuestro lado** (ej. vincular un vendedor): no vuelven a
+  entrar en el rango por defecto si el lead no cambió en Kommo (se filtra por su `updated_at`). El
+  modal lo avisa; hay que ampliar el rango a mano.
+- **Importar por Nº de ficha (para después)**: ventas mira en el listado qué números de ficha
+  faltan y los completa; estaría bueno poder traer de Kommo un lead puntual por su Ficha, no solo
+  por rango de fechas o por id de lead (hoy por id solo se puede desde Postman).
+- **Fuera de alcance por ahora**: cron/sincronización automática, webhooks e importación de las
+  notas del lead.
 - **Sin autenticación** (como todo el backend, ver "Seguridad real"): cualquiera que llegue al
-  backend puede disparar consultas a Kommo con el token, y ahora también importar. Mitigación
-  actual: tope duro de 50 leads por llamada y el token nunca sale en respuestas ni logs.
-- **Orden y "hay más"**: los leads se piden por `updated_at` ascendente; si `hayMasLeads=true`,
-  repetir con un `desde` posterior o subir el límite (máx. 50).
+  backend puede disparar consultas a Kommo con el token. Importar (`simular=false`) y ver la
+  última sincronización exigen `X-Usuario-Id` de un administrativo, que no es autenticación real
+  (se puede mandar a mano). Mitigación actual: topes de 50 (ids) / 250 (fechas) y el token nunca
+  sale en respuestas ni logs.
 
 ## Carga de Talles: desglose por talle para producción
 

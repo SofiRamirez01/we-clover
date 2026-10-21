@@ -1,24 +1,32 @@
 package com.weclover.backend.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.weclover.backend.dto.kommo.KommoContact;
 import com.weclover.backend.dto.kommo.KommoLead;
 import com.weclover.backend.dto.kommo.KommoPipeline;
+import com.weclover.backend.dto.kommo.SincronizacionKommoResponse;
 import com.weclover.backend.dto.pedido.ImportacionKommoResponse;
 import com.weclover.backend.dto.pedido.LeadKommoImportacion;
 import com.weclover.backend.entity.EstadoPedido;
 import com.weclover.backend.entity.Pedido;
+import com.weclover.backend.entity.SincronizacionKommo;
+import com.weclover.backend.exception.PedidoYaImportadoException;
 import com.weclover.backend.exception.ServicioNoDisponibleException;
 import com.weclover.backend.exception.SolicitudInvalidaException;
+import com.weclover.backend.repository.SincronizacionKommoRepository;
+import com.weclover.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,26 +35,52 @@ import lombok.RequiredArgsConstructor;
  * mismo {@link FilaExcelPedido} (ver {@link KommoLeadMapper}) y lo valida y guarda con
  * {@link PedidoImportRowService}. Simular y guardar recorren los mismos pasos; solo cambia si al
  * final se llama a validarFila (simular) o a importarFila (guardar, cada lead en su propia
- * transacción), y las dos aplican las mismas reglas.
+ * transacción), y las dos aplican las mismas reglas. Cada importación real queda registrada en
+ * SincronizacionKommo.
+ *
+ * Topes: por ids, 10 leads por defecto y 50 como máximo; por fechas se trae el rango completo
+ * hasta 250 leads (una página de Kommo). Si el pedido supera el tope, la simulación lo avisa
+ * (hayMasLeads) y la importación real se rechaza sin guardar nada: importar solo una parte de un
+ * rango dejaría leads afuera sin que nadie lo note (los siguientes rangos empiezan después).
  */
 @Service
 @RequiredArgsConstructor
 public class KommoImportService {
 
     static final int LIMITE_POR_DEFECTO = 10;
-    /** Tope duro: el endpoint no tiene autenticación todavía (ver doc/pantallas-pendientes.md). */
+    /** Tope duro por ids: el endpoint de simulación no tiene autenticación todavía (ver
+     *  doc/pantallas-pendientes.md). */
     static final int LIMITE_MAXIMO = 50;
+    /** Tope por rango de fechas: una página completa de Kommo. */
+    static final int LIMITE_MAXIMO_POR_RANGO = KommoApiClient.LIMITE_PAGINA_KOMMO;
 
     private final KommoApiClient kommoApiClient;
     private final KommoLeadMapper kommoLeadMapper;
     private final PedidoImportRowService pedidoImportRowService;
+    private final SincronizacionKommoRepository sincronizacionKommoRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final AutorizacionService autorizacionService;
 
+    /**
+     * @param idUsuarioActor obligatorio y administrativo para importar de verdad (queda en el
+     *                       registro de la sincronización); la simulación no lo exige
+     */
     public ImportacionKommoResponse importar(
-            LocalDate desde, LocalDate hasta, List<Long> ids, Integer limite, boolean simular) {
+            LocalDate desde, LocalDate hasta, List<Long> ids, Integer limite, boolean simular, Long idUsuarioActor) {
         int limiteEfectivo = validarParametros(desde, hasta, ids, limite);
+        if (!simular) {
+            autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+        }
         kommoApiClient.verificarConfiguracion();
 
         KommoApiClient.LeadsKommo traidos = kommoApiClient.listarLeads(desde, hasta, ids, limiteEfectivo);
+        if (!simular && traidos.hayMas()) {
+            throw new SolicitudInvalidaException(ids != null && !ids.isEmpty()
+                ? "Se pidieron más leads (" + ids.size() + ") que el máximo que se puede importar de una vez ("
+                    + limiteEfectivo + "): no se importó ninguno"
+                : "El rango tiene más leads que el máximo que se puede importar de una vez (" + limiteEfectivo
+                    + "): no se importó ninguno. Achicá el rango de fechas y volvé a intentar.");
+        }
 
         List<KommoLead> conFicha = traidos.leads().stream().filter(kommoLeadMapper::tieneFicha).toList();
         int sinFicha = traidos.leads().size() - conFicha.size();
@@ -66,8 +100,37 @@ public class KommoImportService {
             leads.add(procesarLead(lead, contactos.get(KommoLeadMapper.idContactoPrincipal(lead)), nombres, simular));
         }
         int salteados = (int) leads.stream().filter(lead -> lead.motivoSalteo() != null).count();
-        return new ImportacionKommoResponse(
-            simular, traidos.leads().size(), sinFicha, traidos.hayMas(), leads.size() - salteados, salteados, leads);
+        int yaImportados = (int) leads.stream().filter(LeadKommoImportacion::yaImportado).count();
+        int importados = leads.size() - salteados;
+        if (!simular) {
+            registrarSincronizacion(desde, hasta, ids, importados, salteados, sinFicha, idUsuarioActor);
+        }
+        return new ImportacionKommoResponse(simular, traidos.leads().size(), sinFicha, traidos.hayMas(),
+            limiteEfectivo, importados, salteados, yaImportados, leads);
+    }
+
+    /** Última importación real, o vacío si nunca se sincronizó. Solo para el rol administrativo. */
+    @Transactional(readOnly = true)
+    public Optional<SincronizacionKommoResponse> ultimaSincronizacion(Long idUsuarioActor) {
+        autorizacionService.verificarRolAdministrativo(idUsuarioActor);
+        return sincronizacionKommoRepository.findFirstByOrderByFechaHoraDescIdDesc()
+            .map(s -> new SincronizacionKommoResponse(s.getId(), s.getFechaHora(), s.getUsuario().getId(),
+                s.getUsuario().getNombre(), s.getDesde(), s.getHasta(), List.copyOf(s.getIdsLeads()),
+                s.getImportados(), s.getSalteados(), s.getSinFicha()));
+    }
+
+    private void registrarSincronizacion(LocalDate desde, LocalDate hasta, List<Long> ids,
+            int importados, int salteados, int sinFicha, Long idUsuarioActor) {
+        sincronizacionKommoRepository.save(SincronizacionKommo.builder()
+            .fechaHora(LocalDateTime.now())
+            .usuario(usuarioRepository.getReferenceById(idUsuarioActor))
+            .desde(desde)
+            .hasta(hasta)
+            .idsLeads(ids == null ? new ArrayList<>() : new ArrayList<>(ids))
+            .importados(importados)
+            .salteados(salteados)
+            .sinFicha(sinFicha)
+            .build());
     }
 
     private int validarParametros(LocalDate desde, LocalDate hasta, List<Long> ids, Integer limite) {
@@ -84,9 +147,11 @@ public class KommoImportService {
         if (porIds && ids.stream().anyMatch(Objects::isNull)) {
             throw new SolicitudInvalidaException("Hay un id vacío en ids");
         }
-        int limiteEfectivo = limite == null ? LIMITE_POR_DEFECTO : limite;
-        if (limiteEfectivo < 1 || limiteEfectivo > LIMITE_MAXIMO) {
-            throw new SolicitudInvalidaException("limite tiene que estar entre 1 y " + LIMITE_MAXIMO);
+        int maximo = porIds ? LIMITE_MAXIMO : LIMITE_MAXIMO_POR_RANGO;
+        int limiteEfectivo = limite != null ? limite : (porIds ? LIMITE_POR_DEFECTO : LIMITE_MAXIMO_POR_RANGO);
+        if (limiteEfectivo < 1 || limiteEfectivo > maximo) {
+            throw new SolicitudInvalidaException("limite tiene que estar entre 1 y " + maximo
+                + (porIds ? " al pedir por ids" : " al pedir por fechas"));
         }
         return limiteEfectivo;
     }
@@ -98,6 +163,7 @@ public class KommoImportService {
         String codigoInterno = codigoPropuesto(fila);
         Long idPedido = null;
         String motivo = null;
+        boolean yaImportado = false;
         if (estado == null) {
             motivo = "estado no importable: " + nombres.describir(lead.pipelineId(), lead.statusId());
         } else {
@@ -110,6 +176,9 @@ public class KommoImportService {
                     codigoInterno = pedido.getCodigoInterno();
                     idPedido = pedido.getId();
                 }
+            } catch (PedidoYaImportadoException e) {
+                motivo = e.getMessage();
+                yaImportado = true;
             } catch (RuntimeException e) {
                 motivo = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             }
@@ -129,7 +198,8 @@ public class KommoImportService {
             fila.fichaKommo(),
             codigoInterno,
             idPedido,
-            motivo);
+            motivo,
+            yaImportado);
     }
 
     private String codigoPropuesto(FilaExcelPedido fila) {

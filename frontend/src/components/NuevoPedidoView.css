@@ -104,3 +104,9 @@
 .nuevo-pedido input[aria-invalid="true"] {
   border-color: #a12c22;
 }
+
+/* Lista del aviso de pedido importado sin revisar (ver AvisoPedidoImportado). */
+.aviso-importado-lista {
+  margin: 6px 0;
+  padding-left: 20px;
+}

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import org.springframework.data.domain.Sort;
 
 import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.OrigenPedido;
 
 /**
  * Filtros del listado paginado de Base Ventas (ver PedidoListadoService), tal cual llegan por
@@ -22,6 +23,7 @@ import com.weclover.backend.entity.EstadoPedido;
  * @param tamanio       pedidos por página (por defecto 50, máximo 100)
  * @param orden         columna por la que se ordena; null = del pedido más nuevo al más viejo
  * @param direccion     ASC (de menor a mayor, por defecto) o DESC
+ * @param origen        cómo se dio de alta el pedido (manual, Excel o Kommo)
  */
 public record FiltrosListadoPedidos(
     String buscar,
@@ -35,6 +37,7 @@ public record FiltrosListadoPedidos(
     Integer pagina,
     Integer tamanio,
     CampoOrdenPedidos orden,
-    Sort.Direction direccion
+    Sort.Direction direccion,
+    OrigenPedido origen
 ) {
 }

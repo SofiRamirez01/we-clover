@@ -34,6 +34,7 @@ import com.weclover.backend.dto.pedido.PedidoResponse;
 import com.weclover.backend.dto.pedido.PedidosPorEstado;
 import com.weclover.backend.dto.pedido.UnidadesPorEstadoYTipoPrenda;
 import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.OrigenPedido;
 import com.weclover.backend.entity.Pedido;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.Usuario;
@@ -60,7 +61,7 @@ class PedidoListadoServiceTest {
     }
 
     private static FiltrosListadoPedidos sinFiltros() {
-        return new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, null, null, null);
+        return new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private void actorEs(Long id, String rol) {
@@ -69,7 +70,7 @@ class PedidoListadoServiceTest {
 
     /** Cualquier llamada al listado devuelve estos pedidos (total = cantidad de pedidos + extra). */
     private void listadoDevuelve(List<Pedido> pedidos, long total, Pageable pageable) {
-        when(pedidoRepository.buscarListado(any(), any(), any(), any(), any(), any(), anyBoolean(), any(), any(), any(), any()))
+        when(pedidoRepository.buscarListado(any(), any(), any(), any(), any(), any(), anyBoolean(), any(), any(), any(), any(), any()))
             .thenReturn(new PageImpl<>(pedidos, pageable, total));
     }
 
@@ -85,7 +86,7 @@ class PedidoListadoServiceTest {
 
         verify(pedidoRepository).buscarListado(
             isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
-            eq(false), eq(PedidoListadoService.ESTADOS_CERRADOS), isNull(), isNull(),
+            eq(false), eq(PedidoListadoService.ESTADOS_CERRADOS), isNull(), isNull(), isNull(),
             eq(PageRequest.of(0, PedidoListadoService.TAMANIO_POR_DEFECTO, OrdenListadoPedidos.de(null, null))));
         assertThat(listado.pedidos()).hasSize(2);
         assertThat(listado.total()).isEqualTo(120);
@@ -103,7 +104,7 @@ class PedidoListadoServiceTest {
 
         verify(pedidoRepository).buscarListado(
             isNull(), isNull(), isNull(), eq(ID_VENDEDOR), isNull(), isNull(),
-            eq(false), any(), isNull(), isNull(), any());
+            eq(false), any(), isNull(), isNull(), isNull(), any());
         verify(pedidoRepository).contarPorEstado(null, null, null, ID_VENDEDOR);
         verify(pedidoRepository).sumarUnidadesPorEstadoYTipoPrenda(null, null, null, ID_VENDEDOR);
         assertThat(listado.hayMas()).isFalse();
@@ -127,14 +128,14 @@ class PedidoListadoServiceTest {
         listadoDevuelve(List.of(), 0, PageRequest.of(2, 20));
         FiltrosListadoPedidos filtros = new FiltrosListadoPedidos(
             "  Morón ", 2026, EstadoPedido.SENADO, true, 4L, 2L, desde, hasta, 2, 20,
-            CampoOrdenPedidos.TOTAL, Sort.Direction.DESC);
+            CampoOrdenPedidos.TOTAL, Sort.Direction.DESC, OrigenPedido.KOMMO);
 
         service.listar(filtros, ID_ADMIN);
 
         verify(pedidoRepository).buscarListado(
             eq("2026-%"), eq(desde), eq(hasta), isNull(), eq("%Morón%"), eq(EstadoPedido.SENADO),
             eq(true), eq(List.of(EstadoPedido.ENTREGADO, EstadoPedido.CANCELADO)), eq(4L), eq(2L),
-            eq(PageRequest.of(2, 20, OrdenListadoPedidos.de(CampoOrdenPedidos.TOTAL, Sort.Direction.DESC))));
+            eq(OrigenPedido.KOMMO), eq(PageRequest.of(2, 20, OrdenListadoPedidos.de(CampoOrdenPedidos.TOTAL, Sort.Direction.DESC))));
         verify(pedidoRepository).contarPorEstado("2026-%", desde, hasta, null);
         verify(pedidoRepository).sumarUnidadesPorEstadoYTipoPrenda("2026-%", desde, hasta, null);
     }
@@ -167,15 +168,15 @@ class PedidoListadoServiceTest {
     void rechazaFiltrosInvalidosSinConsultarLaBase() {
         actorEs(ID_ADMIN, "ROLE_ADMINISTRATIVO");
         List<FiltrosListadoPedidos> invalidos = List.of(
-            new FiltrosListadoPedidos(null, 226, null, null, null, null, null, null, null, null, null, null),
-            new FiltrosListadoPedidos(null, null, null, null, 4L, null, null, null, null, null, null, null),
-            new FiltrosListadoPedidos(null, null, null, null, null, 2L, null, null, null, null, null, null),
+            new FiltrosListadoPedidos(null, 226, null, null, null, null, null, null, null, null, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, 4L, null, null, null, null, null, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, null, 2L, null, null, null, null, null, null, null),
             new FiltrosListadoPedidos(null, null, null, null, null, null,
-                LocalDate.of(2026, 5, 2), LocalDate.of(2026, 5, 1), null, null, null, null),
-            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, -1, null, null, null),
-            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, 0, null, null),
+                LocalDate.of(2026, 5, 2), LocalDate.of(2026, 5, 1), null, null, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, -1, null, null, null, null),
+            new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null, 0, null, null, null),
             new FiltrosListadoPedidos(null, null, null, null, null, null, null, null, null,
-                PedidoListadoService.TAMANIO_MAXIMO + 1, null, null));
+                PedidoListadoService.TAMANIO_MAXIMO + 1, null, null, null));
 
         for (FiltrosListadoPedidos filtros : invalidos) {
             assertThatThrownBy(() -> service.listar(filtros, ID_ADMIN))
