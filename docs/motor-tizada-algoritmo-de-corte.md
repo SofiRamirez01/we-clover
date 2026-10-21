@@ -136,11 +136,18 @@ El README del servicio tiene la tabla de diferencias respecto de v1.0.0.
 | 8 | **Validación perezosa**: primero cajas, después polígonos; el área de intersección solo si se tocan | Trasladar y calcular intersección en cada chequeo | Rendimiento, mismo criterio | `51898cd` |
 | 9 | **Población inicial constructiva** en cortes densos (> 30 % del lienzo): abajo a la izquierda con orden, rotaciones y modos al azar; se construye el 20 % y el resto son variantes mutadas | Solo al azar | Dos cortes reales no arrancaban | `e32c211` |
 | 10 | `limite_tiempo`: al llegar, se devuelve el mejor encontrado (distinto de cancelar) | Solo terminaba por generaciones | Presupuesto de tiempo por corte | `c3427f2` |
-| 11 | Corte por **estancamiento del largo** (N generaciones sin acortar 1 mm, mínimo 60) — *sin commitear, apagado por defecto* | — | Liberar tiempo para reinicios | — |
+| 11 | Corte por **estancamiento del largo** (N generaciones sin acortar 1 mm, mínimo 60); encendido por defecto con N = 50 | Solo terminaba por generaciones o por tiempo | Liberar tiempo para reinicios | `8b98c91`, `9f07a08` |
 
 Notas sobre el cambio 11: una primera versión medía el estancamiento sobre el *fitness*, que sigue
 mejorando de a poco (compacidad, huecos) aunque el largo ya no baje; en la medición no cortó
-ninguna corrida. Se redefinió sobre el largo y queda pendiente de medir (sección 9).
+ninguna corrida. Se redefinió sobre el largo. Medido en la tanda A (`7c2730a`, cortes 3, 4, 6 y 7,
+semillas 1 y 101): la tela no cambió (< 0,5 %) y el tiempo bajó 17 % con N = 50 y 10 % con N = 80,
+pero ese tiempo no se convertía en más reinicios por dos reglas que mandaban antes: el corte
+anticipado de 2 reinicios sin mejora (cortes chicos) y "solo otra corrida si alcanza para una
+como la anterior" (cortes densos). Por eso se encendió con N = 50 junto con esas reglas aflojadas en
+COMPLETO: 4 reinicios sin mejora y otra corrida si queda 0,8 × la anterior (RAPIDO sigue con 2 y
+1,0). Con esos valores el tiempo de una tanda en COMPLETO puede subir hacia el presupuesto por corte;
+lo que se espera es acortar los cortes chicos y medianos. Falta medirlo.
 
 ## 5. La capa nueva: el planificador de cortes
 
@@ -375,7 +382,8 @@ realidad puños y cintura suelen ser de un solo color).
 
 **Optimización del algoritmo (después del MVP):**
 
-3. Medir el cambio 11 (estancamiento) con una comparación aparte (mismas semillas, con y sin).
+3. Medir el estancamiento (N = 50) con las reglas de reinicio aflojadas en COMPLETO (4 reinicios
+   sin mejora, factor de tiempo 0,8) contra los valores anteriores, con las mismas semillas.
 4. Cambio 12: respetar el presupuesto de tiempo también en la población inicial.
 5. Recalibrar la eficiencia por tela con más tandas reales (quizás por tamaño de corte).
 6. Decidir con tandas reales el caso de Ribb (cortes muy grandes de 1 capa).

@@ -619,18 +619,16 @@ Quedan para después, a propósito:
   5 s de presupuesto un corte tardó 21,7 s. Con RAPIDO (60 s) y COMPLETO (200 s) entra con margen.
   Arreglo propuesto (cambio 12 del vendor): cortar la construcción al llegar al límite y completar
   la población con variantes mutadas.
-- **Corte por estancamiento (cambio 11): medido, sigue apagado; falta decidir.** Sobre el largo
-  (N generaciones sin acortarlo 1 mm, mínimo 60), configurable por modo, y una corrida cortada
-  cuenta como terminada para seguir reiniciando. Medido el 2026-10-20 (tanda A, cortes 3, 4, 6 y
-  7, semillas 1 y 101, N = 50 y 80, `scripts/resultados/estancamiento_tandaA_20261021_*`):
-  **la tela no cambia** (todas las diferencias < 0,5 %) y **el tiempo baja** (−17 % con N = 50,
-  −10 % con N = 80; en el Ribb denso hasta −49 %, porque el largo se aplana antes de la
-  generación 60). No suma reinicios útiles por dos reglas que mandan antes que el tiempo: en
-  cortes chicos, el corte anticipado de 2 reinicios sin mejorar 1 % (siempre 3 corridas); en
-  densos, "lo que queda alcanza para una como la anterior" (el tiempo liberado queda sin usar).
-  Para que el estancamiento acorte la tela habría que medir junto con esas reglas aflojadas
-  (más `reiniciosSinMejora`, o arrancar otra corrida con lo que queda aunque no alcance para una
-  entera).
+- **Estancamiento + reglas de reinicio aflojadas: implementado, falta medirlo.** El corte por
+  estancamiento (cambio 11, sobre el largo, mínimo 60) quedó **encendido por defecto con N = 50**
+  en los dos modos. La primera medición (2026-10-20, `scripts/resultados/estancamiento_tandaA_20261021_*`,
+  con K = 2 y factor 1,0) dio la misma tela (< 0,5 %) y 10 a 17 % menos tiempo, pero sin reinicios
+  útiles porque mandaban el corte anticipado (cortes chicos, siempre 3 corridas) y "lo que queda
+  alcanza para una corrida como la anterior" (cortes densos). Ahora, en COMPLETO,
+  `reiniciosSinMejora` = 4 y `factorTiempoReinicio` = 0,8 (otra corrida si queda 0,8 × la
+  anterior); RAPIDO sigue con 2 y 1,0. Falta medir con esos valores contra los anteriores (mismas
+  semillas): se espera acortar los cortes chicos y medianos, con el tiempo total de una tanda más
+  cerca del presupuesto por corte.
 - **Eficiencia supuesta por tela preliminar** (Friza 0,66, Jersey 0,65, Ribb 0,80): sale de una sola
   tanda (8 cortes de un pedido grande). El estimado se desvía hasta −18 % / +16 % según el tamaño
   del corte: recalibrar con tandas reales, quizás por tamaño de corte y no solo por tela.
