@@ -3,6 +3,10 @@
 Uso:
   python scripts/medir.py preparacion.json [--modo COMPLETO|RAPIDO] [--presupuesto S]
                           [--semilla 1] [--csv salida] [--cortes 1 4] [--comparar-v100 N]
+  python scripts/medir.py preparacion.json --cortes 3 4 --semillas 1 101 --comparar-estancamiento 50 80
+                          [--umbral-estancamiento-cm 0.1]
+    Corte por estancamiento: cada corte, con cada semilla, sin estancamiento y con cada N, de a
+    una corrida por vez; escribe <salida>_estancamiento.csv y una tabla con la diferencia de tela.
 
 Reproducible: la semilla base es fija (por defecto 1) y cada reinicio usa semilla + n. Escribe
 dos CSV: <salida>_cortes.csv (una fila por corte) y <salida>_corridas.csv (una fila por
@@ -99,6 +103,64 @@ def comparar_v100(corte, p):
         destino.unlink(missing_ok=True)
 
 
+COLUMNAS_ESTANCAMIENTO = ["corte", "tela", "capas", "entradas", "semilla", "variante", "corridas", "motivos",
+                          "estado", "largo_cm", "tela_cm", "segundos", "verificacion_ok", "diferencia_vs_sin"]
+
+
+def _motivos(tz):
+    abreviado = {"GENERACIONES": "GENE", "LIMITE_DE_TIEMPO": "LIMI", "ESTANCAMIENTO": "ESTA"}
+    return " ".join(f"{abreviado.get(c.motivo_fin, c.motivo_fin)}@{c.generaciones}" for c in tz.corridas)
+
+
+def comparar_estancamiento(plan, p, args, colores):
+    """Cada corte elegido, con cada semilla, sin estancamiento y con cada N pedido (umbral
+    --umbral-estancamiento-cm), de a una corrida por vez. Escribe <csv>_estancamiento.csv."""
+    from dataclasses import replace
+
+    variantes = [("sin", 0)] + [(f"N={n}", n) for n in args.comparar_estancamiento]
+    filas = []
+    ruta = f"{args.csv}_estancamiento.csv"
+    with open(ruta, "w", newline="", encoding="utf-8") as archivo:
+        escritor = csv.DictWriter(archivo, fieldnames=COLUMNAS_ESTANCAMIENTO)
+        escritor.writeheader()
+        for numero, corte in enumerate(plan.cortes, start=1):
+            if args.cortes and numero not in args.cortes:
+                continue
+            capas = ",".join(f"{colores[c]}={l}" for c, l in corte.capas.items())
+            entradas, _ = armar_entradas(corte, p)
+            for semilla in args.semillas:
+                base = None
+                for nombre, n in variantes:
+                    pv = replace(p, semilla=semilla, generaciones_estancamiento=n,
+                                 umbral_estancamiento_cm=args.umbral_estancamiento_cm)
+                    tz = ubicar_corte(corte, pv)
+                    tela = tz.largo_usado_cm * corte.capas_totales
+                    base = tela if base is None else base
+                    fila = {"corte": numero, "tela": corte.codigo_tela, "capas": capas, "entradas": len(entradas),
+                            "semilla": semilla, "variante": nombre, "corridas": tz.reinicios, "motivos": _motivos(tz),
+                            "estado": tz.estado, "largo_cm": round(tz.largo_usado_cm, 2), "tela_cm": round(tela, 2),
+                            "segundos": round(tz.segundos, 1), "verificacion_ok": tz.verificacion_ok,
+                            "diferencia_vs_sin": round(tela / base - 1, 4)}
+                    escritor.writerow(fila)
+                    archivo.flush()
+                    filas.append(fila)
+                    print(f"corte {numero} {corte.codigo_tela:6} [{capas}] semilla {semilla:>4} {nombre:5} | {tz.reinicios:2}"
+                          f" corrida(s) {fila['motivos']:44} | largo {tz.largo_usado_cm:6.1f} cm, tela {tela:7.1f} cm"
+                          f" ({fila['diferencia_vs_sin']:+.1%}) | {tz.segundos:4.0f} s | {tz.estado}"
+                          f" | verif {'ok' if tz.verificacion_ok else 'FALLÓ'}", flush=True)
+    print(f"\nCSV: {ruta}")
+    print("\n| corte | variante | corridas | mejor largo (cm) | tela (cm) | tiempo (s) | vs sin |")
+    print("|---|---|---|---|---|---|---|")
+    for numero in sorted({f["corte"] for f in filas}):
+        for nombre, _ in variantes:
+            grupo = [f for f in filas if f["corte"] == numero and f["variante"] == nombre]
+            print(f"| {numero} | {nombre} | " + " / ".join(str(f["corridas"]) for f in grupo)
+                  + " | " + " / ".join(f"{f['largo_cm']:.1f}" for f in grupo)
+                  + " | " + " / ".join(f"{f['tela_cm']:.1f}" for f in grupo)
+                  + " | " + " / ".join(f"{f['segundos']:.0f}" for f in grupo)
+                  + " | " + " / ".join(f"{f['diferencia_vs_sin']:+.1%}" for f in grupo) + " |")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("preparacion")
@@ -108,6 +170,12 @@ def main():
     parser.add_argument("--csv", help="prefijo de los CSV (default: scripts/resultados/medicion_tanda<id>_<fecha>)")
     parser.add_argument("--cortes", type=int, nargs="*", help="números de corte a medir (default: todos)")
     parser.add_argument("--comparar-v100", type=int, metavar="N", help="número de corte para comparar con v1.0.0")
+    parser.add_argument("--comparar-estancamiento", type=int, nargs="+", metavar="N",
+                        help="compara cada corte sin estancamiento y con cada N (mismas semillas)")
+    parser.add_argument("--umbral-estancamiento-cm", type=float, default=0.1,
+                        help="umbral del estancamiento para --comparar-estancamiento (default 0,1 cm = 1 mm)")
+    parser.add_argument("--semillas", type=int, nargs="+", help="semillas base para --comparar-estancamiento"
+                        " (default: --semilla)")
     args = parser.parse_args()
 
     preparacion = json.loads(Path(args.preparacion).read_text(encoding="utf-8"))
@@ -123,6 +191,10 @@ def main():
           f" {p.presupuesto_segundos:.0f} s por corte, semilla base {p.semilla}, población {p.poblacion},"
           f" {p.generaciones} generaciones por corrida, corte anticipado tras {p.reinicios_sin_mejora}"
           f" reinicios sin mejorar más de {p.mejora_minima_reinicio:.0%}", flush=True)
+    if args.comparar_estancamiento:
+        args.semillas = args.semillas or [args.semilla]
+        comparar_estancamiento(plan, p, args, colores)
+        return
 
     filas_corte, filas_corrida = [], []
     inicio_tanda = time.perf_counter()

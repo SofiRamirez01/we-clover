@@ -340,17 +340,68 @@ def test_una_tizada_de_mas_de_800_cm_se_parte_y_se_vuelve_a_correr(monkeypatch):
 
 
 
-def test_estancamiento_apagado_por_defecto_y_validado():
-    assert ParametrosCorte().generaciones_estancamiento is None
-    with pytest.raises(ValueError):
-        ParametrosCorte(generaciones_estancamiento=40, limite_estancamiento_mutacion=40)
+def test_estancamiento_apagado_por_defecto_en_los_dos_modos_y_validado():
+    for modo in ("RAPIDO", "COMPLETO"):
+        assert ParametrosCorte(modo_tiempo=modo).estancamiento_generaciones is None
     p = ParametrosCorte(generaciones_estancamiento=80)
-    assert (p.generaciones_minimas, p.limite_estancamiento_mutacion, p.umbral_estancamiento_cm) == (60, 40, 0.1)
+    assert (p.estancamiento_generaciones, p.estancamiento_umbral_cm, p.generaciones_minimas,
+            p.limite_estancamiento_mutacion) == (80, 0.1, 60, 40)
+    with pytest.raises(ValueError):  # N <= 40 cortaría antes del empujón de mutación del vendor
+        ParametrosCorte(generaciones_estancamiento=40)
+    with pytest.raises(ValueError):
+        ParametrosCorte(generaciones_estancamiento_por_modo={"COMPLETO": 30})
+    with pytest.raises(ValueError):
+        ParametrosCorte(generaciones_estancamiento=80, umbral_estancamiento_cm=-1)
 
 
-def test_con_estancamiento_encendido_la_corrida_registra_el_corte():
+def test_estancamiento_por_modo_con_el_valor_de_la_solicitud_por_encima_y_0_apagado():
+    por_modo = {"RAPIDO": 50, "COMPLETO": 80}
+    umbrales = {"RAPIDO": 0.2, "COMPLETO": 0.1}
+    rapido = ParametrosCorte(modo_tiempo="RAPIDO", generaciones_estancamiento_por_modo=por_modo,
+                             umbral_estancamiento_cm_por_modo=umbrales)
+    completo = ParametrosCorte(generaciones_estancamiento_por_modo=por_modo, umbral_estancamiento_cm_por_modo=umbrales)
+    assert (rapido.estancamiento_generaciones, rapido.estancamiento_umbral_cm) == (50, 0.2)
+    assert (completo.estancamiento_generaciones, completo.estancamiento_umbral_cm) == (80, 0.1)
+    explicito = ParametrosCorte(generaciones_estancamiento=120, umbral_estancamiento_cm=0.3,
+                                generaciones_estancamiento_por_modo=por_modo)
+    assert (explicito.estancamiento_generaciones, explicito.estancamiento_umbral_cm) == (120, 0.3)
+    assert ParametrosCorte(generaciones_estancamiento=0, generaciones_estancamiento_por_modo=por_modo) \
+        .estancamiento_generaciones is None
+    desde_api = ParametrosCorte.desde_dict({"modoTiempo": "RAPIDO", "generacionesEstancamientoPorModo": por_modo,
+                                            "umbralEstancamientoCm": 0.05})
+    assert (desde_api.estancamiento_generaciones, desde_api.estancamiento_umbral_cm) == (50, 0.05)
+
+
+def test_con_estancamiento_encendido_la_corrida_registra_el_corte_y_cuenta_como_terminada():
     corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1,
                       generaciones=400, generaciones_estancamiento=45, generaciones_minimas=60,
                       reinicios_sin_mejora=0)
-    (corrida,) = ubicar_corte(corte, p).corridas
+    tizada = ubicar_corte(corte, p)
+    (corrida,) = tizada.corridas
     assert corrida.motivo_fin == "ESTANCAMIENTO" and 60 <= corrida.generaciones < 400
+    assert corrida.estado == "COMPLETO" and tizada.estado == "COMPLETO"
+
+
+def test_despues_de_una_corrida_cortada_por_estancamiento_siguen_los_reinicios():
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1,
+                      generaciones=400, generaciones_estancamiento=45, generaciones_minimas=60,
+                      reinicios_sin_mejora=3, mejora_minima_reinicio=1.0, presupuesto_segundos_por_corte=60)
+    tizada = ubicar_corte(corte, p)
+    assert tizada.reinicios == 4  # la primera y 3 sin mejora: el estancamiento no frenó los reinicios
+    assert all(c.motivo_fin == "ESTANCAMIENTO" and c.estado == "COMPLETO" for c in tizada.corridas)
+
+
+def test_estancamiento_apagado_da_los_mismos_resultados_con_la_misma_semilla():
+    def correr(**extra):
+        corte, p = _corte([_pieza(1, RECTANGULO, True), _pieza(2, ASIMETRICO, False)],
+                          [_item(1, {ROJO: 3}), _item(2, {ROJO: 4})], capas_maximas=1, generaciones=30,
+                          reinicios_sin_mejora=1, **extra)
+        tizada = ubicar_corte(corte, p)
+        return ([(c.semilla, c.generaciones, c.motivo_fin, round(c.largo_cm, 6)) for c in tizada.corridas],
+                [(pz.id_pieza, pz.copia, pz.modo, pz.rotacion, pz.poligono.wkt) for pz in tizada.piezas])
+
+    base = correr()
+    assert correr(generaciones_estancamiento=0) == base
+    assert correr(generaciones_estancamiento_por_modo={"RAPIDO": None, "COMPLETO": None}) == base
+    # Encendido pero sin llegar a cortar (N mayor que las generaciones): tampoco cambia nada.
+    assert correr(generaciones_estancamiento=1000) == base

@@ -75,5 +75,7 @@ def resultado_a_dict(resultado: ResultadoOptimizacion, p: ParametrosCorte, segun
                        "excedenteMaximoPorItem": p.excedente_maximo_por_item,
                        "excedenteMaximoPorTela": p.excedente_maximo_por_tela,
                        "eficienciaEstimadaPorTela": p.eficiencia_estimada_por_tela,
+                       "generacionesEstancamiento": p.estancamiento_generaciones,
+                       "umbralEstancamientoCm": p.estancamiento_umbral_cm,
                        "semilla": p.semilla},
     }

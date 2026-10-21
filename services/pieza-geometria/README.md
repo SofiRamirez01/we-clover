@@ -62,7 +62,30 @@ resuelta, en lugar de que falle el trabajo.
   el plan y el resultado van en cm y el vendor trabaja en mm (×10).
 - `residuo.py`: optimizador de residuo (sustituciones), con la interfaz preparada; todavía no
   aplica nada.
-- `python scripts/medir.py preparacion.json` mide el algoritmo sobre los cortes de una tanda.
+- `python scripts/medir.py preparacion.json` mide el algoritmo sobre los cortes de una tanda; con
+  `--comparar-estancamiento 50 80 --semillas 1 101` compara cada corte sin y con corte por
+  estancamiento, con las mismas semillas.
+
+### Corte por estancamiento (apagado por defecto)
+
+Cada corrida del algoritmo puede terminar antes de sus generaciones si el largo de la tizada ya no
+baja, para que entren más reinicios en el presupuesto del corte (cambio 11 del vendor). Parámetros
+(`ParametrosCorte`, en camelCase por la API):
+
+- `generacionesEstancamientoPorModo` (`{"RAPIDO": null, "COMPLETO": null}`, apagado en los dos) y
+  `generacionesEstancamiento`, el valor de la solicitud, que manda sobre el del modo. `null` o `0`
+  = apagado. Tiene que ser mayor que `limiteEstancamientoMutacion` (40, el `stagnation_limit` del
+  vendor): con N ≤ 40 la corrida se cortaría antes del empujón de mutación del vendor.
+- `umbralEstancamientoCmPorModo` (`0.1` cm = 1 mm en los dos modos) y `umbralEstancamientoCm`:
+  cuánto tiene que acortarse el largo (punto más alto de las piezas) para reiniciar la cuenta.
+- `generacionesMinimas` (60): antes de esa generación no se corta aunque el largo esté plano. Con
+  N = 50 evita cortar por una meseta temprana; con N ≥ 60 no cambia nada.
+
+Una corrida cortada por estancamiento queda con motivo `ESTANCAMIENTO` y cuenta como terminada
+(estado `COMPLETO`, no `LIMITE_DE_TIEMPO`), así que la regla de reinicios sigue: se arranca otra
+mientras el presupuesto que queda alcance para una corrida como la anterior y no se cumpla el corte
+anticipado (`reiniciosSinMejora` = 2 reinicios sin acortar más de `mejoraMinimaReinicio` = 1 %).
+Apagado, los resultados con la misma semilla son idénticos a los de antes del cambio.
 
 ## Levantar el servicio
 
@@ -102,7 +125,8 @@ python -m pytest tests
   Encola la optimización de los cortes de una tanda y devuelve `idTrabajo`, `estado` y
   `posicionEnCola`. Los `parametros` (camelCase) pisan los de la preparación: `modoTiempo`
   (`RAPIDO` 60 s por corte, `COMPLETO` hasta 200 s), `presupuestoSegundosPorCorte`,
-  `excedenteMaximoPorItem`, `excedenteMaximoPorTela`, `modoObjetivo`, `semilla`, etc.
+  `excedenteMaximoPorItem`, `excedenteMaximoPorTela`, `modoObjetivo`, `semilla`,
+  `generacionesEstancamiento` (ver "Corte por estancamiento"), etc.
   422 si la preparación no tiene demanda o un parámetro es inválido.
 - `GET /corte/trabajos/{id}`: `estado` (`EN_COLA`, `EJECUTANDO`, `TERMINADO`, `ERROR`,
   `CANCELADO`), `progreso` (corte, corrida y generación actuales, mejor largo y eficiencia del

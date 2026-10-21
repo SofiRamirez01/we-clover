@@ -72,12 +72,18 @@ class ParametrosCorte:
     compactar: bool = True
     paso_minimo_compactacion_cm: float = 0.01
     # Corte por estancamiento de cada corrida (APAGADO por defecto, todavía sin medir): termina si
-    # pasan `generaciones_estancamiento` generaciones sin que el largo baje al menos
-    # `umbral_estancamiento_cm`, después de `generaciones_minimas`. Tiene que ser mayor que
-    # `limite_estancamiento_mutacion` (el stagnation_limit del vendor, que a las 40 generaciones
-    # sin mejora duplica la escala de mutación una generación). Valor sugerido: 80.
+    # pasan N generaciones seguidas sin que el largo del mejor individuo baje al menos el umbral,
+    # una vez hechas `generaciones_minimas`. N y el umbral salen del modo de tiempo
+    # (`..._por_modo`); el valor explícito de la solicitud manda sobre el del modo. N nulo o 0 =
+    # apagado. N tiene que ser mayor que `limite_estancamiento_mutacion` (el stagnation_limit del
+    # vendor, que a las 40 generaciones sin mejora duplica la escala de mutación una generación):
+    # si no, la corrida se cortaría antes de ese empujón. Ver `estancamiento_generaciones`.
     generaciones_estancamiento: int | None = None
-    umbral_estancamiento_cm: float = 0.1
+    generaciones_estancamiento_por_modo: dict = field(
+        default_factory=lambda: {"RAPIDO": None, "COMPLETO": None})
+    umbral_estancamiento_cm: float | None = None
+    umbral_estancamiento_cm_por_modo: dict = field(default_factory=lambda: {"RAPIDO": 0.1, "COMPLETO": 0.1})
+    # Con N = 50 evita cortar por una meseta temprana; con N >= 60 no cambia nada.
     generaciones_minimas: int = 60
     limite_estancamiento_mutacion: int = 40
     # Semilla del primer reinicio (cada reinicio usa semilla + n). None = al azar.
@@ -104,10 +110,28 @@ class ParametrosCorte:
             raise ValueError(f"modoObjetivo inválido: {self.modo_objetivo} (TELA o COSTO)")
         if self.modo_tiempo not in PRESUPUESTO_POR_MODO:
             raise ValueError(f"modoTiempo inválido: {self.modo_tiempo} (RAPIDO o COMPLETO)")
-        if (self.generaciones_estancamiento is not None
-                and self.generaciones_estancamiento <= self.limite_estancamiento_mutacion):
-            raise ValueError(f"generacionesEstancamiento ({self.generaciones_estancamiento}) tiene que ser "
-                             f"mayor que limiteEstancamientoMutacion ({self.limite_estancamiento_mutacion})")
+        n = self.estancamiento_generaciones
+        if n is not None and n <= self.limite_estancamiento_mutacion:
+            raise ValueError(f"generacionesEstancamiento ({n}) tiene que ser mayor que "
+                             f"limiteEstancamientoMutacion ({self.limite_estancamiento_mutacion})")
+        if n is not None and self.estancamiento_umbral_cm < 0:
+            raise ValueError(f"umbralEstancamientoCm no puede ser negativo ({self.estancamiento_umbral_cm})")
+
+    @property
+    def estancamiento_generaciones(self) -> int | None:
+        """N efectivo del corte por estancamiento: el de la solicitud o, si no vino, el del modo.
+        None = apagado (también si vale 0)."""
+        n = self.generaciones_estancamiento
+        if n is None:
+            n = self.generaciones_estancamiento_por_modo.get(self.modo_tiempo)
+        return n or None
+
+    @property
+    def estancamiento_umbral_cm(self) -> float:
+        """Umbral efectivo (cm) que tiene que acortarse el largo para reiniciar la cuenta."""
+        if self.umbral_estancamiento_cm is not None:
+            return self.umbral_estancamiento_cm
+        return self.umbral_estancamiento_cm_por_modo.get(self.modo_tiempo, 0.1)
 
     def eficiencia_para(self, codigo_tela: str | None) -> float:
         return self.eficiencia_estimada_por_tela.get(codigo_tela, self.eficiencia_estimada)

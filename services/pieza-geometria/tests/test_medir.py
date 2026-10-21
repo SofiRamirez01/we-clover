@@ -36,3 +36,21 @@ def test_medir_escribe_los_csv_por_corte_y_por_corrida(tmp_path):
     assert corridas[0]["motivo_fin"] in ("GENERACIONES", "LIMITE_DE_TIEMPO")
     assert "Tanda:" in salida.stdout and "Tela (largo × capas)" in salida.stdout
     assert "Cortes que llegaron al límite de tiempo" in salida.stdout
+
+
+def test_comparar_estancamiento_corre_cada_variante_con_las_mismas_semillas(tmp_path):
+    preparacion = _preparacion([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 3})])
+    entrada = tmp_path / "preparacion.json"
+    entrada.write_text(json.dumps(preparacion), encoding="utf-8")
+    prefijo = tmp_path / "salida"
+    salida = subprocess.run(
+        [sys.executable, str(RAIZ / "scripts" / "medir.py"), str(entrada), "--presupuesto", "2",
+         "--semillas", "3", "7", "--comparar-estancamiento", "50", "--csv", str(prefijo)],
+        capture_output=True, text=True, encoding="utf-8", timeout=180,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+    assert salida.returncode == 0, salida.stderr
+    with open(f"{prefijo}_estancamiento.csv", encoding="utf-8") as archivo:
+        filas = list(csv.DictReader(archivo))
+    assert [(f["semilla"], f["variante"]) for f in filas] == [("3", "sin"), ("3", "N=50"), ("7", "sin"), ("7", "N=50")]
+    assert all(f["diferencia_vs_sin"] == "0.0" for f in filas if f["variante"] == "sin")
+    assert "| corte | variante |" in salida.stdout

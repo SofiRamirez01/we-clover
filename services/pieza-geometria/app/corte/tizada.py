@@ -45,7 +45,7 @@ class PiezaUbicada:
 
 # Cómo terminó un corte. La cancelación del trabajo no es un estado de la tizada: corta todo
 # con ga.CorteCancelado y no devuelve resultado.
-COMPLETO = "COMPLETO"  # todas las corridas hicieron sus generaciones
+COMPLETO = "COMPLETO"  # la mejor corrida terminó sola (todas sus generaciones o por estancamiento)
 LIMITE_DE_TIEMPO = "LIMITE_DE_TIEMPO"  # la mejor corrida terminó por el presupuesto de tiempo
 
 
@@ -259,13 +259,13 @@ def _correr(entradas, limites, p, semilla, limite_tiempo, avance, cancelado, fin
 
 
 def _estancamiento(p, fin_corrida):
-    """Parámetros del corte por estancamiento, solo si está encendido."""
-    if p.generaciones_estancamiento is None:
+    """Parámetros del corte por estancamiento para el vendor (en mm), solo si está encendido."""
+    if p.estancamiento_generaciones is None:
         return {}
     return {"stagnation_limit": p.limite_estancamiento_mutacion,
-            "corte_estancamiento": p.generaciones_estancamiento,
+            "corte_estancamiento": p.estancamiento_generaciones,
             "generaciones_minimas": p.generaciones_minimas,
-            "umbral_estancamiento": p.umbral_estancamiento_cm * MM_POR_CM,
+            "umbral_estancamiento": p.estancamiento_umbral_cm * MM_POR_CM,
             "resultado": fin_corrida}
 
 
@@ -351,8 +351,10 @@ def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado
         errores = verificar(piezas, p)
         motivo = fin_corrida.get("motivo") or (
             FIN_GENERACIONES if generaciones[0] >= p.generaciones else FIN_LIMITE_DE_TIEMPO)
+        # Cortada por estancamiento cuenta como terminada (no como sin tiempo): si no, la regla de
+        # reinicios de arriba no arrancaría ninguna otra corrida.
         corrida = Corrida(semilla, _largo_cm(piezas, p), generaciones[0], time.monotonic() - arranque,
-                          COMPLETO if motivo == FIN_GENERACIONES else LIMITE_DE_TIEMPO, not errores, motivo)
+                          LIMITE_DE_TIEMPO if motivo == FIN_LIMITE_DE_TIEMPO else COMPLETO, not errores, motivo)
         corridas.append(corrida)
         if errores:
             advertencias.append(f"Semilla {semilla}: la verificación con polígonos exactos falló: "
