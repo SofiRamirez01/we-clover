@@ -20,6 +20,9 @@ public record UsuarioUpdateRequest(
     String telefono,
 
     @NotNull(message = "Debe seleccionar un rol")
-    Long idRol
+    Long idRol,
+
+    /** enum_id de la opción "Vendedor" de Kommo (GET /api/kommo/vendedores); null = sin asignar. */
+    Long kommoVendedorEnumId
 ) {
 }

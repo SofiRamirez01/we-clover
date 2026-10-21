@@ -2,6 +2,7 @@ package com.weclover.backend.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +48,9 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     boolean existsByCodigoInterno(String codigoInterno);
 
     boolean existsByCodigoInternoAndIdNot(String codigoInterno, Long id);
+
+    /** Pedido ya importado desde este lead de Kommo (ver PedidoImportRowService.validarFila). */
+    Optional<Pedido> findByKommoLeadId(Long kommoLeadId);
 
     /** Filtro por estado de la Pantalla de Producción (ver ProduccionService). */
     List<Pedido> findByEstadoActualIn(List<EstadoPedido> estados);

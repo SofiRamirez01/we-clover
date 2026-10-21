@@ -23,4 +23,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      *  PedidoImportService) — la columna "Responsable" de Kommo trae un nombre corto/apodo
      *  (ej. "Sofi"), no un id ni un email. */
     Optional<Usuario> findFirstByNombreContainingIgnoreCaseAndHabilitadoTrue(String fragmentoNombre);
+
+    /** Vendedor de un lead de Kommo, por el enum_id del campo "Vendedor" (habilitado o no: el
+     *  que llama decide qué hacer si está deshabilitado). */
+    Optional<Usuario> findByKommoVendedorEnumId(Long kommoVendedorEnumId);
 }

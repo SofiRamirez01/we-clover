@@ -23,6 +23,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLRestriction;
 
 import lombok.AllArgsConstructor;
@@ -121,6 +122,29 @@ public class Pedido {
      */
     @Column(name = "precio_unitario_referencia_importado")
     private Float precioUnitarioReferenciaImportado;
+
+    /** Cómo se dio de alta. Los pedidos anteriores a este campo quedan MANUAL (default de la columna). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @ColumnDefault("'MANUAL'")
+    @Builder.Default
+    private OrigenPedido origen = OrigenPedido.MANUAL;
+
+    /** Id del lead de Kommo del que se importó (origen KOMMO); null en el resto. Único: un lead
+     *  se importa una sola vez (ver PedidoImportRowService.validarFila). */
+    @Column(name = "kommo_lead_id", unique = true)
+    private Long kommoLeadId;
+
+    /**
+     * false = pedido importado (Excel o Kommo) que nadie revisó todavía. Pasa a true solo al
+     * guardar el formulario de edición del pedido (PedidoService.actualizarPedido), no con
+     * cambios de estado, ficha técnica, talles ni etapas. Alta manual y pedidos anteriores a
+     * este campo: true.
+     */
+    @Column(name = "revisado_importacion", nullable = false)
+    @ColumnDefault("1")
+    @Builder.Default
+    private boolean revisadoImportacion = true;
 
     @CreatedDate
     @Column(name = "fecha_creacion", nullable = false, updatable = false)

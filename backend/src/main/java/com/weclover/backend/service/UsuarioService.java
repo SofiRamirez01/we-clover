@@ -84,6 +84,7 @@ public class UsuarioService {
             throw new BusinessRuleException(
                 "Ya existe un usuario con el email " + request.email());
         }
+        validarVendedorKommoLibre(request.kommoVendedorEnumId(), null);
 
         Usuario usuario = Usuario.builder()
             .rol(rol)
@@ -92,6 +93,7 @@ public class UsuarioService {
             .telefono(request.telefono())
             .passwordHash(passwordEncoder.encode(PASSWORD_PROVISORIA))
             .habilitado(true)
+            .kommoVendedorEnumId(request.kommoVendedorEnumId())
             .build();
 
         return usuarioMapper.toResponse(usuarioRepository.save(usuario));
@@ -111,11 +113,13 @@ public class UsuarioService {
             .ifPresent(existente -> {
                 throw new BusinessRuleException("Ya existe un usuario con el email " + request.email());
             });
+        validarVendedorKommoLibre(request.kommoVendedorEnumId(), id);
 
         usuario.setNombre(request.nombre());
         usuario.setEmail(request.email());
         usuario.setTelefono(request.telefono());
         usuario.setRol(rol);
+        usuario.setKommoVendedorEnumId(request.kommoVendedorEnumId());
 
         return usuarioMapper.toResponse(usuarioRepository.save(usuario));
     }
@@ -125,6 +129,8 @@ public class UsuarioService {
      * por Pedido (creadoPor/representanteCurso) e HistorialEstadoPedido (modificadoPor), y
      * borrarlo de verdad rompería esas relaciones y la trazabilidad exigida por el negocio.
      * Un usuario deshabilitado no puede loguearse (ver AuthService) y desaparece del listado.
+     * También se le quita el vínculo con el vendedor de Kommo: es único y, como no hay pantalla
+     * de reactivación, si lo conservara nadie más podría tomarlo.
      */
     @Transactional
     public void eliminarUsuario(Long id, Long idUsuarioActor) {
@@ -134,7 +140,19 @@ public class UsuarioService {
             .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con id " + id));
 
         usuario.setHabilitado(false);
+        usuario.setKommoVendedorEnumId(null);
         usuarioRepository.save(usuario);
+    }
+
+    /** Un vendedor de Kommo se vincula a un solo usuario (idUsuario = el que se edita, o null en el alta). */
+    private void validarVendedorKommoLibre(Long kommoVendedorEnumId, Long idUsuario) {
+        if (kommoVendedorEnumId == null) return;
+        usuarioRepository.findByKommoVendedorEnumId(kommoVendedorEnumId)
+            .filter(existente -> !existente.getId().equals(idUsuario))
+            .ifPresent(existente -> {
+                throw new BusinessRuleException(
+                    "Ese vendedor de Kommo ya está vinculado al usuario " + existente.getNombre());
+            });
     }
 
     private Rol obtenerRolCorporativo(Long idRol) {

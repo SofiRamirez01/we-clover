@@ -1,0 +1,1264 @@
+{
+    "_page": 1,
+    "_links": {
+        "self": {
+            "href": "https://catalinaplas.kommo.com/api/v4/leads?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=1"
+        },
+        "next": {
+            "href": "https://catalinaplas.kommo.com/api/v4/leads?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=2"
+        }
+    },
+    "_embedded": {
+        "leads": [
+            {
+                "id": 28237082,
+                "name": "Andre",
+                "price": 2328000,
+                "price_with_minor_units": 2328000.0,
+                "responsible_user_id": 14978643,
+                "group_id": 0,
+                "status_id": 102807927,
+                "pipeline_id": 9516980,
+                "loss_reason_id": null,
+                "created_by": 0,
+                "updated_by": 14978643,
+                "created_at": 1777049263,
+                "updated_at": 1791387318,
+                "closed_at": null,
+                "closest_task_at": null,
+                "is_deleted": false,
+                "custom_fields_values": [
+                    {
+                        "field_id": 688318,
+                        "field_name": "utm_source",
+                        "field_code": "UTM_SOURCE",
+                        "field_type": "tracking_data",
+                        "values": [
+                            {
+                                "value": "{{site_source_name}}"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 688316,
+                        "field_name": "utm_campaign",
+                        "field_code": "UTM_CAMPAIGN",
+                        "field_type": "tracking_data",
+                        "values": [
+                            {
+                                "value": "Interacción | CBO | 12/11/2025 | Q4"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 688312,
+                        "field_name": "utm_content",
+                        "field_code": "UTM_CONTENT",
+                        "field_type": "tracking_data",
+                        "values": [
+                            {
+                                "value": "PE | Video | bordado o estampa"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693162,
+                        "field_name": "Fecha de Derivacion",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1776999600
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 689567,
+                        "field_name": "Cantidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "24"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693250,
+                        "field_name": "Promo",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "2027",
+                                "enum_id": 778266,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691725,
+                        "field_name": "Colegio",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "n5"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691723,
+                        "field_name": "Provincia (WSP)",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "bsas"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691325,
+                        "field_name": "Localidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "pinamar"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693252,
+                        "field_name": "Nivel",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Primaria",
+                                "enum_id": 778272,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693254,
+                        "field_name": "Responsable",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Adulto",
+                                "enum_id": 778278,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693292,
+                        "field_name": "Precio Unitario",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "97000"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693652,
+                        "field_name": "Fecha Interesado",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1782529200
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691345,
+                        "field_name": "Ficha",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "241-27"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 694069,
+                        "field_name": "Modalidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "nn"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693516,
+                        "field_name": "Prendas",
+                        "field_code": null,
+                        "field_type": "multiselect",
+                        "values": [
+                            {
+                                "value": "Camperas",
+                                "enum_id": 778596,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693420,
+                        "field_name": "Buzos",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693422,
+                        "field_name": "Camperas",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "24"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693438,
+                        "field_name": "Remeras",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693424,
+                        "field_name": "Chombas",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693426,
+                        "field_name": "Bandera",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778422,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693428,
+                        "field_name": "Contrato",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778426,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693430,
+                        "field_name": "Diseño",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778430,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693418,
+                        "field_name": "Pique",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "No",
+                                "enum_id": 778420,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693432,
+                        "field_name": "Tejido",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "No",
+                                "enum_id": 778436,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693576,
+                        "field_name": "Mes de Cierre",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Junio",
+                                "enum_id": 778670,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693434,
+                        "field_name": "Fecha Venta",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1782788400
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693436,
+                        "field_name": "Fecha Entrega Pactada",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1798599600
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693472,
+                        "field_name": "Cuotas",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "seña + 5"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693578,
+                        "field_name": "Vendedor",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Pia",
+                                "enum_id": 778684,
+                                "enum_code": null
+                            }
+                        ]
+                    }
+                ],
+                "score": null,
+                "account_id": 30122333,
+                "labor_cost": null,
+                "_links": {
+                    "self": {
+                        "href": "https://catalinaplas.kommo.com/api/v4/leads/28237082?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=1"
+                    }
+                },
+                "_embedded": {
+                    "tags": [
+                        {
+                            "id": 456868,
+                            "name": "BOCETO",
+                            "color": null
+                        },
+                        {
+                            "id": 456870,
+                            "name": "TALLES",
+                            "color": null
+                        },
+                        {
+                            "id": 456872,
+                            "name": "BANDERA",
+                            "color": null
+                        },
+                        {
+                            "id": 462384,
+                            "name": "excel talles enviado cata",
+                            "color": null
+                        }
+                    ],
+                    "companies": [],
+                    "contacts": [
+                        {
+                            "id": 32426660,
+                            "is_main": true,
+                            "_links": {
+                                "self": {
+                                    "href": "https://catalinaplas.kommo.com/api/v4/contacts/32426660?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=1"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": 28541382,
+                "name": "Romi",
+                "price": 5040000,
+                "price_with_minor_units": 5040000.0,
+                "responsible_user_id": 14978643,
+                "group_id": 0,
+                "status_id": 102807927,
+                "pipeline_id": 9516980,
+                "loss_reason_id": null,
+                "created_by": 0,
+                "updated_by": 0,
+                "created_at": 1783520980,
+                "updated_at": 1791387063,
+                "closed_at": null,
+                "closest_task_at": null,
+                "is_deleted": false,
+                "custom_fields_values": [
+                    {
+                        "field_id": 693162,
+                        "field_name": "Fecha de Derivacion",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1783479600
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693250,
+                        "field_name": "Promo",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "2027",
+                                "enum_id": 778266,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 689567,
+                        "field_name": "Cantidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "30"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691725,
+                        "field_name": "Colegio",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "Tato"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691723,
+                        "field_name": "Provincia (WSP)",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "Buenos Aires"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691325,
+                        "field_name": "Localidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "San Miguel"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693252,
+                        "field_name": "Nivel",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Secundaria",
+                                "enum_id": 778274,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693254,
+                        "field_name": "Responsable",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Adulto",
+                                "enum_id": 778278,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693292,
+                        "field_name": "Precio Unitario",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "168000"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693166,
+                        "field_name": "Fecha de Cotizado",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1783479600
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693652,
+                        "field_name": "Fecha Interesado",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1784170800
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691345,
+                        "field_name": "Ficha",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "264-27"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693420,
+                        "field_name": "Buzos",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "31"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693422,
+                        "field_name": "Camperas",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693438,
+                        "field_name": "Remeras",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693424,
+                        "field_name": "Chombas",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "30"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693426,
+                        "field_name": "Bandera",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778422,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693428,
+                        "field_name": "Contrato",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778426,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693430,
+                        "field_name": "Diseño",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778430,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693418,
+                        "field_name": "Pique",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "No",
+                                "enum_id": 778420,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693432,
+                        "field_name": "Tejido",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "No",
+                                "enum_id": 778436,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693468,
+                        "field_name": "Emojis",
+                        "field_code": null,
+                        "field_type": "multiselect",
+                        "values": [
+                            {
+                                "value": "no",
+                                "enum_id": 778500,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693576,
+                        "field_name": "Mes de Cierre",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Julio",
+                                "enum_id": 778672,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693472,
+                        "field_name": "Cuotas",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "seña mas 6 cuotas"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 694069,
+                        "field_name": "Modalidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "ns"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693434,
+                        "field_name": "Fecha Venta",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1785121200
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693436,
+                        "field_name": "Fecha Entrega Pactada",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1800414000
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693578,
+                        "field_name": "Vendedor",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Beba",
+                                "enum_id": 778686,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693516,
+                        "field_name": "Prendas",
+                        "field_code": null,
+                        "field_type": "multiselect",
+                        "values": [
+                            {
+                                "value": "Buzos",
+                                "enum_id": 778594,
+                                "enum_code": null
+                            },
+                            {
+                                "value": "Remeras",
+                                "enum_id": 778600,
+                                "enum_code": null
+                            }
+                        ]
+                    }
+                ],
+                "score": null,
+                "account_id": 30122333,
+                "labor_cost": null,
+                "_links": {
+                    "self": {
+                        "href": "https://catalinaplas.kommo.com/api/v4/leads/28541382?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=1"
+                    }
+                },
+                "_embedded": {
+                    "tags": [
+                        {
+                            "id": 456868,
+                            "name": "BOCETO",
+                            "color": null
+                        },
+                        {
+                            "id": 456870,
+                            "name": "TALLES",
+                            "color": null
+                        },
+                        {
+                            "id": 456872,
+                            "name": "BANDERA",
+                            "color": null
+                        }
+                    ],
+                    "companies": [],
+                    "contacts": [
+                        {
+                            "id": 32751502,
+                            "is_main": true,
+                            "_links": {
+                                "self": {
+                                    "href": "https://catalinaplas.kommo.com/api/v4/contacts/32751502?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=1"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": 28152210,
+                "name": "zulma",
+                "price": 6125000,
+                "price_with_minor_units": 6125000.0,
+                "responsible_user_id": 14978643,
+                "group_id": 0,
+                "status_id": 102807927,
+                "pipeline_id": 9516980,
+                "loss_reason_id": null,
+                "created_by": 0,
+                "updated_by": 8115071,
+                "created_at": 1774894158,
+                "updated_at": 1791384762,
+                "closed_at": null,
+                "closest_task_at": null,
+                "is_deleted": false,
+                "custom_fields_values": [
+                    {
+                        "field_id": 688316,
+                        "field_name": "utm_campaign",
+                        "field_code": "UTM_CAMPAIGN",
+                        "field_type": "tracking_data",
+                        "values": [
+                            {
+                                "value": "Leads | Whatsapp | CBO | 2/3/2026"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 688312,
+                        "field_name": "utm_content",
+                        "field_code": "UTM_CONTENT",
+                        "field_type": "tracking_data",
+                        "values": [
+                            {
+                                "value": "Video | audio de mama | prueba social"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 688318,
+                        "field_name": "utm_source",
+                        "field_code": "UTM_SOURCE",
+                        "field_type": "tracking_data",
+                        "values": [
+                            {
+                                "value": "{{site_source_name}}"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693162,
+                        "field_name": "Fecha de Derivacion",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1774839600
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 689567,
+                        "field_name": "Cantidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "30"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691725,
+                        "field_name": "Colegio",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "los lapachos"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691723,
+                        "field_name": "Provincia (WSP)",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "misiones"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691325,
+                        "field_name": "Localidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "puerto esperanza"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693252,
+                        "field_name": "Nivel",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Secundaria",
+                                "enum_id": 778274,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693254,
+                        "field_name": "Responsable",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Alumno",
+                                "enum_id": 778280,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693250,
+                        "field_name": "Promo",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "2027",
+                                "enum_id": 778266,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693292,
+                        "field_name": "Precio Unitario",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "185000"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693166,
+                        "field_name": "Fecha de Cotizado",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1774839600
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691345,
+                        "field_name": "Ficha",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "72-27"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693420,
+                        "field_name": "Buzos",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "30"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693424,
+                        "field_name": "Chombas",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "36"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693426,
+                        "field_name": "Bandera",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778422,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693428,
+                        "field_name": "Contrato",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778426,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693430,
+                        "field_name": "Diseño",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778430,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693418,
+                        "field_name": "Pique",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Si",
+                                "enum_id": 778418,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693432,
+                        "field_name": "Tejido",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "No",
+                                "enum_id": 778436,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693468,
+                        "field_name": "Emojis",
+                        "field_code": null,
+                        "field_type": "multiselect",
+                        "values": [
+                            {
+                                "value": "no",
+                                "enum_id": 778500,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693576,
+                        "field_name": "Mes de Cierre",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Abril",
+                                "enum_id": 778666,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693434,
+                        "field_name": "Fecha Venta",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1776308400
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693436,
+                        "field_name": "Fecha Entrega Pactada",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1793329200
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693472,
+                        "field_name": "Cuotas",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "seña +5 cuotas"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693442,
+                        "field_name": "Promo (Meta form)",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "2027",
+                                "enum_id": 778444,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693516,
+                        "field_name": "Prendas",
+                        "field_code": null,
+                        "field_type": "multiselect",
+                        "values": [
+                            {
+                                "value": "Buzos",
+                                "enum_id": 778594,
+                                "enum_code": null
+                            },
+                            {
+                                "value": "Chombas",
+                                "enum_id": 778598,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693422,
+                        "field_name": "Camperas",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693438,
+                        "field_name": "Remeras",
+                        "field_code": null,
+                        "field_type": "numeric",
+                        "values": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693578,
+                        "field_name": "Vendedor",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Ine",
+                                "enum_id": 778692,
+                                "enum_code": null
+                            }
+                        ]
+                    }
+                ],
+                "score": null,
+                "account_id": 30122333,
+                "labor_cost": null,
+                "_links": {
+                    "self": {
+                        "href": "https://catalinaplas.kommo.com/api/v4/leads/28152210?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=1"
+                    }
+                },
+                "_embedded": {
+                    "tags": [
+                        {
+                            "id": 457902,
+                            "name": "BECHECK",
+                            "color": null
+                        },
+                        {
+                            "id": 458266,
+                            "name": "Cambio talles 23-4",
+                            "color": null
+                        }
+                    ],
+                    "companies": [],
+                    "contacts": [
+                        {
+                            "id": 32319298,
+                            "is_main": true,
+                            "_links": {
+                                "self": {
+                                    "href": "https://catalinaplas.kommo.com/api/v4/contacts/32319298?with=contacts&limit=3&order%5Bupdated_at%5D=desc&filter%5Bstatuses%5D%5B0%5D%5Bpipeline_id%5D=9516980&filter%5Bstatuses%5D%5B0%5D%5Bstatus_id%5D=102807927&page=1"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

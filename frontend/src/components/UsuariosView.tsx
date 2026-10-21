@@ -9,9 +9,10 @@ import {
   eliminarUsuario,
   listarRolesCorporativos,
   listarUsuariosCorporativos,
+  listarVendedoresKommo,
 } from '../services/usuarioService';
 import { extraerMensajeError } from '../utils/errores';
-import type { RolOption, UsuarioResponse } from '../types/usuario';
+import type { RolOption, UsuarioResponse, VendedorKommo } from '../types/usuario';
 
 const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ROL_ADMINISTRATIVO = 'ROLE_ADMINISTRATIVO';
@@ -49,6 +50,8 @@ interface FormularioUsuario {
   email: string;
   telefono: string;
   idRol: string;
+  /** enum_id del vendedor de Kommo como texto; '' = sin asignar. */
+  kommoVendedorEnumId: string;
 }
 
 const formularioInicial: FormularioUsuario = {
@@ -56,9 +59,52 @@ const formularioInicial: FormularioUsuario = {
   email: '',
   telefono: '',
   idRol: '',
+  kommoVendedorEnumId: '',
 };
 
 type EnvioEstado = 'idle' | 'enviando' | 'exito' | 'error';
+type CargaEstado = 'cargando' | 'listo' | 'error';
+
+/**
+ * Select "Vendedor en Kommo": opciones en vivo de Kommo más "Sin asignar". Si Kommo no responde
+ * (o la opción ya no existe allá), el valor ya asignado se conserva como una opción más en vez de
+ * perderse al guardar.
+ */
+function SelectVendedorKommo({
+  valor,
+  onChange,
+  vendedores,
+  estado,
+}: {
+  valor: string;
+  onChange: (valor: string) => void;
+  vendedores: VendedorKommo[];
+  estado: CargaEstado;
+}) {
+  const valorSinOpcion = valor !== '' && !vendedores.some((v) => String(v.enumId) === valor);
+  return (
+    <select
+      value={valor}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={estado !== 'listo'}
+      title={estado === 'error' ? 'No se pudieron cargar los vendedores de Kommo' : undefined}
+    >
+      <option value="">
+        {estado === 'cargando' ? 'Cargando vendedores…' : estado === 'error' ? 'Kommo no disponible' : 'Sin asignar'}
+      </option>
+      {valorSinOpcion && <option value={valor}>Vinculado (#{valor})</option>}
+      {vendedores.map((v) => (
+        <option key={v.enumId} value={v.enumId}>
+          {v.nombre}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function aEnumId(valor: string): number | null {
+  return valor === '' ? null : Number(valor);
+}
 
 export default function UsuariosView() {
   const { usuario: usuarioLogueado } = useAuth();
@@ -69,6 +115,9 @@ export default function UsuariosView() {
 
   const [usuarios, setUsuarios] = useState<UsuarioResponse[]>([]);
   const [usuariosEstado, setUsuariosEstado] = useState<'cargando' | 'listo' | 'error'>('cargando');
+
+  const [vendedoresKommo, setVendedoresKommo] = useState<VendedorKommo[]>([]);
+  const [vendedoresEstado, setVendedoresEstado] = useState<CargaEstado>('cargando');
 
   const [form, setForm] = useState<FormularioUsuario>(formularioInicial);
   const [estado, setEstado] = useState<EnvioEstado>('idle');
@@ -108,6 +157,27 @@ export default function UsuariosView() {
     cargarUsuarios();
   }, [cargarUsuarios]);
 
+  useEffect(() => {
+    let cancelado = false;
+    listarVendedoresKommo()
+      .then((data) => {
+        if (cancelado) return;
+        setVendedoresKommo(data);
+        setVendedoresEstado('listo');
+      })
+      .catch(() => {
+        if (!cancelado) setVendedoresEstado('error');
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  function nombreVendedorKommo(enumId: number | null): string {
+    if (enumId == null) return '—';
+    return vendedoresKommo.find((v) => v.enumId === enumId)?.nombre ?? `Vinculado (#${enumId})`;
+  }
+
   function actualizar<K extends keyof FormularioUsuario>(campo: K, valor: FormularioUsuario[K]) {
     setForm((prev) => ({ ...prev, [campo]: valor }));
   }
@@ -135,6 +205,7 @@ export default function UsuariosView() {
         email: form.email.trim(),
         telefono: form.telefono.trim() || undefined,
         idRol: Number(form.idRol),
+        kommoVendedorEnumId: aEnumId(form.kommoVendedorEnumId),
       });
       setEstado('exito');
       setMensaje(
@@ -156,6 +227,7 @@ export default function UsuariosView() {
       email: u.email,
       telefono: u.telefono ?? '',
       idRol: String(u.idRol),
+      kommoVendedorEnumId: u.kommoVendedorEnumId == null ? '' : String(u.kommoVendedorEnumId),
     });
     setMensaje(null);
   }
@@ -178,6 +250,7 @@ export default function UsuariosView() {
         email: edicion.email.trim(),
         telefono: edicion.telefono.trim() || undefined,
         idRol: Number(edicion.idRol),
+        kommoVendedorEnumId: aEnumId(edicion.kommoVendedorEnumId),
       });
       setEditandoId(null);
       setEstado('exito');
@@ -267,12 +340,27 @@ export default function UsuariosView() {
               </select>
             )}
           </label>
+          <label>
+            Vendedor en Kommo
+            <SelectVendedorKommo
+              valor={form.kommoVendedorEnumId}
+              onChange={(valor) => actualizar('kommoVendedorEnumId', valor)}
+              vendedores={vendedoresKommo}
+              estado={vendedoresEstado}
+            />
+          </label>
         </div>
 
         <p className="usuarios-nota">
           El usuario se crea habilitado con una contraseña provisoria (<code>123</code>) que deberá
           cambiar en su primer ingreso.
         </p>
+        {vendedoresEstado === 'error' && (
+          <p className="usuarios-nota">
+            No se pudieron cargar los vendedores de Kommo: el vínculo no se puede cambiar ahora, pero
+            los ya asignados se conservan al guardar.
+          </p>
+        )}
 
         <button
           type="submit"
@@ -293,6 +381,7 @@ export default function UsuariosView() {
                 <th>Email</th>
                 <th>Teléfono</th>
                 <th>Rol</th>
+                <th>Vendedor en Kommo</th>
                 {puedeGestionar && <th aria-label="Acciones" />}
               </tr>
             </thead>
@@ -332,6 +421,14 @@ export default function UsuariosView() {
                           ))}
                         </select>
                       </td>
+                      <td>
+                        <SelectVendedorKommo
+                          valor={edicion.kommoVendedorEnumId}
+                          onChange={(valor) => setEdicion((prev) => ({ ...prev, kommoVendedorEnumId: valor }))}
+                          vendedores={vendedoresKommo}
+                          estado={vendedoresEstado}
+                        />
+                      </td>
                       <td className="usuarios-acciones">
                         <button
                           type="button"
@@ -359,6 +456,7 @@ export default function UsuariosView() {
                       <td>{u.email}</td>
                       <td>{u.telefono ?? '—'}</td>
                       <td>{u.rolDescripcion ?? u.rol}</td>
+                      <td>{nombreVendedorKommo(u.kommoVendedorEnumId)}</td>
                       {puedeGestionar && (
                         <td className="usuarios-acciones">
                           <button

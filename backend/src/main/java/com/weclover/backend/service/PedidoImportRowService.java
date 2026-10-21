@@ -18,6 +18,7 @@ import com.weclover.backend.entity.Colegio;
 import com.weclover.backend.entity.EstadoBandera;
 import com.weclover.backend.entity.EstadoPedido;
 import com.weclover.backend.entity.HistorialEstadoPedido;
+import com.weclover.backend.entity.OrigenPedido;
 import com.weclover.backend.entity.Pedido;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.ResponsableCurso;
@@ -60,6 +61,11 @@ import lombok.RequiredArgsConstructor;
  * - cantAlumnos: no hay columna directa — se aproxima con la cantidad máxima entre las prendas
  *   del pedido.
  * - curso: no hay columna directa — queda un placeholder ("Sin curso") a completar a mano.
+ * - Origen: KOMMO si la fila trae kommoLeadId (API de Kommo), EXCEL si no; en los dos casos el
+ *   pedido queda sin revisar (Pedido.revisadoImportacion = false) hasta que se guarda desde el
+ *   formulario de edición.
+ * - Fuera de los datos de la fila, el alta hace lo mismo que la manual (PedidoService.crearPedido):
+ *   tela por defecto por tipo de prenda, link de carga de talles y etapas de producción.
  */
 @Service
 @RequiredArgsConstructor
@@ -84,15 +90,136 @@ class PedidoImportRowService {
     private final TipoPrendaRepository tipoPrendaRepository;
     private final PasswordEncoder passwordEncoder;
     private final ProductoEtapaProduccionService productoEtapaProduccionService;
+    private final CargaTallesService cargaTallesService;
+    private final TipoTelaPorDefecto tipoTelaPorDefecto;
+
+    /**
+     * Datos de una fila ya validados por {@link #validarFila}, listos para armar el Pedido sin
+     * ninguna otra verificación: vendedor, representanteExistente, rolCliente y los tipos de
+     * prenda son entidades ya leídas (no se modifican); codigoInterno ya se verificó que no exista.
+     *
+     * @param cantidadPorTipo        prendas (sin Bandera) con cantidad > 0, en el orden del Excel
+     * @param bandera                tipo de prenda Bandera si el pedido la lleva, si no null
+     * @param representanteExistente usuario con el email del contacto, si ya existe (se reutiliza)
+     * @param rolCliente             rol con el que se crea el representante si no existe; null si
+     *                               no hace falta crearlo
+     */
+    record FilaValidada(
+        String colegio,
+        String localidad,
+        String contacto,
+        EstadoPedido estado,
+        Usuario vendedor,
+        LocalDate fechaVenta,
+        LocalDate fechaEntrega,
+        Map<TipoPrenda, Integer> cantidadPorTipo,
+        TipoPrenda bandera,
+        Float precioUnitario,
+        Float presupuesto,
+        boolean costoPorPrendaConocido,
+        int cantAlumnos,
+        String codigoInterno,
+        Usuario representanteExistente,
+        Rol rolCliente
+    ) {
+    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Pedido importarFila(FilaExcelPedido fila) {
+        FilaValidada validada = validarFila(fila);
+        EstadoPedido estado = validada.estado();
+        Usuario vendedor = validada.vendedor();
+        boolean costoPorPrendaConocido = validada.costoPorPrendaConocido();
+        Float precioUnitario = validada.precioUnitario();
+        Float presupuesto = validada.presupuesto();
+
+        Colegio colegio = colegioRepository.save(Colegio.builder()
+            .nombre(validada.colegio())
+            .localidad(validada.localidad())
+            .provincia(blankANull(fila.provincia()))
+            .nivel(blankANull(fila.nivel()))
+            .build());
+
+        Usuario representante = validada.representanteExistente() != null
+            ? validada.representanteExistente()
+            : crearRepresentante(validada.contacto(), blankANull(fila.telefonoContacto()),
+                blankANull(fila.emailContacto()), validada.rolCliente());
+        boolean desdeKommo = fila.kommoLeadId() != null;
+
+        Pedido pedido = Pedido.builder()
+            .colegio(colegio)
+            .representanteCurso(representante)
+            .creadoPor(vendedor)
+            .estadoActual(estado)
+            .codigoInterno(validada.codigoInterno())
+            .curso("Sin curso")
+            .cantAlumnos(validada.cantAlumnos())
+            .observaciones(armarObservaciones(fila))
+            .fechaVenta(validada.fechaVenta())
+            .fechaEstimadaEntrega(validada.fechaEntrega())
+            .responsableCurso(resolverResponsableCurso(fila.responsableCurso()))
+            .contratoFirmado(esSi(fila.contrato()))
+            .cantidadCuotas(parsearEnteroONulo(fila.cuotas()))
+            .montoReferenciaImportado(costoPorPrendaConocido ? null : presupuesto)
+            .precioUnitarioReferenciaImportado(costoPorPrendaConocido ? null : precioUnitario)
+            .origen(desdeKommo ? OrigenPedido.KOMMO : OrigenPedido.EXCEL)
+            .kommoLeadId(fila.kommoLeadId())
+            .revisadoImportacion(false)
+            .build();
+
+        pedido.getHistorial().add(HistorialEstadoPedido.builder()
+            .pedido(pedido)
+            .estado(estado)
+            .fechaCambio(LocalDateTime.now())
+            .modificadoPor(vendedor)
+            .observaciones(desdeKommo
+                ? "Alta por importación desde Kommo, lead #" + fila.kommoLeadId()
+                : "Alta por importación de Excel (Kommo), fila " + fila.filaExcel())
+            .build());
+
+        for (Map.Entry<TipoPrenda, Integer> entry : validada.cantidadPorTipo().entrySet()) {
+            pedido.getProductos().add(Producto.builder()
+                .pedido(pedido)
+                .tipoPrenda(entry.getKey())
+                .tipoTela(tipoTelaPorDefecto.resolver(entry.getKey()))
+                .cantidadTotal(entry.getValue())
+                .costo(costoPorPrendaConocido ? precioUnitario : 0f)
+                .build());
+        }
+        if (validada.bandera() != null) {
+            pedido.getProductos().add(Producto.builder()
+                .pedido(pedido)
+                .tipoPrenda(validada.bandera())
+                .tipoTela(tipoTelaPorDefecto.resolver(validada.bandera()))
+                .cantidadTotal(1)
+                .costo(0f)
+                .estadoBandera(EstadoBandera.PENDIENTE)
+                .build());
+        }
+
+        Pedido guardado = pedidoRepository.save(pedido);
+        cargaTallesService.generarLinkParaPedidoNuevo(guardado);
+        guardado.getProductos().stream()
+            .filter(producto -> !EtapaProduccionAplicabilidad.esBandera(producto))
+            .forEach(productoEtapaProduccionService::sincronizarEtapas);
+        return guardado;
+    }
+
+    /**
+     * Todas las reglas de una fila, sin escribir nada: campos requeridos, estado, vendedor,
+     * fechas, cantidades, lead de Kommo ya importado, Nº de ficha (formato, coherencia con Promo
+     * y duplicado), rol del representante y tipos de prenda del catálogo. Es la única fuente de
+     * motivos de salteo: importarFila no valida nada más, así que la simulación de la
+     * importación desde Kommo reporta exactamente los mismos motivos que la importación real.
+     */
+    @Transactional(readOnly = true)
+    public FilaValidada validarFila(FilaExcelPedido fila) {
         String colegioNombre = requerido(fila.colegio(), "el Colegio");
         String localidad = requerido(fila.localidad(), "la Localidad");
         String contacto = requerido(fila.contactoPrincipal(), "el Contacto principal");
 
         EstadoPedido estado = resolverEstado(fila.etiquetaEstado());
-        Usuario vendedor = resolverVendedor(fila.responsableVendedor());
+        Usuario vendedor = resolverVendedor(fila);
         LocalDate fechaVenta = parsearFecha(fila.fechaVenta(), "Fecha Venta");
         LocalDate fechaEntrega = parsearFecha(fila.fechaEntregaPactada(), "Fecha Entrega Pactada");
         if (fechaEntrega.isBefore(fechaVenta)) {
@@ -101,9 +228,10 @@ class PedidoImportRowService {
         }
 
         Map<String, Integer> cantidadPorTipo = new LinkedHashMap<>();
+        // Map.of no acepta null, y los campos que el lead de Kommo no trae llegan en null.
         for (Map.Entry<String, String> col : Map.of(
-            "buzos", fila.buzos(), "camperas", fila.camperas(),
-            "remeras", fila.remeras(), "chombas", fila.chombas()).entrySet()) {
+            "buzos", nuloAVacio(fila.buzos()), "camperas", nuloAVacio(fila.camperas()),
+            "remeras", nuloAVacio(fila.remeras()), "chombas", nuloAVacio(fila.chombas())).entrySet()) {
             Integer cantidadParseada = parsearEnteroONulo(col.getValue());
             int cantidad = cantidadParseada != null ? cantidadParseada : 0;
             if (cantidad > 0) {
@@ -122,73 +250,39 @@ class PedidoImportRowService {
         int cantAlumnos = cantidadPorTipo.values().stream().mapToInt(Integer::intValue).max()
             .orElse(llevaBandera ? 1 : 1);
 
+        if (fila.kommoLeadId() != null) {
+            pedidoRepository.findByKommoLeadId(fila.kommoLeadId()).ifPresent(existente -> {
+                throw new BusinessRuleException(
+                    "El lead #" + fila.kommoLeadId() + " ya se importó como pedido " + existente.getCodigoInterno());
+            });
+        }
         String codigoInterno = generarCodigoInterno(fila.promo(), fila.fichaKommo());
 
-        Colegio colegio = colegioRepository.save(Colegio.builder()
-            .nombre(colegioNombre)
-            .localidad(localidad)
-            .provincia(blankANull(fila.provincia()))
-            .nivel(blankANull(fila.nivel()))
-            .build());
+        String email = blankANull(fila.emailContacto());
+        Usuario representanteExistente = email == null ? null : usuarioRepository.findByEmail(email).orElse(null);
+        Rol rolCliente = representanteExistente != null ? null : rolRepository.findByNombre(ROL_CLIENTE)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "No existe el rol " + ROL_CLIENTE + " necesario para dar de alta al representante"));
 
-        Usuario representante = crearRepresentante(contacto, blankANull(fila.telefonoContacto()), blankANull(fila.emailContacto()));
+        Map<TipoPrenda, Integer> prendas = new LinkedHashMap<>();
+        cantidadPorTipo.forEach((nombre, cantidad) -> prendas.put(tipoPrendaDelCatalogo(nombre), cantidad));
+        TipoPrenda bandera = llevaBandera ? tipoPrendaDelCatalogo("Bandera") : null;
 
-        Pedido pedido = Pedido.builder()
-            .colegio(colegio)
-            .representanteCurso(representante)
-            .creadoPor(vendedor)
-            .estadoActual(estado)
-            .codigoInterno(codigoInterno)
-            .curso("Sin curso")
-            .cantAlumnos(cantAlumnos)
-            .observaciones(armarObservaciones(fila))
-            .fechaVenta(fechaVenta)
-            .fechaEstimadaEntrega(fechaEntrega)
-            .responsableCurso(resolverResponsableCurso(fila.responsableCurso()))
-            .contratoFirmado(esSi(fila.contrato()))
-            .cantidadCuotas(parsearEnteroONulo(fila.cuotas()))
-            .montoReferenciaImportado(costoPorPrendaConocido ? null : presupuesto)
-            .precioUnitarioReferenciaImportado(costoPorPrendaConocido ? null : precioUnitario)
-            .build();
-
-        pedido.getHistorial().add(HistorialEstadoPedido.builder()
-            .pedido(pedido)
-            .estado(estado)
-            .fechaCambio(LocalDateTime.now())
-            .modificadoPor(vendedor)
-            .observaciones("Alta por importación de Excel (Kommo), fila " + fila.filaExcel())
-            .build());
-
-        for (Map.Entry<String, Integer> entry : cantidadPorTipo.entrySet()) {
-            TipoPrenda tipoPrenda = tipoPrendaRepository.findByNombre(entry.getKey())
-                .orElseThrow(() -> new ResourceNotFoundException("No existe el tipo de prenda " + entry.getKey() + " en el catálogo"));
-            pedido.getProductos().add(Producto.builder()
-                .pedido(pedido)
-                .tipoPrenda(tipoPrenda)
-                .cantidadTotal(entry.getValue())
-                .costo(costoPorPrendaConocido ? precioUnitario : 0f)
-                .build());
-        }
-        if (llevaBandera) {
-            TipoPrenda bandera = tipoPrendaRepository.findByNombre("Bandera")
-                .orElseThrow(() -> new ResourceNotFoundException("No existe el tipo de prenda Bandera en el catálogo"));
-            pedido.getProductos().add(Producto.builder()
-                .pedido(pedido)
-                .tipoPrenda(bandera)
-                .cantidadTotal(1)
-                .costo(0f)
-                .estadoBandera(EstadoBandera.PENDIENTE)
-                .build());
-        }
-
-        Pedido guardado = pedidoRepository.save(pedido);
-        guardado.getProductos().stream()
-            .filter(producto -> !EtapaProduccionAplicabilidad.esBandera(producto))
-            .forEach(productoEtapaProduccionService::sincronizarEtapas);
-        return guardado;
+        return new FilaValidada(colegioNombre, localidad, contacto, estado, vendedor, fechaVenta, fechaEntrega,
+            prendas, bandera, precioUnitario, presupuesto, costoPorPrendaConocido, cantAlumnos,
+            codigoInterno, representanteExistente, rolCliente);
     }
 
-    private String requerido(String valor, String nombreCampo) {
+    private TipoPrenda tipoPrendaDelCatalogo(String nombre) {
+        return tipoPrendaRepository.findByNombre(nombre)
+            .orElseThrow(() -> new ResourceNotFoundException("No existe el tipo de prenda " + nombre + " en el catálogo"));
+    }
+
+    private static String nuloAVacio(String valor) {
+        return valor == null ? "" : valor;
+    }
+
+    private static String requerido(String valor, String nombreCampo) {
         if (valor == null || valor.isBlank()) {
             throw new BusinessRuleException("Falta " + nombreCampo);
         }
@@ -199,7 +293,7 @@ class PedidoImportRowService {
         return (valor == null || valor.isBlank()) ? null : valor.trim();
     }
 
-    private boolean esSi(String valor) {
+    static boolean esSi(String valor) {
         if (valor == null) return false;
         String v = valor.trim().toLowerCase();
         return v.equals("si") || v.equals("sí");
@@ -226,8 +320,24 @@ class PedidoImportRowService {
         return NO_ALFANUMERICO.matcher(sinAcentos.toUpperCase()).replaceAll("_").replaceAll("^_|_$", "");
     }
 
-    private Usuario resolverVendedor(String responsable) {
-        String nombre = requerido(responsable, "el Responsable (vendedor)");
+    /**
+     * Desde la API de Kommo (viene vendedorKommoEnumId): el usuario vinculado a esa opción del
+     * campo Vendedor (Usuario.kommoVendedorEnumId). Desde el Excel: búsqueda por nombre, porque
+     * la columna "Responsable" trae un apodo corto (ej. "Sofi"), no un id.
+     */
+    private Usuario resolverVendedor(FilaExcelPedido fila) {
+        if (fila.vendedorKommoEnumId() != null) {
+            String nombreKommo = fila.responsableVendedor() != null ? fila.responsableVendedor() : "#" + fila.vendedorKommoEnumId();
+            Usuario vinculado = usuarioRepository.findByKommoVendedorEnumId(fila.vendedorKommoEnumId())
+                .orElseThrow(() -> new BusinessRuleException(
+                    "El vendedor de Kommo '" + nombreKommo + "' no está vinculado a ningún usuario"));
+            if (!vinculado.isHabilitado()) {
+                throw new BusinessRuleException("El vendedor de Kommo '" + nombreKommo + "' está vinculado a "
+                    + vinculado.getNombre() + ", que está deshabilitado");
+            }
+            return vinculado;
+        }
+        String nombre = requerido(fila.responsableVendedor(), "el Responsable (vendedor)");
         return usuarioRepository.findFirstByNombreContainingIgnoreCaseAndHabilitadoTrue(nombre)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "No se encontró un usuario habilitado cuyo nombre contenga '" + nombre + "' para asignar como vendedor"));
@@ -250,7 +360,7 @@ class PedidoImportRowService {
         }
     }
 
-    private Integer parsearEnteroONulo(String valor) {
+    static Integer parsearEnteroONulo(String valor) {
         if (valor == null || valor.isBlank()) return null;
         try {
             return Integer.parseInt(valor.trim());
@@ -280,6 +390,17 @@ class PedidoImportRowService {
      * número de Kommo aparte solo para compararlo.
      */
     private String generarCodigoInterno(String promo, String fichaKommo) {
+        String codigo = armarCodigoInterno(promo, fichaKommo);
+        if (pedidoRepository.existsByCodigoInterno(codigo)) {
+            throw new BusinessRuleException(
+                "Ya existe un pedido con el código " + codigo + " — probablemente esta fila (Ficha Kommo '"
+                    + fichaKommo.trim() + "') ya se importó antes");
+        }
+        return codigo;
+    }
+
+    /** AAAA-NN a partir de Promo y Ficha (ver generarCodigoInterno), sin chequear duplicados. */
+    static String armarCodigoInterno(String promo, String fichaKommo) {
         String promoTrim = requerido(promo, "Promo (se usa para el año del Nº de ficha)");
         int anio;
         try {
@@ -293,17 +414,32 @@ class PedidoImportRowService {
         if (numeroKommo.isEmpty() || !numeroKommo.chars().allMatch(Character::isDigit)) {
             throw new BusinessRuleException("No se pudo interpretar el número de la Ficha ('" + fichaTrim + "') para generar el Nº de ficha");
         }
+        if (fichaTrim.contains("-")) {
+            validarSufijoFicha(fichaTrim.substring(fichaTrim.indexOf('-') + 1).trim(), fichaTrim, anio);
+        }
         if (numeroKommo.length() < 2) {
             numeroKommo = "0" + numeroKommo;
         }
+        return anio + "-" + numeroKommo;
+    }
 
-        String codigo = anio + "-" + numeroKommo;
-        if (pedidoRepository.existsByCodigoInterno(codigo)) {
-            throw new BusinessRuleException(
-                "Ya existe un pedido con el código " + codigo + " — probablemente esta fila (Ficha Kommo '"
-                    + fichaTrim + "') ya se importó antes");
+    /**
+     * El sufijo de la Ficha (lo que va después del guion, ej. "27" en "241-27") es el año de la
+     * promoción: tiene que coincidir con Promo, con dos dígitos (últimos dos del año) o cuatro
+     * (año completo). Cualquier otra cosa no se interpreta.
+     */
+    private static void validarSufijoFicha(String sufijo, String ficha, int anioPromo) {
+        boolean soloDigitos = !sufijo.isEmpty() && sufijo.chars().allMatch(Character::isDigit);
+        if (!soloDigitos || (sufijo.length() != 2 && sufijo.length() != 4)) {
+            throw new BusinessRuleException("Sufijo de Ficha no interpretable: Ficha '" + ficha
+                + "' (se espera el año de la promoción después del guion, ej. '241-27')");
         }
-        return codigo;
+        int anioSufijo = Integer.parseInt(sufijo);
+        boolean coincide = sufijo.length() == 2 ? anioSufijo == anioPromo % 100 : anioSufijo == anioPromo;
+        if (!coincide) {
+            throw new BusinessRuleException("La Ficha '" + ficha + "' no coincide con la Promo " + anioPromo
+                + " (el sufijo '" + sufijo + "' tendría que ser el año de la promoción)");
+        }
     }
 
     private String armarObservaciones(FilaExcelPedido fila) {
@@ -331,18 +467,10 @@ class PedidoImportRowService {
      * El representante de curso todavía no tiene alta ni login propios (mismo criterio que
      * PedidoService.obtenerOCrearRepresentante). A diferencia de esa versión, acá el email puede
      * no venir: si falta, no hay con qué buscar uno existente y se crea siempre uno nuevo (evita
-     * que dos representantes sin email distintos se confundan buscando por email null).
+     * que dos representantes sin email distintos se confundan buscando por email null). Si el
+     * email ya existe, validarFila ya trajo ese usuario y no se llega acá.
      */
-    private Usuario crearRepresentante(String nombre, String telefono, String email) {
-        if (email != null) {
-            var existente = usuarioRepository.findByEmail(email);
-            if (existente.isPresent()) {
-                return existente.get();
-            }
-        }
-        Rol rolCliente = rolRepository.findByNombre(ROL_CLIENTE)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "No existe el rol " + ROL_CLIENTE + " necesario para dar de alta al representante"));
+    private Usuario crearRepresentante(String nombre, String telefono, String email, Rol rolCliente) {
         return usuarioRepository.save(Usuario.builder()
             .rol(rolCliente)
             .nombre(nombre)

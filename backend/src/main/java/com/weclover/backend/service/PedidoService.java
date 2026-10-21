@@ -32,7 +32,6 @@ import com.weclover.backend.entity.PatronCorte;
 import com.weclover.backend.entity.Producto;
 import com.weclover.backend.entity.Rol;
 import com.weclover.backend.entity.TipoPrenda;
-import com.weclover.backend.entity.TipoTela;
 import com.weclover.backend.entity.Usuario;
 import com.weclover.backend.exception.BusinessRuleException;
 import com.weclover.backend.exception.ResourceNotFoundException;
@@ -45,7 +44,6 @@ import com.weclover.backend.repository.PatronCorteRepository;
 import com.weclover.backend.repository.PedidoRepository;
 import com.weclover.backend.repository.RolRepository;
 import com.weclover.backend.repository.TipoPrendaRepository;
-import com.weclover.backend.repository.TipoTelaRepository;
 import com.weclover.backend.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -56,28 +54,13 @@ public class PedidoService {
 
     private static final String ROL_CLIENTE = "ROLE_CLIENTE";
 
-    /**
-     * Código de tela por defecto según el nombre del tipo de prenda (ver TipoTela.codigo),
-     * precargada al crear el producto pero editable después desde el selector de tela
-     * dentro del modal de gotero (ver ModalColoresGotero.tsx / ProductoService.actualizarTipoTela).
-     * TipoTela pasó de enum a entidad, así que acá solo guardamos el código estable y se
-     * resuelve contra la base en cada alta (resolverTipoTelaPorDefecto).
-     */
-    private static final Map<String, String> CODIGO_TIPO_TELA_POR_DEFECTO = Map.of(
-        "Buzo", "FRIZA",
-        "Remera", "JERSEY",
-        "Chomba", "PIQUE",
-        "Campera", "FRIZA",
-        "Bandera", "SPUM"
-    );
-
     private final PedidoRepository pedidoRepository;
     private final ColegioRepository colegioRepository;
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final TipoPrendaRepository tipoPrendaRepository;
     private final PatronCorteRepository patronCorteRepository;
-    private final TipoTelaRepository tipoTelaRepository;
+    private final TipoTelaPorDefecto tipoTelaPorDefecto;
     private final HistorialEstadoPedidoRepository historialEstadoPedidoRepository;
     private final MovimientoEstadoRepository movimientoEstadoRepository;
     private final HistorialTandaPedidoRepository historialTandaPedidoRepository;
@@ -165,7 +148,7 @@ public class PedidoService {
                 .pedido(pedido)
                 .tipoPrenda(tipoPrenda)
                 .patronCorte(patronCorte)
-                .tipoTela(resolverTipoTelaPorDefecto(tipoPrenda))
+                .tipoTela(tipoTelaPorDefecto.resolver(tipoPrenda))
                 .cantidadTotal(productoRequest.cantidadTotal())
                 .costo(productoRequest.costo())
                 .observaciones(productoRequest.observaciones())
@@ -403,7 +386,14 @@ public class PedidoService {
         colegio.setNivel(request.colegioNivel());
 
         Usuario representanteActual = pedido.getRepresentanteCurso();
-        if (representanteActual.getEmail().equalsIgnoreCase(request.representanteEmail())) {
+        if (representanteActual.getEmail() == null
+                && usuarioRepository.findByEmail(request.representanteEmail()).isEmpty()) {
+            // Representante importado sin email (Excel/Kommo no siempre lo traen): el formulario
+            // lo exige, así que se completa en el mismo usuario en vez de crear otro.
+            representanteActual.setEmail(request.representanteEmail());
+            representanteActual.setNombre(request.representanteNombre());
+            representanteActual.setTelefono(request.representanteTelefono());
+        } else if (request.representanteEmail().equalsIgnoreCase(representanteActual.getEmail())) {
             representanteActual.setNombre(request.representanteNombre());
             representanteActual.setTelefono(request.representanteTelefono());
         } else {
@@ -421,6 +411,9 @@ public class PedidoService {
         pedido.setResponsableCurso(request.responsableCurso());
         pedido.setContratoFirmado(Boolean.TRUE.equals(request.contratoFirmado()));
         pedido.setCantidadCuotas(request.cantidadCuotas());
+        // Guardar este formulario es lo que cuenta como revisar un pedido importado (ver
+        // Pedido.revisadoImportacion); ningún otro camino lo modifica.
+        pedido.setRevisadoImportacion(true);
 
         if (request.estado() != pedido.getEstadoActual()) {
             aplicarCambioEstadoManual(
@@ -475,7 +468,7 @@ public class PedidoService {
                     .pedido(pedido)
                     .tipoPrenda(tipoPrenda)
                     .patronCorte(patronCorte)
-                    .tipoTela(resolverTipoTelaPorDefecto(tipoPrenda))
+                    .tipoTela(tipoTelaPorDefecto.resolver(tipoPrenda))
                     .cantidadTotal(productoRequest.cantidadTotal())
                     .costo(productoRequest.costo())
                     .observaciones(productoRequest.observaciones())
@@ -537,12 +530,6 @@ public class PedidoService {
         }
         return patronCorteRepository.findById(idPatronCorte)
             .orElseThrow(() -> new ResourceNotFoundException("No existe el patrón de corte con id " + idPatronCorte));
-    }
-
-    /** null si tipoPrenda no tiene default (ver CODIGO_TIPO_TELA_POR_DEFECTO) o si esa fila no está en el catálogo. */
-    private TipoTela resolverTipoTelaPorDefecto(TipoPrenda tipoPrenda) {
-        String codigo = CODIGO_TIPO_TELA_POR_DEFECTO.get(tipoPrenda.getNombre());
-        return codigo != null ? tipoTelaRepository.findByCodigo(codigo).orElse(null) : null;
     }
 
     private PedidoResponse construirRespuesta(Pedido pedido) {
@@ -621,7 +608,9 @@ public class PedidoService {
             base.responsableCurso(),
             base.contratoFirmado(),
             base.cantidadCuotas(),
-            prioridadesAutomaticas.get(pedido.getId())
+            prioridadesAutomaticas.get(pedido.getId()),
+            base.origen(),
+            base.revisadoImportacion()
         );
     }
 }

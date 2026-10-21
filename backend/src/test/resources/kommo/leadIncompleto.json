@@ -1,0 +1,168 @@
+{
+                "id": 28049126,
+                "name": "MAYRA",
+                "price": 0,
+                "price_with_minor_units": 0.0,
+                "responsible_user_id": 13564852,
+                "group_id": 0,
+                "status_id": 91176132,
+                "pipeline_id": 11782868,
+                "loss_reason_id": null,
+                "created_by": 0,
+                "updated_by": 0,
+                "created_at": 1772364353,
+                "updated_at": 1791120181,
+                "closed_at": null,
+                "closest_task_at": null,
+                "is_deleted": false,
+                "custom_fields_values": [
+                    {
+                        "field_id": 693162,
+                        "field_name": "Fecha de Derivacion",
+                        "field_code": null,
+                        "field_type": "date",
+                        "values": [
+                            {
+                                "value": 1772334000
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 689567,
+                        "field_name": "Cantidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "24"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693250,
+                        "field_name": "Promo",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "2027",
+                                "enum_id": 778266,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691723,
+                        "field_name": "Provincia (WSP)",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "BS AS"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691325,
+                        "field_name": "Localidad",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "CABA"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693252,
+                        "field_name": "Nivel",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Secundaria",
+                                "enum_id": 778274,
+                                "enum_code": null
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 691725,
+                        "field_name": "Colegio",
+                        "field_code": null,
+                        "field_type": "text",
+                        "values": [
+                            {
+                                "value": "ESCUELA 6 DISTRITO11"
+                            }
+                        ]
+                    },
+                    {
+                        "field_id": 693254,
+                        "field_name": "Responsable",
+                        "field_code": null,
+                        "field_type": "select",
+                        "values": [
+                            {
+                                "value": "Alumno",
+                                "enum_id": 778280,
+                                "enum_code": null
+                            }
+                        ]
+                    }
+                ],
+                "score": null,
+                "account_id": 30122333,
+                "labor_cost": null,
+                "_links": {
+                    "self": {
+                        "href": "https://catalinaplas.kommo.com/api/v4/leads/28049126?with=contacts&limit=5&filter%5Bcreated_at%5D%5Bfrom%5D=1772334000&order%5Bcreated_at%5D=asc&page=1"
+                    }
+                },
+                "_embedded": {
+                    "tags": [
+                        {
+                            "id": 431963,
+                            "name": "2027",
+                            "color": "D1A4DC"
+                        },
+                        {
+                            "id": 454238,
+                            "name": "Faltan Datos",
+                            "color": "FF8F92"
+                        },
+                        {
+                            "id": 456766,
+                            "name": "RMK Regalo",
+                            "color": null
+                        },
+                        {
+                            "id": 466973,
+                            "name": "RMK 28-9",
+                            "color": null
+                        },
+                        {
+                            "id": 466975,
+                            "name": "RMK 28-9 dia 3",
+                            "color": null
+                        },
+                        {
+                            "id": 466977,
+                            "name": "RMK 28-9 dia 6",
+                            "color": null
+                        }
+                    ],
+                    "companies": [],
+                    "contacts": [
+                        {
+                            "id": 32186014,
+                            "is_main": true,
+                            "_links": {
+                                "self": {
+                                    "href": "https://catalinaplas.kommo.com/api/v4/contacts/32186014?with=contacts&limit=5&filter%5Bcreated_at%5D%5Bfrom%5D=1772334000&order%5Bcreated_at%5D=asc&page=1"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }

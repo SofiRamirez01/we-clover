@@ -140,7 +140,9 @@ public class PedidoImportService {
             valor(row, COL_FECHA_ENTREGA_PACTADA, formatter),
             valor(row, COL_CUOTAS, formatter),
             valor(row, COL_RESPONSABLE_CURSO, formatter),
-            notas
+            notas,
+            null,
+            null
         );
     }
 

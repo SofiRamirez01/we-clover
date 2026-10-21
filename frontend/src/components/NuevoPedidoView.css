@@ -99,3 +99,8 @@
 .resumen-financiero .btn-guardar {
   margin-top: 6px;
 }
+
+/* Mail del representante vacío al editar un pedido importado sin mail (ver handleSubmit). */
+.nuevo-pedido input[aria-invalid="true"] {
+  border-color: #a12c22;
+}

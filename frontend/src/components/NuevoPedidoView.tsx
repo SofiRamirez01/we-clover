@@ -16,6 +16,7 @@ import type {
 } from '../types/pedido';
 
 const FORMATO_NUMERO_FICHA = /^\d{4}-\d{2,}$/;
+const FORMATO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const ESTADOS_INICIALES: { value: EstadoPedido; label: string }[] = [
   { value: 'PRESUPUESTADO', label: 'Presupuestado' },
@@ -100,7 +101,7 @@ function clienteDesdePedido(pedido: PedidoResponse): ClienteForm {
     nivelColegio: pedido.nivelColegio ?? '',
     nombreContacto: pedido.nombreRepresentanteCurso,
     telefono: pedido.telefonoRepresentanteCurso ?? '',
-    mail: pedido.emailRepresentanteCurso,
+    mail: pedido.emailRepresentanteCurso ?? '',
     cantAlumnos: String(pedido.cantAlumnos),
     curso: pedido.curso,
   };
@@ -219,6 +220,19 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
     if (!FORMATO_NUMERO_FICHA.test(numeroFicha)) {
       setEstado('error');
       setMensaje('El Nº de ficha debe tener el formato AAAA-NN, con NN de al menos 2 dígitos (ej: 2026-01, o 2026-100 al superar los 99 pedidos del año).');
+      return;
+    }
+
+    // Obligatorio también al editar: los pedidos importados de Excel/Kommo pueden venir sin mail
+    // del representante, y es al revisarlos acá cuando hay que completarlo.
+    if (!cliente.mail.trim()) {
+      setEstado('error');
+      setMensaje('El mail del representante es obligatorio.');
+      return;
+    }
+    if (!FORMATO_EMAIL.test(cliente.mail.trim())) {
+      setEstado('error');
+      setMensaje('Ingresá un mail válido para el representante.');
       return;
     }
 
@@ -399,12 +413,13 @@ export default function NuevoPedidoView({ onCreado, onVolver, pedidoAEditar }: N
               />
             </label>
             <label>
-              Mail
+              Mail *
               <input
-                type="email"
+                type="text"
                 value={cliente.mail}
                 onChange={(e) => actualizarCliente('mail', e.target.value)}
-                required
+                placeholder={esEdicion && !pedidoAEditar?.emailRepresentanteCurso ? 'Falta: se importó sin mail' : undefined}
+                aria-invalid={esEdicion && !cliente.mail.trim() ? true : undefined}
               />
             </label>
             <label>

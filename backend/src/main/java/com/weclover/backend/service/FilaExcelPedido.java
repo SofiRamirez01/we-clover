@@ -4,7 +4,10 @@ import java.util.List;
 
 /**
  * Datos crudos (strings, sin parsear ni validar) de una fila del Excel de exportación de leads
- * de Kommo, extraídos por {@link PedidoImportService}. La validación/parseo y el armado de
+ * de Kommo, extraídos por {@link PedidoImportService}, o de un lead de la API de Kommo (ver
+ * {@link KommoLeadMapper}).
+ * vendedorKommoEnumId y kommoLeadId solo vienen de la API (null desde el Excel): con el primero
+ * se resuelve el vendedor por vínculo en vez de por nombre; el segundo marca el origen KOMMO. La validación/parseo y el armado de
  * entidades vive en {@link PedidoImportRowService} — ver doc/pantallas-pendientes.md para el
  * detalle de a qué columna del Excel corresponde cada campo y qué reglas de negocio se
  * acordaron para el mapeo.
@@ -36,6 +39,8 @@ record FilaExcelPedido(
     String fechaEntregaPactada,
     String cuotas,
     String responsableCurso,
-    List<String> notas
+    List<String> notas,
+    Long vendedorKommoEnumId,
+    Long kommoLeadId
 ) {
 }

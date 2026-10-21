@@ -8,6 +8,7 @@ public record UsuarioResponse(
     Long idRol,
     String rol,
     String rolDescripcion,
-    boolean habilitado
+    boolean habilitado,
+    Long kommoVendedorEnumId
 ) {
 }

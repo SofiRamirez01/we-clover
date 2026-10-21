@@ -1,0 +1,37 @@
+# Plantilla de src/main/resources/application-local.yml (ese archivo está en .gitignore).
+# Copiarla ahí. El token NO va acá: se toma de la variable de entorno KOMMO_TOKEN.
+app:
+  kommo:
+    base-url: https://catalinaplas.kommo.com
+    token: ${KOMMO_TOKEN:}
+    # Pipeline "Administracion"
+    pipeline-id: 9516980
+    # status_id de Kommo -> EstadoPedido. Cualquier otro estado no se importa.
+    estados-importables:
+      73480596: SENADO   # Boceto y banderas
+      102814047: SENADO  # Talles
+      102807927: SENADO  # Produccion y pagos
+      103172111: SENADO  # reclamo pago
+      102794939: SENADO  # Saldo 0
+    # field_id de cada campo personalizado del lead
+    campos:
+      colegio: 691725
+      localidad: 691325
+      provincia: 691723              # "Provincia (WSP)"
+      nivel: 693252
+      responsable: 693254            # responsable del curso: Alumno / Adulto
+      promo: 693250                  # NO usar 693442 "Promo (Meta form)"
+      ficha: 691345
+      precio-unitario: 693292
+      buzos: 693420
+      camperas: 693422
+      remeras: 693438
+      chombas: 693424
+      bandera: 693426
+      contrato: 693428
+      pique: 693418
+      tejido: 693432
+      fecha-venta: 693434
+      fecha-entrega-pactada: 693436
+      cuotas: 693472
+      vendedor: 693578

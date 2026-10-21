@@ -243,7 +243,8 @@ export interface PedidoResponse {
   idRepresentanteCurso: number;
   nombreRepresentanteCurso: string;
   telefonoRepresentanteCurso: string | null;
-  emailRepresentanteCurso: string;
+  /** null en pedidos importados (Excel/Kommo) sin email del representante. */
+  emailRepresentanteCurso: string | null;
   codigoInterno: string;
   curso: string;
   cantAlumnos: number;
@@ -272,7 +273,12 @@ export interface PedidoResponse {
    *  Entrega 2. */
   /** Puntaje sugerido (rank por % de pago). La prioridad real es la tanda, que no viaja acá. */
   prioridadAutomatica: number | null;
+  origen: OrigenPedido;
+  /** false = importado (Excel/Kommo) y todavía no se guardó desde el formulario de edición. */
+  revisadoImportacion: boolean;
 }
+
+export type OrigenPedido = 'MANUAL' | 'EXCEL' | 'KOMMO';
 
 export interface PedidoImportadoResumen {
   filaExcel: number;

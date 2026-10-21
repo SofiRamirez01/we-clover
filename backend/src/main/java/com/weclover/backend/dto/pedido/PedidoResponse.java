@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.weclover.backend.dto.producto.ProductoResponse;
 import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.entity.OrigenPedido;
 import com.weclover.backend.entity.ResponsableCurso;
 
 public record PedidoResponse(
@@ -52,6 +53,9 @@ public record PedidoResponse(
      *  por porcentajePagado descendente, calculado al vuelo. Es solo una referencia: la
      *  prioridad real la define la tanda, que es información interna y no viaja en este DTO.
      *  Null si el pedido no está activo. */
-    Integer prioridadAutomatica
+    Integer prioridadAutomatica,
+    OrigenPedido origen,
+    /** false = importado (Excel/Kommo) y todavía no se guardó desde el formulario de edición. */
+    boolean revisadoImportacion
 ) {
 }

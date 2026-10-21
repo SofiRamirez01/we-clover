@@ -27,6 +27,7 @@ import com.weclover.backend.dto.pedido.CambioEstadoRequest;
 import com.weclover.backend.dto.pedido.CampoOrdenPedidos;
 import com.weclover.backend.dto.pedido.FiltrosListadoPedidos;
 import com.weclover.backend.dto.pedido.HistorialCambioResponse;
+import com.weclover.backend.dto.pedido.ImportacionKommoResponse;
 import com.weclover.backend.dto.pedido.ImportacionPedidosExcelResponse;
 import com.weclover.backend.dto.pedido.ListadoPedidosResponse;
 import com.weclover.backend.dto.pedido.OpcionesFiltroPedidosResponse;
@@ -34,6 +35,7 @@ import com.weclover.backend.dto.pedido.PedidoCreateRequest;
 import com.weclover.backend.dto.pedido.PedidoResponse;
 import com.weclover.backend.dto.pedido.PedidoUpdateRequest;
 import com.weclover.backend.entity.EstadoPedido;
+import com.weclover.backend.service.KommoImportService;
 import com.weclover.backend.service.PedidoImportService;
 import com.weclover.backend.service.PedidoListadoService;
 import com.weclover.backend.service.PedidoService;
@@ -49,6 +51,7 @@ public class PedidoController {
     private final PedidoService pedidoService;
     private final PedidoImportService pedidoImportService;
     private final PedidoListadoService pedidoListadoService;
+    private final KommoImportService kommoImportService;
 
     @PostMapping
     public ResponseEntity<PedidoResponse> crearPedido(@Valid @RequestBody PedidoCreateRequest request) {
@@ -122,6 +125,18 @@ public class PedidoController {
     @PostMapping("/importar-excel")
     public ImportacionPedidosExcelResponse importarExcel(@RequestParam("archivo") MultipartFile archivo) {
         return pedidoImportService.importarDesdeExcel(archivo);
+    }
+
+    /** Importación desde la API de Kommo (ver KommoImportService): por ids o por rango de fechas
+     *  de última actualización del lead. simular=true (default) no guarda nada. */
+    @PostMapping("/importar-kommo")
+    public ImportacionKommoResponse importarKommo(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(required = false) List<Long> ids,
+            @RequestParam(required = false) Integer limite,
+            @RequestParam(defaultValue = "true") boolean simular) {
+        return kommoImportService.importar(desde, hasta, ids, limite, simular);
     }
 
     /** La prioridad numérica por pedido fue reemplazada por las tandas (ver TandaController):

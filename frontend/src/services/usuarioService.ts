@@ -1,5 +1,11 @@
 import api from './api';
-import type { RolOption, UsuarioCreateRequest, UsuarioResponse, UsuarioUpdateRequest } from '../types/usuario';
+import type {
+  RolOption,
+  UsuarioCreateRequest,
+  UsuarioResponse,
+  UsuarioUpdateRequest,
+  VendedorKommo,
+} from '../types/usuario';
 import type { UsuarioResumen } from '../types/produccion';
 
 export async function crearUsuario(payload: UsuarioCreateRequest): Promise<UsuarioResponse> {
@@ -19,6 +25,12 @@ export async function listarUsuariosCorporativos(): Promise<UsuarioResponse[]> {
 
 export async function actualizarUsuario(id: number, payload: UsuarioUpdateRequest): Promise<UsuarioResponse> {
   const { data } = await api.put<UsuarioResponse>(`/usuarios/${id}`, payload);
+  return data;
+}
+
+/** Opciones del campo "Vendedor" de Kommo, consultadas en vivo (puede fallar si Kommo no responde). */
+export async function listarVendedoresKommo(): Promise<VendedorKommo[]> {
+  const { data } = await api.get<VendedorKommo[]>('/kommo/vendedores');
   return data;
 }
 

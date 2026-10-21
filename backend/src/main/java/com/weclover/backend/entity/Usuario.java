@@ -55,4 +55,13 @@ public class Usuario {
 
     @Column(nullable = false)
     private boolean habilitado;
+
+    /**
+     * enum_id de la opción del campo "Vendedor" de los leads de Kommo que corresponde a este
+     * usuario: la importación desde la API de Kommo resuelve el vendedor del pedido por este id
+     * (ver PedidoImportRowService.resolverVendedor). Único: una opción de Kommo es un solo
+     * usuario. Se borra al deshabilitar el usuario (ver UsuarioService.eliminarUsuario).
+     */
+    @Column(name = "kommo_vendedor_enum_id", unique = true)
+    private Long kommoVendedorEnumId;
 }

@@ -34,3 +34,6 @@ build/
 
 ### Archivos subidos por usuarios (moldería, etc.) ###
 /uploads/
+
+### Configuración local (Kommo, ver application-local.example.yml) ###
+src/main/resources/application-local.yml

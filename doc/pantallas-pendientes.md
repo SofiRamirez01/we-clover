@@ -6,7 +6,7 @@ detalle de lo ya construido (el "por qué" de cada decisión ya tomada) vive en
 [tareas-realizadas.md](tareas-realizadas.md). Cuando algo de acá se resuelva, mover el
 detalle a ese archivo y borrarlo de este.
 
-Última actualización: 2026-10-20 (Módulo 4: algoritmo de corte y API de trabajos).
+Última actualización: 2026-10-21 (importación desde la API de Kommo, paso 2: importación real).
 
 ## Responsive: falta verificar por debajo de 1280px y otras pantallas con tablas
 
@@ -100,6 +100,41 @@ Puntos a tener presentes:
   `REQUIRES_NEW`): una fila con datos inválidos se saltea y se lista con el motivo en la
   respuesta del endpoint (mostrado en el modal del frontend) — el resto de las filas se importa
   igual.
+
+## Importación de pedidos desde la API de Kommo (pasos 1 y 2: simulación e importación real)
+
+`POST /api/pedidos/importar-kommo` (por `ids` o por `desde`/`hasta` de última actualización del
+lead) trae leads del pipeline "Administracion", arma el mismo `FilaExcelPedido` que el Excel
+(`KommoLeadMapper`) y lo valida (`simular=true`, default) o lo guarda (`simular=false`) con
+`PedidoImportRowService`; las dos usan `validarFila`, así que reportan los mismos motivos. El
+vendedor se resuelve por `Usuario.kommoVendedorEnumId`, que se asigna en la pantalla de Usuarios
+("Vendedor en Kommo", opciones en vivo de `GET /api/kommo/vendedores`). Configuración en
+`backend/src/main/resources/application-local.yml` (ignorado por git, plantilla en
+`backend/application-local.example.yml`); el token sale de la variable de entorno `KOMMO_TOKEN`
+del proceso del backend. Sin eso el endpoint responde 503 y el resto arranca igual.
+
+- **Esquema nuevo (2026-10-21)**: `pedidos.origen` (enum nativo de MySQL, default `MANUAL`),
+  `pedidos.kommo_lead_id` (único), `pedidos.revisado_importacion` (default 1) y
+  `usuarios.kommo_vendedor_enum_id` (único). Los agrega `ddl-auto=update` al reiniciar el
+  backend, con los defaults para las filas existentes; no hace falta SQL a mano. Probado sobre
+  una copia de la base, no sobre `weclover_db`. Ojo: como `origen` es un enum nativo, sumarle un
+  valor más adelante necesita un `ALTER TABLE` a mano (igual que `estado_actual`).
+- **Vendedor vinculado a un usuario deshabilitado**: la importación lo saltea con el motivo
+  "está vinculado a X, que está deshabilitado". Hoy no pasa porque deshabilitar un usuario le
+  borra el vínculo, pero falta mostrar estos casos en la pantalla para que el administrador sepa
+  que el vendedor de Kommo quedó sin usuario (pedido por el negocio para después).
+- **Leads sin el campo Vendedor**: se saltean con "Falta el Responsable (vendedor)" (el texto
+  viene del flujo de Excel). En la simulación del 2026-10-21 fueron 13 de 50; revisar si el
+  texto alcanza o si hay que avisar en Kommo.
+- **Pendiente de UI (fuera de alcance de este paso)**: pantalla/modal de sincronización, badges
+  de origen y de "sin revisar", tabla de sincronizaciones y cron. `origen` y
+  `revisadoImportacion` ya viajan en `PedidoResponse`.
+- **Notas del lead**: `notas` va vacía por ahora (en el Excel salían de "Nota 1..5").
+- **Sin autenticación** (como todo el backend, ver "Seguridad real"): cualquiera que llegue al
+  backend puede disparar consultas a Kommo con el token, y ahora también importar. Mitigación
+  actual: tope duro de 50 leads por llamada y el token nunca sale en respuestas ni logs.
+- **Orden y "hay más"**: los leads se piden por `updated_at` ascendente; si `hayMasLeads=true`,
+  repetir con un `desde` posterior o subir el límite (máx. 50).
 
 ## Carga de Talles: desglose por talle para producción
 
@@ -206,6 +241,9 @@ Falta:
 - Revisar en simultáneo: quién puede crear un pedido "en nombre de" otro vendedor, qué puede
   editar cada rol (ver "Roles nuevos y permisos" más abajo, están relacionados).
 - Reestablecer contraseña en login o dentro del sistema.
+- `POST /api/pedidos/importar-kommo` también queda abierto hasta entonces (consulta Kommo con el
+  token del backend); no se restringió a localhost porque con Docker la IP de origen no es
+  127.0.0.1.
 
 ## Reutilización de Colegios existentes
 
