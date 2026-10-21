@@ -208,8 +208,9 @@ def main():
                for g in preparacion["grupos"] for it in g["items"] for c in it["porColor"]}
     print(f"Tanda {preparacion['nombreTanda']}: {len(plan.cortes)} cortes | modo {p.modo_tiempo}, presupuesto"
           f" {p.presupuesto_segundos:.0f} s por corte, semilla base {p.semilla}, población {p.poblacion},"
-          f" {p.generaciones} generaciones por corrida, corte anticipado tras {p.reinicios_sin_mejora}"
-          f" reinicios sin mejorar más de {p.mejora_minima_reinicio:.0%}", flush=True)
+          f" {p.generaciones} generaciones por corrida, corte anticipado tras {p.reinicios_sin_mejora_efectivos}"
+          f" reinicios sin mejorar más de {p.mejora_minima_reinicio:.0%}, factor de tiempo para otro reinicio"
+          f" {p.factor_tiempo_reinicio_efectivo}, estancamiento N={p.estancamiento_generaciones}", flush=True)
     if args.comparar_estancamiento:
         args.semillas = args.semillas or [args.semilla]
         comparar_estancamiento(plan, p, args, colores)

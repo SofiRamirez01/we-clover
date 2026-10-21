@@ -64,23 +64,34 @@ class ParametrosCorte:
     modo_tiempo: str = "COMPLETO"
     presupuesto_segundos_por_corte: float | None = None
     presupuesto_maximo_segundos: float = 200.0
-    # Corte anticipado: si los últimos K reinicios no acortan la mejor tizada en más de esta
-    # fracción, el corte termina aunque quede presupuesto.
-    reinicios_sin_mejora: int = 2
+    # Corte anticipado: si los últimos K reinicios seguidos no acortan la mejor tizada en más de
+    # `mejora_minima_reinicio`, el corte termina aunque quede presupuesto. K sale del modo de tiempo
+    # (`reinicios_sin_mejora_por_modo`); el valor explícito de la solicitud manda sobre el del
+    # modo. Ver `reinicios_sin_mejora_efectivos`.
+    reinicios_sin_mejora: int | None = None
+    reinicios_sin_mejora_por_modo: dict = field(default_factory=lambda: {"RAPIDO": 2, "COMPLETO": 4})
     mejora_minima_reinicio: float = 0.01
+    # Un reinicio nuevo arranca solo si lo que queda del presupuesto alcanza para
+    # factor × la duración de la corrida anterior (1,0 = una corrida como la anterior entera). Con
+    # menos de 1 se aprovecha el tiempo que libera el estancamiento; si la corrida no termina a
+    # tiempo, el límite duro del presupuesto la corta igual y su tizada cuenta. Mismo patrón por
+    # modo que `reinicios_sin_mejora`. Ver `factor_tiempo_reinicio_efectivo`.
+    factor_tiempo_reinicio: float | None = None
+    factor_tiempo_reinicio_por_modo: dict = field(default_factory=lambda: {"RAPIDO": 1.0, "COMPLETO": 0.8})
     # Compactación final de la mejor tizada (mitades solo en y, enteras en x e y).
     compactar: bool = True
     paso_minimo_compactacion_cm: float = 0.01
-    # Corte por estancamiento de cada corrida (APAGADO por defecto, todavía sin medir): termina si
-    # pasan N generaciones seguidas sin que el largo del mejor individuo baje al menos el umbral,
-    # una vez hechas `generaciones_minimas`. N y el umbral salen del modo de tiempo
-    # (`..._por_modo`); el valor explícito de la solicitud manda sobre el del modo. N nulo o 0 =
-    # apagado. N tiene que ser mayor que `limite_estancamiento_mutacion` (el stagnation_limit del
-    # vendor, que a las 40 generaciones sin mejora duplica la escala de mutación una generación):
-    # si no, la corrida se cortaría antes de ese empujón. Ver `estancamiento_generaciones`.
+    # Corte por estancamiento de cada corrida (ENCENDIDO por defecto con N = 50 en los dos modos,
+    # medido en 7c2730a: misma tela y menos tiempo): termina si pasan N generaciones seguidas sin
+    # que el largo del mejor individuo baje al menos el umbral, una vez hechas
+    # `generaciones_minimas`. N y el umbral salen del modo de tiempo (`..._por_modo`); el valor
+    # explícito de la solicitud manda sobre el del modo. N nulo o 0 = apagado. N tiene que ser
+    # mayor que `limite_estancamiento_mutacion` (el stagnation_limit del vendor, que a las 40
+    # generaciones sin mejora duplica la escala de mutación una generación): si no, la corrida se
+    # cortaría antes de ese empujón. Ver `estancamiento_generaciones`.
     generaciones_estancamiento: int | None = None
     generaciones_estancamiento_por_modo: dict = field(
-        default_factory=lambda: {"RAPIDO": None, "COMPLETO": None})
+        default_factory=lambda: {"RAPIDO": 50, "COMPLETO": 50})
     umbral_estancamiento_cm: float | None = None
     umbral_estancamiento_cm_por_modo: dict = field(default_factory=lambda: {"RAPIDO": 0.1, "COMPLETO": 0.1})
     # Con N = 50 evita cortar por una meseta temprana; con N >= 60 no cambia nada.
@@ -116,6 +127,24 @@ class ParametrosCorte:
                              f"limiteEstancamientoMutacion ({self.limite_estancamiento_mutacion})")
         if n is not None and self.estancamiento_umbral_cm < 0:
             raise ValueError(f"umbralEstancamientoCm no puede ser negativo ({self.estancamiento_umbral_cm})")
+        if self.reinicios_sin_mejora_efectivos < 0:
+            raise ValueError(f"reiniciosSinMejora no puede ser negativo ({self.reinicios_sin_mejora_efectivos})")
+        if self.factor_tiempo_reinicio_efectivo <= 0:
+            raise ValueError(f"factorTiempoReinicio tiene que ser mayor que 0 ({self.factor_tiempo_reinicio_efectivo})")
+
+    @property
+    def reinicios_sin_mejora_efectivos(self) -> int:
+        """K del corte anticipado: el de la solicitud o, si no vino, el del modo."""
+        if self.reinicios_sin_mejora is not None:
+            return self.reinicios_sin_mejora
+        return self.reinicios_sin_mejora_por_modo.get(self.modo_tiempo, 2)
+
+    @property
+    def factor_tiempo_reinicio_efectivo(self) -> float:
+        """Factor de la regla "lo que queda alcanza para otra corrida": el de la solicitud o el del modo."""
+        if self.factor_tiempo_reinicio is not None:
+            return self.factor_tiempo_reinicio
+        return self.factor_tiempo_reinicio_por_modo.get(self.modo_tiempo, 1.0)
 
     @property
     def estancamiento_generaciones(self) -> int | None:

@@ -205,7 +205,8 @@ def test_corte_anticipado_sin_mejora():
 def test_si_el_presupuesto_no_alcanza_usa_una_sola_corrida_y_la_devuelve_verificada():
     corte, p = _corte([_pieza(1, RECTANGULO, True), _pieza(2, ASIMETRICO, False)],
                       [_item(1, {ROJO: 6}), _item(2, {ROJO: 6})], capas_maximas=1,
-                      generaciones=100000, presupuesto_segundos_por_corte=1.0)
+                      generaciones=100000, presupuesto_segundos_por_corte=1.0,
+                      generaciones_estancamiento=0)  # sin estancamiento: la corrida usa todo el presupuesto
     tizada = ubicar_corte(corte, p)
     assert tizada.reinicios == 1 and tizada.estado == "LIMITE_DE_TIEMPO"
     assert 1 <= tizada.corridas[0].generaciones < 100000
@@ -298,8 +299,9 @@ def test_cada_corrida_registra_por_que_termino():
     corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1, reinicios_sin_mejora=0)
     (corrida,) = ubicar_corte(corte, p).corridas
     assert (corrida.motivo_fin, corrida.generaciones) == ("GENERACIONES", 3)
+    # Sin estancamiento (encendido por defecto, cortaría antes): la corrida termina por tiempo.
     corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1,
-                      generaciones=100000, presupuesto_segundos_por_corte=0.5)
+                      generaciones=100000, presupuesto_segundos_por_corte=0.5, generaciones_estancamiento=0)
     (corrida,) = ubicar_corte(corte, p).corridas
     assert corrida.motivo_fin == "LIMITE_DE_TIEMPO" and corrida.generaciones < 100000
 
@@ -340,9 +342,16 @@ def test_una_tizada_de_mas_de_800_cm_se_parte_y_se_vuelve_a_correr(monkeypatch):
 
 
 
-def test_estancamiento_apagado_por_defecto_en_los_dos_modos_y_validado():
+def test_estancamiento_encendido_por_defecto_con_50_en_los_dos_modos_y_0_lo_apaga():
     for modo in ("RAPIDO", "COMPLETO"):
-        assert ParametrosCorte(modo_tiempo=modo).estancamiento_generaciones is None
+        assert ParametrosCorte(modo_tiempo=modo).estancamiento_generaciones == 50
+        assert ParametrosCorte(modo_tiempo=modo).estancamiento_umbral_cm == 0.1
+        assert ParametrosCorte(modo_tiempo=modo, generaciones_estancamiento=0).estancamiento_generaciones is None
+    assert ParametrosCorte.desde_dict({"generacionesEstancamiento": 0}).estancamiento_generaciones is None
+    assert ParametrosCorte().generaciones_minimas == 60
+
+
+def test_estancamiento_validado():
     p = ParametrosCorte(generaciones_estancamiento=80)
     assert (p.estancamiento_generaciones, p.estancamiento_umbral_cm, p.generaciones_minimas,
             p.limite_estancamiento_mutacion) == (80, 0.1, 60, 40)
@@ -391,7 +400,7 @@ def test_despues_de_una_corrida_cortada_por_estancamiento_siguen_los_reinicios()
     assert all(c.motivo_fin == "ESTANCAMIENTO" and c.estado == "COMPLETO" for c in tizada.corridas)
 
 
-def test_estancamiento_apagado_da_los_mismos_resultados_con_la_misma_semilla():
+def test_estancamiento_apagado_o_sin_llegar_a_cortar_da_los_mismos_resultados_con_la_misma_semilla():
     def correr(**extra):
         corte, p = _corte([_pieza(1, RECTANGULO, True), _pieza(2, ASIMETRICO, False)],
                           [_item(1, {ROJO: 3}), _item(2, {ROJO: 4})], capas_maximas=1, generaciones=30,
@@ -400,8 +409,83 @@ def test_estancamiento_apagado_da_los_mismos_resultados_con_la_misma_semilla():
         return ([(c.semilla, c.generaciones, c.motivo_fin, round(c.largo_cm, 6)) for c in tizada.corridas],
                 [(pz.id_pieza, pz.copia, pz.modo, pz.rotacion, pz.poligono.wkt) for pz in tizada.piezas])
 
-    base = correr()
-    assert correr(generaciones_estancamiento=0) == base
-    assert correr(generaciones_estancamiento_por_modo={"RAPIDO": None, "COMPLETO": None}) == base
-    # Encendido pero sin llegar a cortar (N mayor que las generaciones): tampoco cambia nada.
-    assert correr(generaciones_estancamiento=1000) == base
+    apagado = correr(generaciones_estancamiento=0)
+    assert correr(generaciones_estancamiento_por_modo={"RAPIDO": None, "COMPLETO": None}) == apagado
+    # Encendido pero sin llegar a cortar (30 generaciones, antes del mínimo de 60 o de N): igual.
+    assert correr() == apagado
+    assert correr(generaciones_estancamiento=1000) == apagado
+
+
+def test_reinicios_sin_mejora_por_modo_4_en_completo_y_2_en_rapido():
+    assert ParametrosCorte().reinicios_sin_mejora_efectivos == 4
+    assert ParametrosCorte(modo_tiempo="RAPIDO").reinicios_sin_mejora_efectivos == 2
+
+    def corridas(**extra):
+        # Ninguna corrida cuenta como mejora (pide acortar 100 %): frena solo el corte anticipado.
+        corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 4})], capas_maximas=1,
+                          mejora_minima_reinicio=1.0, presupuesto_segundos_por_corte=60, **extra)
+        return ubicar_corte(corte, p).reinicios
+
+    assert corridas() == 5  # COMPLETO: la primera y 4 sin mejora
+    assert corridas(modo_tiempo="RAPIDO") == 3  # la primera y 2 sin mejora
+    assert corridas(reinicios_sin_mejora=1) == 2  # el valor de la solicitud manda sobre el del modo
+    assert corridas(modo_tiempo="RAPIDO", reinicios_sin_mejora_por_modo={"RAPIDO": 3, "COMPLETO": 4}) == 4
+
+
+def test_factor_de_tiempo_por_modo_y_el_de_la_solicitud_manda():
+    assert ParametrosCorte().factor_tiempo_reinicio_efectivo == 0.8
+    assert ParametrosCorte(modo_tiempo="RAPIDO").factor_tiempo_reinicio_efectivo == 1.0
+    assert ParametrosCorte(factor_tiempo_reinicio=0.5).factor_tiempo_reinicio_efectivo == 0.5
+    desde_api = ParametrosCorte.desde_dict({"modoTiempo": "RAPIDO", "factorTiempoReinicioPorModo": {"RAPIDO": 0.7},
+                                            "reiniciosSinMejora": 6})
+    assert (desde_api.factor_tiempo_reinicio_efectivo, desde_api.reinicios_sin_mejora_efectivos) == (0.7, 6)
+    for invalido in ({"factor_tiempo_reinicio": 0}, {"reinicios_sin_mejora": -1}):
+        with pytest.raises(ValueError):
+            ParametrosCorte(**invalido)
+
+
+def _reloj_falso(monkeypatch, duracion_corrida):
+    """Reloj que solo avanza cuando termina una corrida (`duracion_corrida` segundos), para probar
+    la regla de reinicio sin depender de lo que tarda la máquina."""
+    import time as modulo_time
+
+    import app.corte.tizada as tizada_mod
+
+    reloj = {"ahora": 1000.0}
+    monkeypatch.setattr(modulo_time, "monotonic", lambda: reloj["ahora"])
+    original = tizada_mod._correr
+
+    def correr_y_avanzar(*args, **kwargs):
+        individuo = original(*args, **kwargs)
+        reloj["ahora"] += duracion_corrida
+        return individuo
+
+    monkeypatch.setattr(tizada_mod, "_correr", correr_y_avanzar)
+
+
+@pytest.mark.parametrize("factor, corridas_esperadas", [(0.8, 2), (1.0, 1)])
+def test_otro_reinicio_arranca_solo_si_lo_que_queda_alcanza_para_factor_por_la_anterior(
+        monkeypatch, factor, corridas_esperadas):
+    # Presupuesto 10 s y cada corrida tarda 5,5: después de la primera quedan 4,5 s.
+    # Con 0,8 alcanza (4,5 >= 0,8 × 5,5 = 4,4); con 1,0 no (4,5 < 5,5).
+    _reloj_falso(monkeypatch, duracion_corrida=5.5)
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 4})], capas_maximas=1,
+                      presupuesto_segundos_por_corte=10, factor_tiempo_reinicio=factor,
+                      reinicios_sin_mejora=10, mejora_minima_reinicio=1.0)
+    assert ubicar_corte(corte, p).reinicios == corridas_esperadas
+
+
+def test_con_poco_tiempo_la_ultima_corrida_la_corta_el_limite_duro_y_cuenta():
+    # Factor casi 0: arranca otra corrida aunque no alcance; el límite del presupuesto la corta,
+    # su tizada compite igual y no se pasa del presupuesto (más la verificación y la compactación).
+    corte, p = _corte([_pieza(1, RECTANGULO, True)], [_item(1, {ROJO: 2})], capas_maximas=1,
+                      generaciones=100000, generaciones_estancamiento=45, generaciones_minimas=60,
+                      factor_tiempo_reinicio=0.01, reinicios_sin_mejora=1000, mejora_minima_reinicio=0.0,
+                      presupuesto_segundos_por_corte=1.5)
+    tizada = ubicar_corte(corte, p)
+    assert tizada.reinicios >= 2
+    assert [c.motivo_fin for c in tizada.corridas[:-1]] == ["ESTANCAMIENTO"] * (tizada.reinicios - 1)
+    assert tizada.corridas[-1].motivo_fin == "LIMITE_DE_TIEMPO"
+    verificadas = [c for c in tizada.corridas if c.verificacion_ok]
+    assert tizada.semilla_ganadora == min(verificadas, key=lambda c: c.largo_cm).semilla
+    assert tizada.segundos < 1.5 + 2.0

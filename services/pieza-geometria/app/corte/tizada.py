@@ -307,11 +307,15 @@ def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado
 
     - Cada reinicio corre el algoritmo completo con una semilla distinta (semilla, semilla + 1...)
       y se queda la tizada más corta que pasa la verificación con polígonos exactos.
-    - No se empieza un reinicio si lo que queda de presupuesto no alcanza para uno como el
-      anterior; en un corte denso la primera corrida usa todo el presupuesto y se devuelve lo
-      mejor que encontró (estado LIMITE_DE_TIEMPO).
-    - Corte anticipado: si los últimos `reinicios_sin_mejora` reinicios no acortaron la mejor en
-      más de `mejora_minima_reinicio`, termina aunque quede presupuesto.
+    - No se empieza un reinicio si lo que queda de presupuesto es menos que
+      `factor_tiempo_reinicio` × la duración de la corrida anterior (1,0 en RAPIDO, 0,8 en
+      COMPLETO). Toda corrida cuenta como terminada (por generaciones, por estancamiento o cortada
+      por el límite duro del presupuesto, que se sigue respetando: si una corrida no llega a
+      terminar, el límite la corta y su tizada compite igual). En un corte denso la primera
+      corrida usa todo el presupuesto y se devuelve lo mejor que encontró (estado LIMITE_DE_TIEMPO).
+    - Corte anticipado: si los últimos `reinicios_sin_mejora` reinicios (2 en RAPIDO, 4 en
+      COMPLETO) no acortaron la mejor en más de `mejora_minima_reinicio`, termina aunque quede
+      presupuesto.
     Lanza NoSeUbica si no puede ubicar todo, y ga.CorteCancelado si se cancela el trabajo.
     """
     entradas, meta = armar_entradas(corte, p)
@@ -325,9 +329,10 @@ def ubicar_corte(corte: Corte, p: ParametrosCorte, on_generation=None, cancelado
         numero = len(corridas)
         if numero:
             anterior = corridas[-1]
-            if anterior.estado == LIMITE_DE_TIEMPO or fin - time.monotonic() < anterior.segundos:
+            # Si el límite duro cortó la anterior, lo que queda es ~0 y esta regla también frena.
+            if fin - time.monotonic() < p.factor_tiempo_reinicio_efectivo * anterior.segundos:
                 break
-            if sin_mejora >= p.reinicios_sin_mejora:
+            if sin_mejora >= p.reinicios_sin_mejora_efectivos:
                 break
         semilla = base + numero
         if on_corrida is not None:

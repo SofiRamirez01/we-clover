@@ -66,26 +66,39 @@ resuelta, en lugar de que falle el trabajo.
   `--comparar-estancamiento 50 80 --semillas 1 101` compara cada corte sin y con corte por
   estancamiento, con las mismas semillas.
 
-### Corte por estancamiento (apagado por defecto)
+### Reinicios y corte por estancamiento
 
-Cada corrida del algoritmo puede terminar antes de sus generaciones si el largo de la tizada ya no
-baja, para que entren más reinicios en el presupuesto del corte (cambio 11 del vendor). Parámetros
-(`ParametrosCorte`, en camelCase por la API):
+Cada corte se ubica con varias corridas del algoritmo (reinicios con semilla, semilla + 1...)
+dentro de su presupuesto de tiempo, y gana la tizada más corta que pasa la verificación. Tres
+reglas deciden cuántas corridas entran; las tres son configurables por modo con el mismo patrón que
+la eficiencia por tela: un valor por modo (`...PorModo`) y el valor explícito de la solicitud
+(`ParametrosCorte`, en camelCase por la API), que manda sobre el del modo.
 
-- `generacionesEstancamientoPorModo` (`{"RAPIDO": null, "COMPLETO": null}`, apagado en los dos) y
-  `generacionesEstancamiento`, el valor de la solicitud, que manda sobre el del modo. `null` o `0`
-  = apagado. Tiene que ser mayor que `limiteEstancamientoMutacion` (40, el `stagnation_limit` del
-  vendor): con N ≤ 40 la corrida se cortaría antes del empujón de mutación del vendor.
-- `umbralEstancamientoCmPorModo` (`0.1` cm = 1 mm en los dos modos) y `umbralEstancamientoCm`:
-  cuánto tiene que acortarse el largo (punto más alto de las piezas) para reiniciar la cuenta.
-- `generacionesMinimas` (60): antes de esa generación no se corta aunque el largo esté plano. Con
-  N = 50 evita cortar por una meseta temprana; con N ≥ 60 no cambia nada.
+| Parámetro (solicitud / por modo) | RAPIDO | COMPLETO | Qué hace |
+|---|---|---|---|
+| `generacionesEstancamiento` / `generacionesEstancamientoPorModo` | 50 | 50 | **Corte por estancamiento** (cambio 11 del vendor): la corrida termina si pasan N generaciones seguidas sin que el largo (punto más alto de las piezas) baje al menos el umbral. `null` o `0` = apagado. Tiene que ser mayor que `limiteEstancamientoMutacion` (40, el `stagnation_limit` del vendor): con N ≤ 40 la corrida se cortaría antes del empujón de mutación del vendor |
+| `umbralEstancamientoCm` / `umbralEstancamientoCmPorModo` | 0,1 cm | 0,1 cm | Cuánto tiene que acortarse el largo para reiniciar la cuenta del estancamiento (1 mm) |
+| `generacionesMinimas` | 60 | 60 | Antes de esa generación no se corta por estancamiento aunque el largo esté plano: con N = 50 evita cortar por una meseta temprana |
+| `reiniciosSinMejora` / `reiniciosSinMejoraPorModo` | 2 | 4 | **Corte anticipado**: si los últimos K reinicios seguidos no acortaron la mejor tizada más de `mejoraMinimaReinicio` (1 %), el corte termina aunque quede presupuesto |
+| `factorTiempoReinicio` / `factorTiempoReinicioPorModo` | 1,0 | 0,8 | **Otro reinicio** arranca solo si lo que queda del presupuesto alcanza para factor × la duración de la corrida anterior |
 
-Una corrida cortada por estancamiento queda con motivo `ESTANCAMIENTO` y cuenta como terminada
-(estado `COMPLETO`, no `LIMITE_DE_TIEMPO`), así que la regla de reinicios sigue: se arranca otra
-mientras el presupuesto que queda alcance para una corrida como la anterior y no se cumpla el corte
-anticipado (`reiniciosSinMejora` = 2 reinicios sin acortar más de `mejoraMinimaReinicio` = 1 %).
-Apagado, los resultados con la misma semilla son idénticos a los de antes del cambio.
+Toda corrida cuenta como terminada para seguir reiniciando: la que hace sus generaciones, la que
+corta el estancamiento (motivo `ESTANCAMIENTO`, estado `COMPLETO`) y la que corta el **límite duro
+del presupuesto**, que no cambió: si una corrida arrancada con menos tiempo que la anterior no llega
+a terminar, el límite la corta (motivo `LIMITE_DE_TIEMPO`), su tizada compite igual y no arranca
+ninguna otra porque ya no queda presupuesto.
+
+Con N = 0 los resultados con la misma semilla son idénticos a los de antes del cambio 11.
+
+**Qué cambia en la práctica (COMPLETO).** Medido con K = 2 y factor 1,0, el estancamiento dejaba la
+tela igual y bajaba el tiempo entre 10 y 17 % (`7c2730a`), pero ese tiempo no se usaba: en cortes
+chicos frenaba el corte anticipado (siempre 3 corridas) y en densos la regla de "una corrida como la
+anterior". Con K = 4 y factor 0,8 se aprovecha ese tiempo en más reinicios, así que **el tiempo
+total de una tanda puede subir hacia el presupuesto por corte** (hasta 200 s × cantidad de cortes).
+Lo que se espera mejorar es el **largo de los cortes chicos y medianos**, donde la variación entre
+semillas es grande (en el corte 3 de la tanda A, de 176 a 204 cm según la semilla). Los cortes
+densos llegan igual al límite de tiempo con una sola corrida. RAPIDO queda con K = 2 y factor 1,0.
+Todavía no está medido con estos valores.
 
 ## Levantar el servicio
 
@@ -126,7 +139,8 @@ python -m pytest tests
   `posicionEnCola`. Los `parametros` (camelCase) pisan los de la preparación: `modoTiempo`
   (`RAPIDO` 60 s por corte, `COMPLETO` hasta 200 s), `presupuestoSegundosPorCorte`,
   `excedenteMaximoPorItem`, `excedenteMaximoPorTela`, `modoObjetivo`, `semilla`,
-  `generacionesEstancamiento` (ver "Corte por estancamiento"), etc.
+  `generacionesEstancamiento`, `reiniciosSinMejora`, `factorTiempoReinicio` (ver "Reinicios y corte por
+  estancamiento"), etc.
   422 si la preparación no tiene demanda o un parámetro es inválido.
 - `GET /corte/trabajos/{id}`: `estado` (`EN_COLA`, `EJECUTANDO`, `TERMINADO`, `ERROR`,
   `CANCELADO`), `progreso` (corte, corrida y generación actuales, mejor largo y eficiencia del

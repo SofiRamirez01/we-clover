@@ -77,5 +77,7 @@ def resultado_a_dict(resultado: ResultadoOptimizacion, p: ParametrosCorte, segun
                        "eficienciaEstimadaPorTela": p.eficiencia_estimada_por_tela,
                        "generacionesEstancamiento": p.estancamiento_generaciones,
                        "umbralEstancamientoCm": p.estancamiento_umbral_cm,
+                       "reiniciosSinMejora": p.reinicios_sin_mejora_efectivos,
+                       "factorTiempoReinicio": p.factor_tiempo_reinicio_efectivo,
                        "semilla": p.semilla},
     }
